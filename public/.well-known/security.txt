@@ -1,0 +1,12 @@
+# Security Policy
+# https://apms.asharparfum.com/.well-known/security.txt
+
+Contact: mailto:security@asharparfum.com
+Expires: 2027-06-14T00:00:00.000Z
+Encryption: https://keybase.io/asharparfum/pgp-keys.asc
+Preferred-Languages: id, en
+Canonical: https://apms.asharparfum.com/.well-known/security.txt
+Policy: https://apms.asharparfum.com/security-policy
+
+# APMS - Ashar Parfume Management System
+# We take security seriously. Please report vulnerabilities.
