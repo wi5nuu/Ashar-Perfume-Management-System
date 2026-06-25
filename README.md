@@ -32,8 +32,20 @@
 - [9. API Reference](#9-api-reference)
 - [10. Database Schema](#10-database-schema)
 - [11. Development Workflow](#11-development-workflow)
-- [12. Disaster Recovery](#12-disaster-recovery)
-- [13. License](#13-license)
+- [12. System Diagrams](#12-system-diagrams)
+  - [12.1 Class Diagram — Core Domain Model](#121-class-diagram--core-domain-model)
+  - [12.2 Sequence Diagram — POS Transaction Flow](#122-sequence-diagram--pos-transaction-flow)
+  - [12.3 Sequence Diagram — Wholesale Order Fulfillment](#123-sequence-diagram--wholesale-order-fulfillment)
+  - [12.4 Sequence Diagram — Stock Request Fulfillment Pipeline](#124-sequence-diagram--stock-request-fulfillment-pipeline)
+  - [12.5 Sequence Diagram — Authentication & 2FA Flow](#125-sequence-diagram--authentication--2fa-flow)
+  - [12.6 Workflow Diagram — Sales Order-to-Cash Process](#126-workflow-diagram--sales-order-to-cash-process)
+  - [12.7 Workflow Diagram — Inventory Management Lifecycle](#127-workflow-diagram--inventory-management-lifecycle)
+  - [12.8 Workflow Diagram — B2B Wholesale Order Fulfillment](#128-workflow-diagram--b2b-wholesale-order-fulfillment)
+  - [12.9 Workflow Diagram — Employee & Payroll Lifecycle](#129-workflow-diagram--employee--payroll-lifecycle)
+  - [12.10 Component Diagram — Application Layer Architecture](#1210-component-diagram--application-layer-architecture)
+  - [12.11 Deployment Architecture](#1211-deployment-architecture)
+- [13. Disaster Recovery](#13-disaster-recovery)
+- [14. License](#14-license)
 
 ---
 
@@ -570,7 +582,970 @@ refactor: Code restructure
 
 ---
 
-## 12. Disaster Recovery
+## 12. System Diagrams
+
+This section provides visual documentation of the system architecture using Mermaid diagrams (rendered natively on GitHub and other Mermaid-compatible markdown viewers).
+
+---
+
+### 12.1 Class Diagram — Core Domain Model
+
+```mermaid
+classDiagram
+    class Branch {
+        +int id
+        +string name
+        +string code
+        +string city
+        +bool is_active
+        +time shift_start
+        +time shift_end
+    }
+
+    class User {
+        +int id
+        +string name
+        +string email
+        +string role
+        +int branch_id
+        +bool can_login
+        +has2FA()
+        +hasPermission()
+    }
+
+    class Role {
+        +int id
+        +string name
+        +string slug
+    }
+
+    class Permission {
+        +int id
+        +string name
+        +string slug
+    }
+
+    class Customer {
+        +int id
+        +string customer_code
+        +string name
+        +string type
+        +int points
+        +int branch_id
+    }
+
+    class Product {
+        +int id
+        +string name
+        +string barcode
+        +decimal selling_price
+        +decimal wholesale_price
+        +decimal purchase_price
+        +int category_id
+        +int supplier_id
+        +bool is_refill
+    }
+
+    class ProductCategory {
+        +int id
+        +string name
+        +string slug
+    }
+
+    class Inventory {
+        +int id
+        +int product_id
+        +int branch_id
+        +int warehouse_id
+        +int current_stock
+        +int minimum_stock
+        +decimal bulk_stock_ml
+        +date expiration_date
+    }
+
+    class InventoryMovement {
+        +int id
+        +int product_id
+        +int branch_id
+        +int inventory_id
+        +int user_id
+        +string type
+        +int quantity
+        +int stock_before
+        +int stock_after
+        +string reference_type
+        +int reference_id
+    }
+
+    class Warehouse {
+        +int id
+        +string name
+        +int branch_id
+        +bool is_active
+    }
+
+    class Supplier {
+        +int id
+        +string name
+        +string contact_person
+        +string phone
+        +bool is_active
+    }
+
+    class PurchaseOrder {
+        +int id
+        +string po_number
+        +int supplier_id
+        +int branch_id
+        +int user_id
+        +string status
+        +decimal total_amount
+        +date expected_date
+    }
+
+    class PurchaseOrderItem {
+        +int id
+        +int purchase_order_id
+        +int product_id
+        +int quantity
+        +decimal unit_price
+        +decimal subtotal
+    }
+
+    class GoodsReceipt {
+        +int id
+        +string receipt_number
+        +int product_id
+        +int branch_id
+        +int recorded_by
+        +int quantity
+        +decimal unit_cost
+    }
+
+    class Transaction {
+        +int id
+        +string invoice_number
+        +int customer_id
+        +int user_id
+        +int branch_id
+        +decimal subtotal
+        +decimal discount
+        +decimal total_amount
+        +string payment_method
+        +decimal paid_amount
+        +decimal change_amount
+        +decimal debt_amount
+    }
+
+    class TransactionDetail {
+        +int id
+        +int transaction_id
+        +int product_id
+        +int quantity
+        +decimal price
+        +decimal subtotal
+        +decimal purchase_price
+        +int bonus_quantity
+        +decimal refill_volume_ml
+    }
+
+    class WholesaleOrder {
+        +int id
+        +string invoice_number
+        +int customer_id
+        +int user_id
+        +int branch_id
+        +int handler_id
+        +decimal total_amount
+        +decimal shipping_cost
+        +string status
+    }
+
+    class WholesaleOrderDetail {
+        +int id
+        +int order_id
+        +int product_id
+        +int wholesale_product_id
+        +int quantity
+        +decimal price
+        +decimal subtotal
+    }
+
+    class WholesaleProduct {
+        +int id
+        +int branch_id
+        +string name
+        +string unit
+        +decimal price_per_unit
+        +decimal price_per_ml
+        +int stock
+    }
+
+    class StockRequest {
+        +int id
+        +string request_number
+        +int branch_id
+        +int requested_by
+        +int approved_by
+        +string status
+    }
+
+    class StockRequestItem {
+        +int id
+        +int stock_request_id
+        +int product_id
+        +int quantity_requested
+        +int quantity_approved
+        +int quantity_shipped
+        +int quantity_received
+    }
+
+    class Coupon {
+        +int id
+        +string code
+        +string type
+        +decimal value
+        +bool is_percentage
+        +date expiration_date
+        +int max_usage
+    }
+
+    class DebtPayment {
+        +int id
+        +int transaction_id
+        +decimal amount
+        +string payment_method
+    }
+
+    class SalesReturn {
+        +int id
+        +string return_number
+        +int transaction_id
+        +int user_id
+        +int branch_id
+        +decimal total_refund
+        +string reason
+        +string status
+    }
+
+    class SalesReturnItem {
+        +int id
+        +int sales_return_id
+        +int transaction_detail_id
+        +int product_id
+        +int quantity
+        +decimal refund_amount
+    }
+
+    class Attendance {
+        +int id
+        +int user_id
+        +int branch_id
+        +date date
+        +datetime time_in
+        +datetime time_out
+        +string status
+    }
+
+    class Shift {
+        +int id
+        +int user_id
+        +int branch_id
+        +datetime start_time
+        +datetime end_time
+        +decimal initial_cash
+        +decimal expected_cash
+        +decimal actual_cash
+        +decimal discrepancy
+        +string status
+        +string photo_path
+    }
+
+    class Payroll {
+        +int id
+        +int user_id
+        +string month
+        +decimal basic_salary
+        +decimal allowance
+        +decimal deduction
+        +decimal total_salary
+        +string status
+    }
+
+    class Commission {
+        +int id
+        +int user_id
+        +int transaction_id
+        +decimal commission_rate
+        +decimal commission_amount
+        +string month
+        +string status
+    }
+
+    class Expense {
+        +int id
+        +int user_id
+        +int branch_id
+        +int category_id
+        +string description
+        +decimal amount
+        +date date
+    }
+
+    class AuditLog {
+        +int id
+        +int user_id
+        +string action
+        +string target_model
+        +int target_id
+        +json old_data
+        +json new_data
+        +string ip_address
+    }
+
+    class Setting {
+        +int id
+        +string key
+        +string value
+    }
+
+    %% ─── Relationships ───
+
+    Branch  --> User          : has many
+    Branch  --> Transaction   : has many
+    Branch  --> Inventory     : has many
+    Branch  --> WholesaleOrder: has many
+    Branch  --> Expense       : has many
+    Branch  --> StockRequest  : has many
+    Branch  --> Warehouse     : has many
+    Branch  --> Attendance    : has many
+    Branch  --> Shift         : has many
+    Branch  --> GoodsReceipt  : has many
+
+    User    --> Role          : belongsToMany
+    User    --> Permission    : belongsToMany
+    Role    --> Permission    : belongsToMany
+    User    --> Transaction   : has many (cashier)
+    User    --> Shift         : has many
+    User    --> Attendance    : has many
+    User    --> Payroll       : has many
+    User    --> Commission    : has many
+    User    --> Expense       : has many
+    User    --> AuditLog      : has many
+    User    --> StockRequest  : has many (requester/approver)
+
+    Customer --> Transaction  : has many
+    Customer --> WholesaleOrder : has many
+    Customer --> Coupon       : has many
+
+    Product --> ProductCategory: belongs to
+    Product --> Supplier      : belongs to
+    Product --> Inventory     : has many
+    Product --> TransactionDetail : has many
+    Product --> WholesaleOrderDetail : has many
+    Product --> PurchaseOrderItem : has many
+    Product --> StockRequestItem : has many
+    Product --> GoodsReceipt  : has many
+    Product --> PriceHistory  : has many
+    Product --> SalesReturnItem : has many
+
+    Inventory --> Product      : belongs to
+    Inventory --> Warehouse    : belongs to
+    Inventory --> InventoryMovement: has many
+    Inventory --> Supplier     : belongs to
+
+    InventoryMovement --> Product  : belongs to
+    InventoryMovement --> User     : belongs to
+    InventoryMovement --> Branch   : belongs to
+
+    Transaction --> TransactionDetail: has many
+    Transaction --> Coupon    : belongs to
+    Transaction --> DebtPayment: has many
+    Transaction --> SalesReturn: has many
+
+    WholesaleOrder --> WholesaleOrderDetail: has many
+    WholesaleOrder --> Customer: belongs to
+    WholesaleOrderDetail --> WholesaleProduct: belongs to
+
+    StockRequest --> StockRequestItem: has many
+
+    PurchaseOrder --> PurchaseOrderItem: has many
+    PurchaseOrder --> Supplier: belongs to
+
+    Supplier --> PurchaseOrder: has many
+    Supplier --> SupplierPrice: has many
+    Supplier --> GoodsReceipt : has many (via product)
+
+    SalesReturn --> SalesReturnItem: has many
+    SalesReturnItem --> TransactionDetail: belongs to
+
+    Payroll --> User: belongs to
+    Commission --> User: belongs to
+    Commission --> Transaction: belongs to
+
+    Shift --> User: belongs to
+    Attendance --> User: belongs to
+    Expense --> User: belongs to
+    Expense --> Branch: belongs to
+
+    AuditLog --> User: belongs to
+```
+
+### 12.2 Sequence Diagram — POS Transaction Flow
+
+```mermaid
+sequenceDiagram
+    participant Cashier as Kasir (User)
+    participant POS as POS System
+    participant DB as Database
+    participant Inv as Inventory
+    participant Acc as Accounting
+
+    Cashier->>POS: Buka shift (setor modal awal)
+    POS->>DB: Simpan Shift (initial_cash)
+    DB-->>POS: Shift ID
+
+    loop Setiap transaksi
+        Cashier->>POS: Scan/cari produk
+        POS->>DB: Validasi produk & stok
+        DB-->>POS: Harga, stok, tier
+        POS->>POS: Tentukan tier harga (eceran/grosir)
+
+        Cashier->>POS: Masukkan kupon (opsional)
+        POS->>DB: Validasi kupon (expiry, usage)
+        DB-->>POS: Kupon valid
+
+        Cashier->>POS: Pilih metode bayar
+        POS->>POS: Hitung total + diskon
+
+        alt Cash
+            Cashier->>POS: Input nominal bayar
+            POS->>POS: Hitung kembalian
+        else Transfer
+            Cashier->>POS: Konfirmasi transfer
+        else Kas Bon (Piutang)
+            POS->>DB: Catat hutang pelanggan
+        end
+
+        POS->>DB: Begin transaction (DB::transaction)
+        POS->>DB: Simpan Transaction header
+        POS->>DB: Simpan TransactionDetail items
+        POS->>DB: Update Inventory (lockForUpdate)
+        POS->>DB: Catat InventoryMovement (stock_before, stock_after)
+        POS->>DB: Update penggunaan kupon (used_count)
+        POS->>DB: Commit transaction
+
+        DB-->>POS: Transaksi sukses
+        POS-->>Cashier: Cetak struk invoice
+    end
+
+    Cashier->>POS: Tutup shift
+    POS->>Cashier: Hitung expected_cash
+    Cashier->>POS: Input actual_cash
+    POS->>DB: Simpan Shift (reconciliation)
+    POS->>DB: Catat discrepancy
+    POS-->>Cashier: Rekonsiliasi selesai
+
+    alt Discrepancy > 0
+        Manager->>DB: Review & approve shift
+        DB-->>Manager: Shift approved
+    end
+```
+
+### 12.3 Sequence Diagram — Wholesale Order Fulfillment
+
+```mermaid
+sequenceDiagram
+    participant WC as Wholesale Customer
+    participant Portal as Customer Portal
+    participant Admin as Admin/Marketing
+    participant WH as Warehouse
+    participant Finance as Keuangan
+
+    WC->>Portal: Login (email/OAuth)
+    Portal->>Portal: Generate/validasi token
+    Portal-->>WC: Dashboard portal
+
+    WC->>Portal: Buat order baru
+    Portal->>Portal: Hitung total + ongkir
+    Portal-->>WC: Review order
+
+    WC->>Portal: Konfirmasi order
+    Portal->>DB: Simpan order (status: pending)
+    Portal-->>WC: Notifikasi order diterima
+
+    Admin->>DB: Review order
+    Admin->>DB: Update status → reviewed
+    Admin->>DB: Update status → confirmed
+    Admin->>DB: Reserve stock produk
+
+    WH->>DB: View confirmed orders
+    WH->>DB: Pick & pack items
+    WH->>DB: Update status → packing
+    WH->>DB: Update stok (lockForUpdate)
+    WH->>DB: Catat InventoryMovement
+    WH->>DB: Update status → shipped
+    WH->>DB: Masukkan nomor resi
+
+    Portal-->>WC: Notifikasi barang dikirim
+
+    WC->>Portal: Lacak status pengiriman
+    Portal-->>WC: Status & tracking info
+
+    alt Diterima
+        WC->>Portal: Konfirmasi diterima
+        Admin->>DB: Update status → delivered
+        Admin->>DB: Update status → completed
+        Portal-->>WC: Tambah poin loyalty
+    else Retur
+        WC->>Portal: Ajukan retur
+        Admin->>DB: Proses retur
+        Finance->>DB: Catat refund
+    end
+
+    Finance->>DB: Generate invoice final
+    Finance-->>WC: Kirim tagihan
+    WC->>Portal: Lakukan pembayaran
+    Portal->>DB: Catat ledger
+```
+
+### 12.4 Sequence Diagram — Stock Request Fulfillment Pipeline
+
+```mermaid
+sequenceDiagram
+    participant Requester as Admin Cabang
+    participant App as Aplikasi
+    participant Approver as Admin Pusat
+    participant WH as Warehouse
+    participant Driver as Kurir
+
+    Requester->>App: Buat permintaan stok
+    App->>App: Generate request_number
+    App->>DB: Simpan StockRequest (status: pending)
+
+    Approver->>App: Lihat daftar permintaan
+    App->>Approver: Tampilkan item + prioritas
+
+    alt Disetujui
+        Approver->>App: Setujui permintaan
+        App->>DB: Update status → approved
+        App->>DB: Set qty_approved
+
+        WH->>App: Persiapan barang
+        WH->>App: Update status → preparing
+
+        WH->>DB: Kurangi stok gudang
+        WH->>DB: Catat InventoryMovement (transfer_out)
+        WH->>App: Update status → shipped
+
+        Driver->>Driver: Kirim barang ke cabang
+
+        Requester->>App: Terima barang
+        Requester->>App: Verifikasi quantity
+        App->>DB: Update status → received
+        App->>DB: Tambah stok cabang
+        App->>DB: Catat InventoryMovement (transfer_in)
+        App->>DB: Set qty_received
+    else Ditolak
+        Approver->>App: Tolak (dengan alasan)
+        App->>DB: Update status → rejected
+    end
+```
+
+### 12.5 Sequence Diagram — Authentication & 2FA Flow
+
+```mermaid
+sequenceDiagram
+    participant User as Pengguna
+    participant App as Aplikasi
+    participant Auth as Auth System
+    participant DB as Database
+    participant TOTP as TOTP Authenticator
+
+    User->>App: Akses halaman login
+    App-->>User: Form login
+
+    User->>Auth: Submit credentials
+    Auth->>DB: Cari user by email
+    Auth->>Auth: Verify password (Hash::check)
+    Auth->>DB: Log LoginActivity (IP, user-agent)
+
+    alt Gagal
+        Auth->>DB: Increment failed_attempts
+        alt 5 gagal beruntun
+            Auth->>DB: Lock account
+            App-->>User: Account terkunci (15 menit)
+        else
+            App-->>User: Email/password salah
+        end
+    else Sukses
+        alt Password expired (>90 hari)
+            App-->>User: Redirect ke forced password change
+            User->>App: Set password baru
+            App->>DB: Simpan PasswordHistory
+        end
+
+        alt 2FA diaktifkan
+            App-->>User: Tampilkan form TOTP
+            User->>TOTP: Buka authenticator app
+            User->>Auth: Masukkan 6-digit kode
+            Auth->>Auth: Verify TOTP (Google2FA)
+            alt Kode valid
+                Auth->>Auth: Generate session
+                Auth->>DB: Simpan session
+                App-->>User: Redirect ke dashboard
+            else Kode invalid
+                App-->>User: Kode salah, coba lagi
+            end
+        else
+            Auth->>Auth: Generate session
+            Auth->>DB: Simpan session (encrypted)
+            App-->>User: Redirect ke dashboard
+        end
+    end
+
+    Note over Auth,DB: Session: encrypted, HTTP-only, SameSite=Strict, 30-min idle timeout
+    Note over User,TOTP: TOTP secret disimpan terenkripsi di database
+```
+
+### 12.6 Workflow Diagram — Sales Order-to-Cash Process
+
+```mermaid
+flowchart TD
+    START([Mulai]) --> LOGIN{Kasir login?}
+    LOGIN -->|Ya| OPEN_SHIFT[Buka Shift\nInput saldo awal\nFoto uang]
+    LOGIN -->|Tidak| WAIT[Tunggu login]
+
+    OPEN_SHIFT --> SCAN[Scan/Search Produk]
+    SCAN --> TIER{Tentukan Harga}
+    TIER -->|Retail < 6 pcs| RETAIL[Harga Eceran]
+    TIER -->|Grosir ≥ 6 pcs| GROSIR[Harga Grosir]
+
+    RETAIL --> COUPON{Punya Kupon?}
+    GROSIR --> COUPON
+
+    COUPON -->|Ya| VALIDATE[Validasi Kupon\n- Expiry\n- Min pembelian\n- Usage limit]
+    VALIDATE -->|Valid| APPLY[Terapkan Diskon]
+    VALIDATE -->|Tidak valid| NOC[Kupon tidak berlaku]
+    COUPON -->|Tidak| NOC
+
+    NOC --> PAYMENT[Pilih Metode Bayar]
+    APPLY --> PAYMENT
+
+    PAYMENT -->|Cash| CASH[Input nominal bayar\nHitung kembalian]
+    PAYMENT -->|Transfer| TRANSFER[Konfirmasi bukti transfer]
+    PAYMENT -->|Kas Bon| DEBT[Catat piutang pelanggan]
+
+    CASH --> SAVE{Simpan Transaksi}
+    TRANSFER --> SAVE
+    DEBT --> SAVE
+
+    SAVE -->|Ya| LOCK[DEDUCT STOCK\nBEGIN TRANSACTION]
+    SAVE -->|Tidak| CANCEL[Batal]
+
+    LOCK --> DEDUCT[Deduct Product Inventory\nlockForUpdate]
+    DEDUCT --> MOVEMENT[Catat InventoryMovement\nstock_before → stock_after]
+    MOVEMENT --> COUPON_USED[Update kupon\nused_count++]
+    COUPON_USED --> COMMIT[COMMIT TRANSACTION]
+    COMMIT --> INVOICE[Cetak Struk/Invoice]
+
+    INVOICE --> NEXT{Ada transaksi\nberikutnya?}
+    NEXT -->|Ya| SCAN
+    NEXT -->|Tidak| CLOSE{Tutup Shift?}
+
+    CLOSE -->|Ya| RECON[Hitung Expected Cash\nInput Actual Cash\nFoto uang akhir]
+    RECON --> APPROVE{Discrepancy?}
+
+    APPROVE -->|0| CLOSED[Shift Selesai ✓]
+    APPROVE -->|≠ 0| MANAGER[Manager Review\nApprove discrepancy]
+
+    MANAGER --> CLOSED
+
+    CLOSE -->|Tidak| SCAN
+    WAIT --> LOGIN
+    CLOSED --> END([Selesai])
+```
+
+### 12.7 Workflow Diagram — Inventory Management Lifecycle
+
+```mermaid
+flowchart TD
+    START([Mulai]) --> TYPE{Pilih Aktivitas}
+
+    TYPE -->|Pembelian| PO[Buat Purchase Order\n- Pilih Supplier\n- Isi produk & qty\n- Tentukan harga]
+
+    PO --> PO_SENT[Kirim PO ke Supplier\nstatus: sent]
+    PO_SENT --> PO_RECV[Terima Barang\nstatus: received]
+    PO_RECV --> GR[Membuat Goods Receipt\n- Catat quantity diterima\n- Set unit cost]
+    GR --> INV_ADD[Tambah Inventory\n- current_stock +=\n- Catat batch/expiry]
+    INV_ADD --> MOV_ADD[InventoryMovement\n type: purchase]
+
+    TYPE -->|Penyesuaian| ADJ[Ajukan Stock Adjustment\n- Pilih produk\n- Hitung fisik vs sistem]
+    ADJ --> ADJ_REASON{Beda > threshold?}
+    ADJ_REASON -->|Ya| ADJ_APPROVE[Manager approval]
+    ADJ_REASON -->|Tidak| ADJ_OK
+    ADJ_APPROVE --> ADJ_OK[Update Inventory\n- Set current_stock\n- Catat selisih]
+    ADJ_OK --> MOV_ADJ[InventoryMovement\n type: adjustment]
+
+    TYPE -->|Audit Siklus| AUDIT[Buat Stock Audit\n- Pilih area/rak\n- Hitung fisik]
+    AUDIT --> AUDIT_ITEM[Hitung per item]
+    AUDIT_ITEM --> AUDIT_MATCH{Cocok dgn sistem?}
+    AUDIT_MATCH -->|Ya| AUDIT_OK[Catat: match]
+    AUDIT_MATCH -->|Tidak| AUDIT_DIFF[Catat selisih\nUpdate inventory]
+    AUDIT_DIFF --> AUDIT_MOV[InventoryMovement\n type: audit]
+
+    TYPE -->|Transfer| REQ[Buat Stock Request\n- Pilih produk\n- Tentukan qty]
+    REQ --> REQ_APPROVE[Disetujui Admin Pusat?]
+    REQ_APPROVE -->|Ya| PREP[Preparing from warehouse]
+    REQ_APPROVE -->|Tidak| REJ[Ditolak]
+    PREP --> SHIP[Dikirim ke cabang]
+    SHIP --> MOV_OUT[InventoryMovement\n type: transfer_out]
+    MOV_OUT --> RECV[Cabang terima]
+    RECV --> MOV_IN[InventoryMovement\n type: transfer_in]
+    MOV_IN --> INV_UPD[Update branch inventory\ncurrent_stock += qty]
+
+    PO_RECV --> GR
+    GR --> END([Selesai])
+    MOV_ADJ --> END
+    AUDIT_OK --> END
+    AUDIT_MOV --> END
+    REJ --> END
+    INV_UPD --> END
+```
+
+### 12.8 Workflow Diagram — B2B Wholesale Order Fulfillment
+
+```mermaid
+flowchart TD
+    START([Customer Ingin Order]) --> LOGIN{Customer terdaftar?}
+
+    LOGIN -->|Ya| AUTH{Metode Login}
+    LOGIN -->|Tidak| REGISTRASI[Daftar via Admin\nSet data pelanggan]
+
+    AUTH -->|Email/Password| EMAIL[Login form\nRate limited 5/15min]
+    AUTH -->|Google OAuth| OAUTH[Google OAuth\nState validation]
+
+    EMAIL --> DASH[Dashboard Portal]
+    OAUTH --> DASH
+
+    REGISTRASI --> DASH
+
+    DASH --> KATALOG[Lihat Katalog Wholesale\nHarga per pcs / pack / box]
+
+    KATALOG --> KERANJANG[Tambah ke Keranjang]
+    KERANJANG --> CEK_STOK{Cek Stok Wholesale}
+    CEK_STOK -->|Tersedia| KERANJANG
+    CEK_STOK -->|Tidak| NOTIF[Notifikasi habis]
+
+    KERANJANG --> REVIEW[Review Order\n- Hitung total\n- Hitung ongkir\n- Cek limit kredit]
+    REVIEW --> CHECK_LIMIT{Limit kredit\nmencukupi?}
+
+    CHECK_LIMIT -->|Ya| KONFIRM[Konfirmasi Order]
+    CHECK_LIMIT -->|Tidak| DP[Minta DP 50%]
+
+    DP --> KONFIRM
+
+    KONFIRM --> SUBMIT[Order Tersimpan\nstatus: pending]
+    SUBMIT --> NOTIF_ADMIN[Notifikasi ke admin\nvia Reverb WebSocket]
+
+    NOTIF_ADMIN --> ADMIN_REVIEW[Admin/Marketing Review]
+    ADMIN_REVIEW --> ADMIN_APPROVE{Setuju?}
+
+    ADMIN_APPROVE -->|Ya| CONFIRM[Konfirmasi\nstatus: confirmed\nReserve stok]
+    ADMIN_APPROVE -->|Tidak| REJECT[Tolak\nstatus: rejected\nSertakan alasan]
+
+    CONFIRM --> PACK[Packing Gudang\nstatus: packing]
+    PACK --> SHIP[Kirim\nstatus: shipped\nInput no. resi]
+    SHIP --> NOTIF_CUST[Notifikasi customer\nBarang dikirim]
+
+    NOTIF_CUST --> DELIVER{Customer terima?}
+
+    DELIVER -->|Ya| DELIVERED[Konfirmasi terima\nstatus: delivered]
+    DELIVERED --> COMPLETE[Selesai\nstatus: completed\nTambah poin loyalty]
+
+    DELIVER -->|Barang rusak/salah| RETURN[Ajukan Retur]
+    RETURN --> RETURN_REVIEW[Admin review retur]
+    RETURN_REVIEW -->|Disetujui| REFUND[Proses refund\nKurangi stok kembali]
+
+    REFUND --> COMPLETE
+
+    COMPLETE --> PAYMENT_LEDGER[Generate invoice final\nCatat pembayaran]
+    PAYMENT_LEDGER --> LOYALTY[Update Loyalty Points\n- Tambah poin\n- Cek tier upgrade]
+
+    LOYALTY --> END([Selesai])
+```
+
+### 12.9 Workflow Diagram — Employee & Payroll Lifecycle
+
+```mermaid
+flowchart TD
+    START([Manajemen SDM]) --> REKRUT[Karyawan Baru\n- Input data pribadi\n- Input NIK, NPWP, bank\n- Tentukan role & cabang]
+
+    REKRUT --> AKUN{Bisa Login?}
+    AKUN -->|Ya| USER_AKUN[Buat akun User\nGenerate random password\nKirim credential]
+    AKUN -->|Tidak| TOKO_ONLY[Hanya akses toko\nTanpa login system]
+
+    USER_AKUN --> ATTENDANCE[Presensi Harian\n- Check-in (time_in)\n- Pilih status\n- Opsional: alasan]
+
+    TOKO_ONLY --> ATTENDANCE
+
+    ATTENDANCE --> SHIFT[Buka Shift Kerja\n- Catat initial_cash\n- Foto uang awal]
+
+    SHIFT --> TRANSACTIONS[Lakukan Transaksi POS]
+    TRANSACTIONS --> COMMISSION[Hitung Komisi\n- Per item transaksi\n- Commission rate berdasar role]
+
+    COMMISSION --> SHIFT_CLOSE[Tutup Shift\n- Rekonsiliasi kas\n- Foto uang akhir\n- Approve manager jika perlu]
+
+    SHIFT_CLOSE --> MONTHLY_END{Akhir Bulan?}
+
+    MONTHLY_END -->|Ya| PAYROLL_MTD[Hitung Payroll Bulanan\n- Gaji pokok\n- Tunjangan\n- Potongan]
+    MONTHLY_END -->|Tidak| ATTENDANCE
+
+    PAYROLL_MTD --> COMMISSION_MTD[Aggregate Komisi\n- Total komisi bulan ini\n- Verifikasi detail transaksi]
+    COMMISSION_MTD --> PAYROLL_CALC[Hitung Total Gaji\n= gaji + tunjangan - potongan + komisi]
+
+    PAYROLL_CALC --> PAYROLL_STATUS{Approve Payroll?}
+    PAYROLL_STATUS -->|Draft| REVISE[Revisi perhitungan]
+    REVISE --> PAYROLL_CALC
+    PAYROLL_STATUS -->|Final| PAY[Bayar Gaji\nstatus: paid]
+
+    PAY --> LAPORAN[Tercatat di Laporan\n- Arsip Payroll\n- Slip gaji PDF]
+
+    LAPORAN --> END([Selesai])
+
+    subgraph KEAMANAN [Security Layer]
+        PWD[Password reset\nOwner approval]\n2FA[TOTP verification]\nLOCK[Account lockout\nafter 5 failures]
+    end
+
+    USER_AKUN --> PWD
+    PWD --> 2FA
+    2FA --> LOCK
+    LOCK --> ATTENDANCE
+```
+
+### 12.10 Component Diagram — Application Layer Architecture
+
+```mermaid
+graph TB
+    subgraph EXTERNAL [External Layer]
+        BROWSER[Browser Client\nBlade + Alpine.js]
+        API[External API Clients\nSanctum Token]
+        CRON[Cron / Scheduler]
+        MAIL[Mail Server]
+    end
+
+    subgraph HTTP [HTTP Layer]
+        HTACCESS[.htaccess\nURL Rewriting]
+        MIDDLEWARE[Middleware Stack\n15 middlewares]
+        ROUTES[Route Groups\nweb / auth / enterprise / api]
+    end
+
+    subgraph APP [Application Layer]
+        CONTROLLERS[Controllers\n52 Controllers]
+        REQUESTS[Form Requests\nValidation Layer]
+        GATES[Gates & Policies\nAuthorization]
+        SERVICES[Services\nBusiness Logic]
+    end
+
+    subgraph PERSISTENCE [Data Layer]
+        ELOQUENT[Eloquent ORM\n48 Models]
+        CACHE[Cache\nDatabase Driver]
+        QUEUE[Queue\nDatabase Driver]
+        SESSION[Session\nDatabase/File]
+    end
+
+    subgraph STORAGE [Storage Layer]
+        DB[(MySQL 8.0\nInnoDB)]
+        FS[File System\nStorage: Local]
+        LOG[Log Files\nDaily Rotating]
+    end
+
+    subgraph INFRA [Infrastructure]
+        GIT[Git / GitHub]
+        COMPOSER[Composer\nDependencies]
+        VITE[Vite Build\nCSS + JS]
+        ARTISAN[Artisan CLI]
+    end
+
+    BROWSER --> HTACCESS
+    HTACCESS --> MIDDLEWARE
+    API --> MIDDLEWARE
+    MIDDLEWARE --> ROUTES
+    ROUTES --> CONTROLLERS
+    CONTROLLERS --> REQUESTS
+    CONTROLLERS --> GATES
+    CONTROLLERS --> SERVICES
+    SERVICES --> ELOQUENT
+
+    ELOQUENT --> DB
+    CACHE --> DB
+    QUEUE --> DB
+    SESSION --> DB
+    ELOQUENT --> FS
+
+    CRON --> ARTISAN
+    ARTISAN --> QUEUE
+    QUEUE --> MAIL
+
+    COMPOSER --> APP
+    VITE --> BROWSER
+```
+
+### 12.11 Deployment Architecture
+
+```mermaid
+graph LR
+    subgraph INTERNET [Internet]
+        USER[User Browser]
+        CUSTOMER[Wholesale Customer]
+    end
+
+    subgraph DNS [DNS]
+        DOMAIN[ashargrosirparfum.com\nCNAME → shared hosting]
+        CF[Cloudflare\nProxy / SSL]
+    end
+
+    subgraph HOSTING [Shared Hosting]
+        APACHE[Apache 2.4\nmod_rewrite]
+        PHP[PHP 8.2 FPM\nmax_execution: 300s\nmemory: 256M]
+        APP_LARAVEL[APMS Laravel 12\n/public sebagai Document Root]
+    end
+
+    subgraph DATABASE [Database Server]
+        MYSQL[(MySQL 8.0\nInnoDB)]
+        BACKUP[Spatie Backup\nDaily encrypted dump]
+    end
+
+    subgraph EXTERNAL_SVC [External Services]
+        EMAIL[SMTP Mail\nNotifications]
+        PUSHER[Pusher/Berror\nWebSocket]
+        GOOGLE[Google OAuth\nWholesale Login]
+    end
+
+    USER --> CF
+    CUSTOMER --> CF
+    CF --> DOMAIN
+    DOMAIN --> APACHE
+    APACHE --> PHP
+    PHP --> APP_LARAVEL
+
+    APP_LARAVEL --> MYSQL
+    APP_LARAVEL --> EMAIL
+    APP_LARAVEL --> PUSHER
+    APP_LARAVEL --> GOOGLE
+
+    MYSQL --> BACKUP
+    BACKUP --> APP_LARAVEL
+
+    style USER fill:#e1f5fe
+    style CUSTOMER fill:#e1f5fe
+    style MYSQL fill:#fff3e0
+    style BACKUP fill:#e8f5e9
+```
+
+---
+
+## 13. Disaster Recovery
 
 ### Backup Strategy
 
@@ -601,7 +1576,7 @@ mysql -u apms_user -p systemasharparfum < backup.sql
 
 ---
 
-## 13. License
+## 14. License
 
 **Proprietary & Confidential**
 
