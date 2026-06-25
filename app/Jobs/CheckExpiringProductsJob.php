@@ -9,7 +9,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 class CheckExpiringProductsJob implements ShouldQueue
 {
@@ -23,7 +22,19 @@ class CheckExpiringProductsJob implements ShouldQueue
             ->get();
 
         foreach ($expiringSoon as $item) {
-            Log::warning("Expiring product: {$item->product->name} expired pada {$item->expiration_date}");
+            \App\Models\AuditLog::create([
+                'user_id' => 1,
+                'action' => 'expiry_alert',
+                'target_model' => \App\Models\Product::class,
+                'target_id' => $item->product_id,
+                'old_data' => null,
+                'new_data' => json_encode([
+                    'expiration_date' => $item->expiration_date,
+                    'current_stock' => $item->current_stock,
+                    'branch_id' => $item->branch_id,
+                ]),
+                'ip_address' => '127.0.0.1',
+            ]);
         }
     }
 }

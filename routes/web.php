@@ -124,6 +124,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
             'index' => 'wholesale.products.index',
             'create' => 'wholesale.products.create',
             'store' => 'wholesale.products.store',
+            'show' => 'wholesale.products.show',
             'edit' => 'wholesale.products.edit',
             'update' => 'wholesale.products.update',
             'destroy' => 'wholesale.products.destroy',

@@ -21,3 +21,17 @@ Broadcast::channel('debt-approvals', function ($user) {
 Broadcast::channel('dashboard', function ($user) {
     return in_array($user->role, ['owner', 'admin', 'manager', 'cashier', 'supervisor']);
 });
+
+/*
+ * Inventory updates: hanya staff yang boleh mendengar perubahan stok.
+ */
+Broadcast::channel('inventory', function ($user) {
+    return in_array($user->role, ['owner', 'admin', 'admin_pusat', 'admin_cabang', 'manager', 'warehouse']);
+});
+
+/*
+ * Notifikasi sistem: low stock, wholesale order, debt reminder.
+ */
+Broadcast::channel('notifications', function ($user) {
+    return in_array($user->role, ['owner', 'admin', 'admin_pusat', 'admin_cabang', 'manager']);
+});

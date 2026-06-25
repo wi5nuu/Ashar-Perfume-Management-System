@@ -33,7 +33,7 @@ window.Echo = new Echo({
 });
 
 // Listener untuk Stock Update
-window.Echo.channel('inventory')
+window.Echo.private('inventory')
     .listen('.StockUpdated', (e) => {
         console.log('[Realtime] Stok produk ' + e.productName + ' berubah menjadi: ' + e.newStock);
         if (typeof Toast !== 'undefined') {
@@ -42,7 +42,7 @@ window.Echo.channel('inventory')
     });
 
 // Listener untuk Live Dashboard Counters
-window.Echo.channel('dashboard')
+window.Echo.private('dashboard')
     .listen('.dashboard.updated', (e) => {
         console.log('[Realtime] Dashboard update', e);
 
@@ -81,7 +81,7 @@ if (userRole === 'owner' || userRole === 'admin') {
 }
 
 // Real-time notification channel — low stock, new wholesale orders, debt reminders
-window.Echo.channel('notifications')
+window.Echo.private('notifications')
     .listen('.LowStockAlert', (e) => {
         console.log('[Realtime] Low stock alert', e);
         if (typeof Swal !== 'undefined') {

@@ -2,9 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -35,9 +33,13 @@ class StockUpdated implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        // Broadcast ke channel public "inventory"
         return [
-            new Channel('inventory'),
+            new PrivateChannel('inventory'),
         ];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'StockUpdated';
     }
 }

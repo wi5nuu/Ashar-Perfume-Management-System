@@ -1570,7 +1570,70 @@ POST /settings/backup (requires manage_settings permission)
 mysql -u apms_user -p systemasharparfum < backup.sql
 ```
 
-### Monitoring
+### Production Checklist
+
+Before going live, verify these settings in `.env`:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+SESSION_SECURE_COOKIE=true
+FORCE_HTTPS=true
+CACHE_STORE=file              # or redis if available
+LOG_STACK=daily               # rotates logs automatically
+LOG_DAILY_DAYS=30             # keep 30 days of logs
+MAIL_MAILER=smtp              # set to a real mail driver
+```
+
+### Queue Worker Setup
+
+The application processes background jobs (low stock alerts, expiring products, daily reports, payroll generation) via Laravel's queue system.
+
+**Using Supervisor (Linux):**
+
+```ini
+; /etc/supervisor/conf.d/apms-worker.conf
+[program:apms-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /path/to/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/path/to/storage/logs/queue-worker.log
+stopwaitsecs=3600
+```
+
+**Without Supervisor (Shared Hosting — use cron):**
+
+```bash
+# Add to crontab (runs every minute, processes jobs, then exits)
+* * * * * php /path/to/artisan queue:work --stop-when-empty --sleep=3 --tries=3 >> /dev/null 2>&1
+```
+
+### Cron / Scheduler Setup
+
+The system runs scheduled tasks via Laravel's scheduler. Add this single cron entry:
+
+```bash
+# Run once per minute — Laravel handles the actual schedule internally
+* * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Scheduled tasks include:
+| Time | Task |
+|------|------|
+| Every hour | Check low stock → broadcast alert |
+| Daily 00:00 | Generate daily sales report |
+| Daily 02:00 | Database backup |
+| Daily 04:00 | Password expiry check |
+| Daily 23:50 | Send scheduled email reports |
+| Weekly (Sun 03:00) | Clean old audit logs |
+
+### Health & Monitoring
 
 - **Health endpoint:** `GET /up` — returns 200 when application is healthy
 - **Log viewer:** `/admin/monitoring/logs` — real-time log inspection

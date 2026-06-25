@@ -2,14 +2,13 @@
 
 namespace App\Jobs;
 
+use App\Events\LowStockAlert;
 use App\Models\Inventory;
-use App\Models\Product;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 class CheckLowStockJob implements ShouldQueue
 {
@@ -22,7 +21,12 @@ class CheckLowStockJob implements ShouldQueue
             ->get();
 
         foreach ($lowStockItems as $item) {
-            Log::warning("Low stock alert: {$item->product->name} hanya memiliki {$item->current_stock} stok (min: {$item->minimum_stock})");
+            LowStockAlert::dispatch(
+                $item->product_id,
+                $item->product->name,
+                $item->current_stock,
+                $item->minimum_stock
+            );
         }
     }
 }
