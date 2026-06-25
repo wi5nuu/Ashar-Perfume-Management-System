@@ -338,7 +338,7 @@ class ProductController extends Controller
             foreach ($products as $product) {
                 fputcsv($file, [
                     $product->internal_id,
-                    $product->barcode,
+                    "'" . $product->barcode,
                     $product->name,
                     $product->category->name ?? '-',
                     $product->size . ' ' . $product->unit,

@@ -41,6 +41,11 @@ class CustomerPortalController extends Controller
     {
         $customer = $this->resolveCustomer($token);
 
+        $tokenCreated = $customer->updated_at ?? $customer->created_at;
+        if ($tokenCreated->diffInDays(now()) > 30) {
+            abort(410, 'Token ini sudah kedaluwarsa. Hubungi toko untuk token baru.');
+        }
+
         $totalOrders = $customer->wholesaleOrders()->where('status', '!=', 'cancelled')->count();
         $pendingOrders = $customer->wholesaleOrders()->whereIn('status', ['pending', 'processing'])->count();
 
@@ -68,6 +73,11 @@ class CustomerPortalController extends Controller
     {
         $customer = $this->resolveCustomer($token);
 
+        $tokenCreated = $customer->updated_at ?? $customer->created_at;
+        if ($tokenCreated->diffInDays(now()) > 30) {
+            abort(410, 'Token ini sudah kedaluwarsa. Hubungi toko untuk token baru.');
+        }
+
         $orders = $customer->wholesaleOrders()
             ->with('details.product')
             ->latest()
@@ -82,6 +92,11 @@ class CustomerPortalController extends Controller
     public function statement(string $token)
     {
         $customer = $this->resolveCustomer($token);
+
+        $tokenCreated = $customer->updated_at ?? $customer->created_at;
+        if ($tokenCreated->diffInDays(now()) > 30) {
+            abort(410, 'Token ini sudah kedaluwarsa. Hubungi toko untuk token baru.');
+        }
 
         $transactions = $customer->transactions()
             ->with('debtPayments')

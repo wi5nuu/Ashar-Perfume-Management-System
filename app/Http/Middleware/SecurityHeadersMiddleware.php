@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\Response;
 
 class SecurityHeadersMiddleware
@@ -18,6 +19,9 @@ class SecurityHeadersMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
+        $nonce = base64_encode(random_bytes(16));
+        View::share('cspNonce', $nonce);
+
         $response = $next($request);
 
         foreach ($this->headers as $key => $value) {
@@ -37,10 +41,9 @@ class SecurityHeadersMiddleware
 
     private function getCspPolicy(): string
     {
-        $nonce = base64_encode(random_bytes(16));
         return "default-src 'self'; "
-            . "script-src 'self' 'nonce-{$nonce}' https://code.jquery.com https://cdn.jsdelivr.net https://cdn.datatables.net https://cdnjs.cloudflare.com; "
-            . "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            . "script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdn.jsdelivr.net https://cdn.datatables.net https://cdnjs.cloudflare.com; "
+            . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             . "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
             . "img-src 'self' data: blob:; "
             . "connect-src 'self' https://*.pusher.com wss://*.pusher.com; "

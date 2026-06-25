@@ -11,11 +11,18 @@ class WholesaleGoogleAuthController extends Controller
 {
     public function redirect()
     {
-        return Socialite::driver('google')->redirect();
+        session()->put('state', $state = \Illuminate\Support\Str::random(40));
+        return Socialite::driver('google')->with(['state' => $state])->redirect();
     }
 
-    public function callback()
+    public function callback(Request $request)
     {
+        $state = session()->pull('state');
+        if (!$state || $request->input('state') !== $state) {
+            return redirect()->route('wholesale.customer.login')
+                ->with('error', 'Session tidak valid. Silakan coba lagi.');
+        }
+
         try {
             $googleUser = Socialite::driver('google')->user();
         } catch (\Exception $e) {
@@ -30,11 +37,11 @@ class WholesaleGoogleAuthController extends Controller
 
         if (!$user) {
             return redirect()->route('wholesale.customer.login')
-                ->with('error', 'Akun dengan email ' . $googleUser->email . ' tidak ditemukan. Hubungi Owner untuk mendaftarkan akun Anda.');
+                ->with('error', 'Akun dengan email tersebut tidak terdaftar. Hubungi Owner.');
         }
 
         Auth::login($user);
-        request()->session()->regenerate();
+        $request->session()->regenerate();
 
         return redirect()->intended(route('wholesale.customer.dashboard'));
     }

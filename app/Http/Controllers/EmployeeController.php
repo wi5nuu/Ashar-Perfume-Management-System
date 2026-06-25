@@ -84,7 +84,7 @@ class EmployeeController extends Controller
         if ($isStoreEmp) {
             $validated['role'] = 'employee';
             $validated['can_login'] = false;
-            $validated['password'] = bcrypt(uniqid()); // random password, never used
+            $validated['password'] = \Illuminate\Support\Str::random(40); // random password, never used
         } else {
             $validated['can_login'] = true;
             $validated['password'] = bcrypt($validated['password']);
@@ -157,7 +157,7 @@ class EmployeeController extends Controller
             'emergency_contact_relation' => 'nullable|string',
             'skills' => 'nullable|string',
             'is_staying_in_mess' => 'nullable|boolean',
-            'password' => 'nullable|string|min:6',
+            'password' => ['nullable', new StrongPassword],
         ];
 
         if (!$isStoreEmp) {

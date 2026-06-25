@@ -106,7 +106,7 @@
         }
     </style>
 </head>
-<body onload="{{ request()->has('print') ? 'generateQRCode(); window.print()' : 'generateQRCode()' }}">
+<body>
     <div class="no-print text-center mb-2" style="padding: 10px; background: #f8f9fa; border-bottom: 1px solid #ddd;">
         <button onclick="window.print()" style="padding: 8px 20px; background: #FF6B35; color: white; border: none; border-radius: 5px; cursor: pointer;">
             <i class="fas fa-print"></i> Cetak Struk
@@ -243,20 +243,25 @@
         </div>
     </div>
 
-    <script>
-        function generateQRCode() {
-            const qrContainer = document.getElementById("qrcode");
-            qrContainer.innerHTML = ""; // Clear existing
-            
-            new QRCode(qrContainer, {
-                text: "{{ route('transactions.public_invoice', $transaction->invoice_number) }}",
-                width: 100,
-                height: 100,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-        }
+    <script nonce="{{ $cspNonce ?? '' }}">
+        document.addEventListener('DOMContentLoaded', function() {
+            function generateQRCode() {
+                const qrContainer = document.getElementById("qrcode");
+                qrContainer.innerHTML = "";
+                new QRCode(qrContainer, {
+                    text: "{{ route('transactions.public_invoice', $transaction->invoice_number) }}",
+                    width: 100,
+                    height: 100,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            }
+            generateQRCode();
+            if (window.location.search.includes('print')) {
+                window.print();
+            }
+        });
     </script>
 </body>
 </html>

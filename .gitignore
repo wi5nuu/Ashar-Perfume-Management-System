@@ -90,3 +90,5 @@ tests/coverage/
 /secret*
 backup-*.sql
 dump.rdb
+/tmp_cols.php
+*.ps1

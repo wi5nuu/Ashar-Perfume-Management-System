@@ -388,7 +388,7 @@ class ReportController extends Controller
             fputcsv($handle, ['No Invoice', 'Tanggal', 'Kasir', 'Pelanggan', 'Metode Bayar', 'Subtotal', 'Diskon', 'PPN', 'Total', 'Bayar', 'Kembalian', 'Tipe']);
             foreach ($transactions as $t) {
                 fputcsv($handle, [
-                    $t->invoice_number,
+                    "'" . $t->invoice_number,
                     $t->created_at->format('d/m/Y H:i'),
                     $t->user->name ?? '-',
                     $t->customer->name ?? 'Umum',

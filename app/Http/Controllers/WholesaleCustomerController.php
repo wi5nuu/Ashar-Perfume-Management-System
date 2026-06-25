@@ -50,11 +50,19 @@ class WholesaleCustomerController extends Controller
             'password' => 'required',
         ]);
 
+        $key = 'wholesale_login_' . $request->ip();
+        $attempts = (int) \Illuminate\Support\Facades\Cache::get($key, 0);
+        if ($attempts >= 5) {
+            return back()->withErrors(['email' => 'Terlalu banyak percobaan. Silakan coba lagi dalam 15 menit.'])->onlyInput('email');
+        }
+
         if (Auth::attempt(array_merge($credentials, ['role' => 'wholesale_customer', 'can_login' => true, 'is_active' => true]))) {
             $request->session()->regenerate();
+            \Illuminate\Support\Facades\Cache::forget($key);
             return redirect()->intended(route('wholesale.customer.dashboard'));
         }
 
+        \Illuminate\Support\Facades\Cache::put($key, $attempts + 1, now()->addMinutes(15));
         return back()->withErrors(['email' => 'Email atau password salah.'])->onlyInput('email');
     }
 
@@ -139,18 +147,11 @@ class WholesaleCustomerController extends Controller
         $myReferralsCount = $user->referrals()->count();
         $myPosition = $referrerRanks->where('referrals_count', '>', $myReferralsCount)->count() + 1;
 
-        // Recent ongoing transactions (safe — no customer identity)
-        $recentOrders = WholesaleOrder::whereIn('status', ['pending', 'reviewed', 'on_progress', 'packed', 'shipped'])
-            ->with('details')
-            ->latest()
-            ->take(10)
-            ->get();
-
         $totalReferrals = $user->referrals()->count();
 
         return view('wholesale.customer.leaderboard', compact(
             'user', 'topReferrers', 'myReferralsCount', 'myPosition',
-            'recentOrders', 'totalReferrals'
+            'totalReferrals'
         ));
     }
 

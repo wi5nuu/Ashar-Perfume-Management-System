@@ -1,441 +1,618 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/APMS-Enterprise%20Edition-2c7be5?style=for-the-badge&labelColor=1a1a2e" alt="APMS Official">
-  <img src="https://img.shields.io/badge/Version-2.0.0--Enterprise-00C851?style=for-the-badge&labelColor=1a1a2e" alt="Version">
-  <br>
-  <img src="https://img.shields.io/badge/Architecture-Decoupled%20Monolith-purple?style=flat-square" alt="Architecture">
-  <img src="https://img.shields.io/badge/Framework-Laravel%2011.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel">
-  <img src="https://img.shields.io/badge/Database-MySQL%208.0%20%7C%20PostgreSQL-336791?style=flat-square" alt="Database">
-  <img src="https://img.shields.io/badge/Security-Level%204%20Hardened-orange?style=flat-square" alt="Security">
+  <img src="public/logotoko.png" alt="APMS Logo" width="180">
 </p>
 
-<h1 align="center">
-  APMS — Ashar Parfum Management System
-</h1>
+<h1 align="center">APMS — Ashar Parfume Management System</h1>
 
 <p align="center">
-  <strong>The Definitive Enterprise Point-of-Sale, Supply Chain & Business Intelligence Platform</strong><br>
-  <sub>Proprietary System Engine for Ashar Grosir Parfum Bekasi - Developed in Indonesia - Architected for High Availability</sub>
+  <strong>Enterprise Point-of-Sale, Inventory, Wholesale & HR Management Platform</strong><br>
+  <sub>Proprietary system for Ashar Grosir Parfum · Laravel 12 · PHP 8.2+ · MySQL 8.0</sub>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php" alt="PHP 8.2">
+  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql" alt="MySQL">
+  <img src="https://img.shields.io/badge/Security-Hardened-00C851" alt="Security">
+  <img src="https://img.shields.io/badge/API-Sanctum-FF2D20" alt="Sanctum">
 </p>
 
 ---
 
-## 1. Executive Summary & System Overview
+## Table of Contents
 
-**APMS (Ashar Parfum Management System)** is a proprietary, mission-critical enterprise resource planning (ERP) and point-of-sale (POS) platform engineered exclusively for the operational ecosystem of Ashar Grosir Parfum Bekasi.
-
-Version 2.0 (Enterprise) is specifically architected to mitigate operational bottlenecks, eliminate financial discrepancies, and provide real-time, multi-branch visibility. It integrates disparate business domains—ranging from frontline retail transactions and high-volume B2B wholesale logistics to complex human resource payroll generation—into a single, unified data lake.
-
-The system is strictly bound by the principles of **Data Immutability**, **Strict Access Control**, and **Forensic Accountability**, ensuring that every mutation within the system leaves a permanent, cryptographically sound audit trail.
-
----
-
-## 2. Infrastructure & System Architecture
-
-APMS employs a robust "Decoupled Monolith" architecture, prioritizing execution speed and maintenance simplicity over unnecessary microservice fragmentation, while remaining highly scalable horizontally.
-
-### 2.1 Core Stack Specifications
-- **Application Framework:** Laravel 11.x (PHP 8.2+). Chosen for its enterprise-level stability, extensive testing suites, and seamless ORM capabilities.
-- **Web Server Layer:** Nginx (Primary Reverse Proxy) / Apache (Application Server). Configured with stringent SSL/TLS 1.3 requirements, HTTP/2 multiplexing, and optimized worker processes.
-- **Data Persistence:** MySQL 8.0+ or PostgreSQL 15+. Configured with strict ACID enforcement, InnoDB clustered indexes, and transactional isolation layers.
-- **In-Memory Datastore:** Redis 7.x. Serves as the backbone for high-speed query caching, session clustering, rate-limiting algorithms, and queue processing.
-- **Real-Time Communication:** Laravel Reverb. Provides a low-latency WebSockets infrastructure necessary for synchronized wholesale order notifications and live POS telemetry.
-
-### 2.2 Architectural Constraints & Strategies
-- **Stateless Application Nodes:** The application servers hold no persistent state. All sessions and cached geometries are offloaded to Redis, allowing instantaneous horizontal scaling via Load Balancers (HAProxy/AWS ALB).
-- **Asynchronous Processing:** Non-blocking operations (Email Dispatches, End-of-Month Payroll Aggregation, Daily Sales Report Compilations) are delegated to background worker queues, ensuring the UI thread remains continuously responsive.
+- [1. System Overview](#1-system-overview)
+- [2. Core Features](#2-core-features)
+- [3. Architecture & Stack](#3-architecture--stack)
+- [4. Security Architecture](#4-security-architecture)
+- [5. Role-Based Access Control](#5-role-based-access-control)
+- [6. Module Guide](#6-module-guide)
+- [7. Installation](#7-installation)
+- [8. Deployment to Shared Hosting](#8-deployment-to-shared-hosting)
+- [9. API Reference](#9-api-reference)
+- [10. Database Schema](#10-database-schema)
+- [11. Development Workflow](#11-development-workflow)
+- [12. Disaster Recovery](#12-disaster-recovery)
+- [13. License](#13-license)
 
 ---
 
-## 3. Database Integrity & Domain Models
+## 1. System Overview
 
-The database schema is heavily normalized to 3NF (Third Normal Form) to prevent data anomalies, combined with strategic denormalization (e.g., cached aggregates) for high-performance read pathways.
+APMS (Ashar Parfume Management System) is a **production-grade enterprise platform** built exclusively for Ashar Grosir Parfum — a multi-branch perfume wholesale and retail business in Bekasi, Indonesia.
 
-### 3.1 Structural Safeguards
-- **Unbounded Scaling Keys:** Utilization of `BIGINT UNSIGNED` primary constraints, capable of absorbing 18.4 quintillion distinct records without the risk of integer overflow.
-- **Financial Precision Protocols:** All monetary matrices (Prices, Transactions, Debts, Payrolls) strictly utilize `DECIMAL(15,2)` paradigms. This absolutely prevents the floating-point truncation errors common in dynamic programming environments.
-- **Transactional Atomicity:** All multi-step mutations (e.g., "Checkout" requires writing to `transactions`, writing to `transaction_details`, and decrementing `inventories`) are wrapped in strict Database Transactions. A failure at any sub-step instantly triggers a full rollback.
-- **Historical Immutability (Soft Deletes):** Records are never hard-deleted via `DELETE` statements. Instead, a `deleted_at` timestamp is applied. This guarantees that historical reporting structures (like past revenues generated by a now-terminated employee) remain mathematically sound and auditable.
+The system unifies **Point-of-Sale (POS)**, **inventory logistics**, **wholesale B2B management**, **employee payroll**, **commission tracking**, and **business intelligence reporting** into a single, real-time platform with branch-level data isolation.
 
----
+### Key Business Objectives
 
-## 4. Security Posture & Compliance
-
-APMS integrates military-grade application security protocols, classifying it as a Level 4 Hardened environment.
-
-### 4.1 Access Control & Hardening
-- **Multi-Factor Authentication (MFA):** Cryptographic Time-based One-Time Password (TOTP) enforcement required for accounts holding elevated privileges (Owner/Admin).
-- **Session Hardening:** Dynamic session regeneration upon privilege escalation, strict idle-timeout termination, and HTTPOnly/Secure flagged cookies.
-- **Network Perimeter Defense:** Built-in IP Geofencing and Blacklisting middleware. Access to administrative panels can be mathematically restricted to predefined corporate subnet blocks (CIDR).
-- **Rate Limiting & Throttling:** Exponential backoff algorithms applied to authentication endpoints to neutralize brute-force and dictionary attacks.
-
-### 4.2 Forensic Audit Logging
-An immutable logging mechanism captures every significant state change across the platform. The forensic ledger records:
-- Authenticated `User ID` and Role Status.
-- Target Model and specific mutated fields (Before & After states).
-- Originating `IP Address` and Client `User-Agent`.
-- Precise UTC Timestamp.
-
-### 4.3 Environment Secrecy
-The codebase contains zero hardcoded cryptographic keys, database passwords, or third-party API tokens. All sensitive vectors are injected strictly via server-level environment variables (`.env`), which are fundamentally excluded from version control.
+| Objective | Solution |
+|-----------|----------|
+| Eliminate cashier discrepancies | Shift reconciliation with blind-drop protocol and photo evidence |
+| Prevent overselling | ACID-transactional stock deduction with `lockForUpdate()` concurrency |
+| Multi-branch visibility | Owner dashboard aggregates all branches; branch-scoped isolation for others |
+| Wholesale customer autonomy | Customer portal with token-based access, order tracking, loyalty points |
+| Regulatory compliance | Encrypted PII (bank accounts, NPWP, NIK), 2FA, audit trail, password policy |
 
 ---
 
-## 5. Role-Based Access Control (RBAC) & Multi-Branch Topology
+## 2. Core Features
 
-APMS operates on a strict Principle of Least Privilege (PoLP) utilizing an advanced, multi-tenant capable RBAC engine.
+### Retail POS
+- **Multi-tier pricing** — automatic switching between retail (eceran) and wholesale (grosir) pricing
+- **Coupon engine** — percentage/fixed discounts with expiration and usage-limit validation
+- **Hybrid payments** — cash, transfer, or *kas bon* (authorized debt) with automatic ledger posting
+- **Bonus stock** — configurable buy-N-get-X bonus items per product
+- **Refill system** — volume-based refill tracking for fragrance oils (ml)
 
-### 5.1 Authorization Tiers
-1. **Owner (Super Administrator):** Unrestricted access. Capable of cross-branch financial aggregations, global parameter tuning, system-wide audits, and overriding locked transactions.
-2. **Administrator / Manager:** High-level operational supervisors. Capable of executing Purchase Orders (POs), generating payroll, viewing restricted P&L reports, and managing wholesale fulfillment.
-3. **Cashier (Kasir):** Frontline terminal operators. Strictly confined to the Retail POS interface, basic customer registration, and their individual shift management.
+### Inventory & Supply Chain
+- **Multi-warehouse** — branch-attached warehouses with transferable stock
+- **Stock requests** — branch-to-warehouse fulfillment pipeline (request → approve → prepare → ship → receive)
+- **Purchase orders** — supplier PO lifecycle (draft → sent → received) with COGS tracking
+- **Goods receipts** — incoming stock logging with batch/expiry tracking
+- **Expiry alerts** — automatic 90/60/30-day expiry warnings
+- **Inventory movements** — immutable audit trail for every stock mutation (sale, adjustment, audit, transfer)
 
-### 5.2 Branch Data Isolation
-Every user (excluding the Owner tier) and transaction is cryptographically bound to a specific `branch_id`. Global queries inherently apply tenant scopes, making it impossible for a Cashier in "Branch A" to view inventory levels or financial data of "Branch B".
+### Wholesale B2B
+- **Wholesale product catalog** — separate pricing matrix (per-piece, per-pack, per-box)
+- **Order lifecycle** — pending → reviewed → confirmed → packing → shipped → delivered → completed
+- **Tracking numbers** — delivery tracking with status updates
+- **Customer portal** — token-based access for order history, statements, loyalty
+- **Google OAuth** — social login for wholesale customers
+- **Loyalty system** — rank-based tiers (Regular/VIP/Silver/Gold/Platinum) with credit-based rewards
+- **Referral program** — customer referral tracking with leaderboard
+
+### Employee & HR
+- **Employee database** — comprehensive profiles (NIK, NPWP, bank, salary, emergency contacts)
+- **Attendance** — check-in/check-out with role-based recording
+- **Shift management** — open/close protocol with cash reconciliation and photo evidence
+- **Payroll** — automated monthly payroll generation with salary + commission aggregation
+- **Commissions** — per-transaction item-based commission calculation
+- **Password reset requests** — branch-level employees request owner-approved password resets
+
+### Reporting & Analytics
+- **Sales reports** — daily/monthly/custom range with PDF/CSV/Excel export
+- **Inventory reports** — low stock, expiry, stock audit discrepancy reports
+- **Profit & loss** — comprehensive P&L with COGS calculation
+- **Customer analytics** — loyalty rank distribution, top customers, purchase patterns
+- **AI Copilot** — natural-language business queries (sales summary, stock status, profit/loss)
+- **AI Strategic Dashboard** — predictive analytics and recommendations
+
+### Security & Administration
+- **RBAC** — role-based access with granular permission system
+- **2FA** — TOTP-based two-factor authentication (enforceable)
+- **IP security** — blacklist, rate limiting, admin IP whitelist
+- **Session security** — encrypted sessions, idle timeout, forced password change
+- **Audit trail** — immutable logging of all model mutations (who, what, when, IP)
+- **Password policy** — history (5), complexity, 90-day expiry
+- **Account lockout** — automatic lock after 5 failed attempts
 
 ---
 
-## 6. Comprehensive Module Ecosystem
+## 3. Architecture & Stack
 
-### 6.1 Point-of-Sale (POS) & Checkout Engine
-- **Dual-Pricing Algorithms:** Instantaneous dynamic switching between Retail (Eceran) and Wholesale (Grosir) tiers. The system automatically recalculates total cart values based on the active pricing tier matrix.
-- **Loyalty & Discount Verification:** Real-time coupon parsing, validating expiration dates, minimum spend thresholds, and maximum usage caps before applying percentage or fixed deductions.
-- **Hybrid Payment Gateways:** Natively supports Cash, Bank Transfer, and Kas Bon (Authorized Customer Debt), directly routing funds to the appropriate digital ledger.
+### Technology Stack
 
-### 6.2 Supply Chain & Inventory Logistics
-- **Concurrent Stock Deduction:** Inventory integers are decremented at the exact millisecond of a transaction commit, preventing overselling in high-velocity environments.
-- **Purchase Order (PO) Lifecycles:** Tracks supplier acquisitions from Draft -> Submitted -> Received. Automatically updates moving average costs (COGS) to calculate true profit margins.
-- **Expiry Matrix:** Chronological tracking of batch expiration dates. Generates automated alert thresholds (e.g., 90 days before expiry) to prioritize stock liquidation and mitigate dead-stock financial loss.
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Framework** | Laravel 12.x | MVC application foundation |
+| **Language** | PHP 8.2+ | Runtime (readonly properties, enums, fibers) |
+| **Database** | MySQL 8.0+ | Primary data store (InnoDB, ACID) |
+| **Cache** | Database driver / Redis | Query caching, session storage |
+| **Queue** | Database driver | Async job processing (email, reports, payroll) |
+| **Frontend** | Blade + Bootstrap 5 + Alpine.js | Server-rendered UI with reactive components |
+| **Assets** | Vite + Tailwind CSS + Sass | Build pipeline and styling |
+| **Real-time** | Laravel Reverb | WebSocket notifications for orders |
+| **API Auth** | Laravel Sanctum | Token-based API authentication |
+| **PDF** | barryvdh/laravel-dompdf | Invoice and report generation |
+| **Excel** | maatwebsite/excel | Spreadsheet exports |
+| **Backup** | spatie/laravel-backup | Automated encrypted database backups |
 
-### 6.3 Human Capital & Payroll Automation
-- **Shift Reconciliation (Blind Drops):** Cashiers must execute structured Open/Close shift protocols. Discrepancies between the system-calculated expected drawer balance and physical cash input demand photographic evidence of manual ledgers.
-- **Algorithmic Payroll:** Eliminates manual accounting. Payroll is generated dynamically by aggregating base salaries, attendance deductions, and transparent, item-based sales commissions within the pay period.
+### Architecture Pattern
 
-### 6.4 Customer Relationship Management (CRM)
-- **Wholesale Client Portals:** Isolated interfaces permitting B2B clients to authenticate, review historical statements, track active order fulfillment, and monitor their outstanding credit balances.
-- **Debt Aging Visualizations:** Automated chronological categorization of outstanding receivables (0-30 days, 31-60 days, etc.) to streamline collection efficiency.
+**Decoupled Monolith** — a single deployable application with clear separation of concerns:
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   HTTP / CLI                         │
+├─────────────────────────────────────────────────────┤
+│  Middleware Stack                                    │
+│  [HSTS→CSP→Session→Encrypt→Throttle→Auth→Roles]    │
+├─────────────────────────────────────────────────────┤
+│  Controllers → Services → Models → Database         │
+│  ↓                                                  │
+│  Validation Layer (Form Requests + Rules)           │
+│  Authorization Layer (Gates + Policies)             │
+│  Audit Layer (Traits + AuditLog)                    │
+├─────────────────────────────────────────────────────┤
+│  Queue Workers                                      │
+│  [Email→Notifications→Reports→Payroll Generation]   │
+├─────────────────────────────────────────────────────┤
+│  Broadcast (Reverb WebSocket)                       │
+├─────────────────────────────────────────────────────┤
+│  Cache / Session Store                              │
+└─────────────────────────────────────────────────────┘
+```
+
+### Branch Data Isolation
+
+Every record is scoped by `branch_id`. Queries automatically filter based on the authenticated user's branch:
+
+```
+Owner         → sees ALL branches
+Admin Pusat   → sees ALL branches (read/write)
+Admin Cabang  → sees OWN branch only
+Manager       → sees OWN branch only
+Cashier       → sees OWN branch only
+```
 
 ---
 
-## 7. Disaster Recovery & Business Continuity (DRP)
+## 4. Security Architecture
 
-### 7.1 Automated Backup Topology
-- **Nightly Snapshots:** Automated cron schedulers execute full SQL dumps daily at 03:00 AM (Off-Peak).
-- **Encrypted Archives:** Dumps are compressed and AES-256 encrypted before being routed to secure, off-site secondary storage layers (AWS S3 / GCP Storage).
-- **Auto-Pruning Rotation:** Retains daily backups for 30 days, weekly backups for 3 months, and monthly backups indefinitely, actively preventing storage inflation.
+### Defense-in-Depth Layers
 
-### 7.2 Application Monitoring
-- **Real-time Exception Tracking:** Laravel Log aggregation capturing stack traces, queue timeout failures, and payload validation anomalies.
-- **Security Dashboard:** High-level UI explicitly for Owners to visualize brute-force attempts, IP block-lists, and database integrity checksums.
+| Layer | Protection |
+|-------|-----------|
+| **CSP** | Nonce-based script/style allowlisting |
+| **HSTS** | max-age=31536000, includeSubDomains |
+| **Headers** | X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, COOP, COEP, CORP |
+| **Session** | Encrypted, HTTP-only, SameSite=Strict, 30-min idle timeout |
+| **Rate Limit** | IP (200/min), login (5/15min), route (per-endpoint) |
+| **Auth** | 2FA (TOTP), password policy (history/complexity/90day), account lockout |
+| **Input** | Global sanitization, Form Request validation, Eloquent ORM (zero raw SQL) |
+| **Output** | Blade `{{ }}` auto-escaping (only 1 `{!! !!}` instance fixed) |
+| **DB** | Encrypted PII (bank, NPWP, NIK, 2FA secrets), parameterized queries |
+| **Audit** | Immutable AuditLog on all model mutations |
+| **Network** | IP blacklist, admin CIDR whitelist |
+
+### Enforced Security Policies
+
+```env
+# .env production
+APP_ENV=production
+APP_DEBUG=false
+SESSION_DRIVER=database
+SESSION_ENCRYPT=true
+SESSION_HTTP_ONLY=true
+SESSION_SAME_SITE=strict
+SESSION_SECURE_COOKIE=true
+BCRYPT_ROUNDS=12
+```
 
 ---
 
-## 8. Development, Integration & Deployment Workflow
+## 5. Role-Based Access Control
 
-### 8.1 Local Environment Provisioning
+### Predefined Roles
+
+| Role | Scope | Permissions |
+|------|-------|-------------|
+| **Owner** | Global | Full access — all branches, all modules, system settings, audit, RBAC |
+| **Admin Pusat** | All branches | Products, inventory, transactions, expenses, reports, employees |
+| **Admin Cabang** | Own branch | Same as Admin Pusat but scoped to one branch |
+| **Manager** | Own branch | Reports, expenses, payroll view, wholesale management |
+| **Supervisor** | Own branch | Attendance, shift reconciliation, basic operations |
+| **Cashier** | Own branch | POS transactions, shift management, customer registration |
+| **Warehouse** | Own branch | Inventory, stock requests, goods receipts |
+| **Employee** | Own branch | Attendance only (no login capability) |
+| **Wholesale Customer** | Self | Portal access: order history, tracking, loyalty |
+
+### Authorization Methods
+
+```php
+// Gates (business-level)
+Gate::authorize('manage_products');
+Gate::authorize('manage_transactions');
+
+// Policies (model-level)
+Gate::authorize('update', $transaction);
+Gate::authorize('delete', $expense);
+
+// RBAC (fine-grained permissions)
+$user->hasPermission('stock_requests.approve');
+$user->hasPermission('audit.view');
+
+// Role middleware
+Route::middleware('role:owner,admin,manager')->group(...);
+```
+
+---
+
+## 6. Module Guide
+
+### 6.1 POS & Transactions
+```
+/transactions          → List all transactions (branch-scoped)
+/transactions/create   → POS checkout interface
+/transactions/{id}     → Transaction detail & receipt
+/transactions/{id}/print → Print invoice PDF
+```
+
+**Process flow:**
+1. Cashier opens shift → records initial cash
+2. Scans/carts products → system applies pricing tier
+3. Applies coupon → validates constraints (expiry, min spend, usage limit)
+4. Selects payment method (cash/transfer/kas bon)
+5. System deducts stock within `DB::transaction` + `lockForUpdate()`
+6. Records `InventoryMovement` with before/after quantities
+7. Generates invoice number and prints receipt
+8. Cashier closes shift → reconciles actual vs expected cash → manager approves
+
+### 6.2 Inventory Management
+```
+/inventory               → Stock overview with warehouse/branch filter
+/inventory/adjust        → Manual stock adjustment (with reason)
+/inventory/audit         → Cycle counting audit
+/inventory/expiry-alerts → Products expiring within 30/60/90 days
+/inventory/movements     → Audit trail of all stock changes
+```
+
+### 6.3 Wholesale Orders
+```
+/wholesale                 → Manage wholesale orders
+/wholesale/{order}/confirm → Confirm order → deducts stock
+/wholesale/{order}/pack    → Mark as packed
+/wholesale/{order}/ship    → Mark as shipped + add tracking number
+/wholesale/{order}/deliver → Mark as delivered
+/wholesale/{order}/complete→ Mark as completed
+```
+
+### 6.4 Employee & Payroll
+```
+/employees             → Employee directory
+/employees/create      → Add employee (login or store-only)
+/employees/{id}/edit   → Edit employee details
+/payroll               → Payroll management
+/payroll/generate      → Generate monthly payroll
+/commissions           → Transaction-based commission tracking
+/attendances           → Attendance records
+```
+
+### 6.5 Reports
+```
+/reports/sales              → Sales report with date range + filters
+/reports/inventory          → Low stock & expiry reports
+/reports/profit-loss        → P&L with COGS breakdown
+/reports/customers          → Customer analytics
+/reports/export/excel/sales → Excel download
+```
+
+### 6.6 Settings & Administration
+```
+/settings              → App configuration (name, address, logo, etc.)
+/settings/profile      → User profile & photo
+/settings/backup       → Database backup download
+/admin/rbac            → Role & permission management
+/admin/security        → Security dashboard (audit logs, IP blocks, locked accounts)
+/admin/security/two-factor → 2FA setup & management
+```
+
+### 6.7 Customer Portal
+```
+/portal/{token}             → Customer dashboard (orders, debts, statements)
+/wholesale-customer/login   → Wholesale customer login
+/wholesale-customer/dashboard → Portal dashboard
+/wholesale-customer/loyalty → Loyalty points & redemptions
+/wholesale-customer/leaderboard → Referral leaderboard
+```
+
+---
+
+## 7. Installation
+
+### Requirements
+
+- PHP 8.2+ (extensions: `bcmath`, `ctype`, `fileinfo`, `json`, `mbstring`, `mysqli`, `openssl`, `pdo`, `tokenbin`, `xml`, `zip`)
+- MySQL 8.0+ / MariaDB 10.6+
+- Composer 2.x
+- Node.js 20+ (for frontend build)
+- Apache with `mod_rewrite` (or nginx)
+
+### Quick Start
+
 ```bash
-# 1. Clone the Official Repository (Restricted Access)
-git clone https://github.com/wi5nuu/asharparfummanagementsystem.git
+# 1. Clone
+git clone https://github.com/wi5nuu/Ashar-Perfume-Management-System.git
 cd APMS
 
-# 2. Resolve PHP & Node Dependencies (Production Mode)
+# 2. Install dependencies
 composer install --optimize-autoloader --no-dev
 npm install && npm run build
 
-# 3. Environment Variable Injection
+# 3. Environment setup
 cp .env.example .env
+# Edit .env: set DB_DATABASE, DB_USERNAME, DB_PASSWORD, APP_URL
 php artisan key:generate
 
-# 4. Database Schema Migration & Seeding
-# ENSURE .env DATABASE CREDENTIALS ARE ACCURATE
+# 4. Database
 php artisan migrate --force
 php artisan db:seed --class=DatabaseSeeder
 
-# 5. Core Application Bootstrapping
+# 5. Storage link
 php artisan storage:link
+
+# 6. Cache optimization (production)
 php artisan optimize:clear
 php artisan config:cache
-php artisan event:cache
 php artisan route:cache
 php artisan view:cache
+php artisan event:cache
+
+# 7. Start development server
+php artisan serve
 ```
 
-### 8.2 Continuous Integration (CI/CD) Specifications
-All codebase mutations are strictly managed via Git version control. Production deployments are gated behind automated pipelines that enforce:
-1. Syntactic Validation (PHPStan / Pint).
-2. Unit and Feature Testing (PHPUnit) with mandatory >80% coverage requirements on core financial controllers.
-3. Vulnerability Scanning of all composer dependencies.
+### Default Accounts (DEVELOPMENT ONLY)
+
+| Role | Email | Password |
+|------|-------|----------|
+| Owner | owner@asharparfum.com | (set during seeding) |
+| Manager | manager@asharparfum.com | (set during seeding) |
+| Cashier | cashier@asharparfum.com | (set during seeding) |
+
+> **IMPORTANT:** Change all default passwords immediately after first login. Never use default accounts in production.
 
 ---
 
-## 9. Comprehensive System Diagrams
+## 8. Deployment to Shared Hosting
 
-To ensure technical alignment, this section documents the system data models, transaction flow sequences, and operational logic workflows of APMS.
+### 8.1 InfinityFree / Hostinger Setup
 
-### 9.1 Database & Entity-Relationship Model (Class Diagram)
-
-The following class diagram represents the core business entities, their persistent attributes, and their relational scopes within the APMS decoupled monolith:
-
-```mermaid
-classDiagram
-    direction TB
-    class User {
-        +BIGINT id
-        +VARCHAR name
-        +VARCHAR full_name
-        +VARCHAR email
-        +VARCHAR phone
-        +VARCHAR role
-        +BIGINT branch_id
-        +DECIMAL basic_salary
-        +BOOLEAN is_active
-        +BOOLEAN is_locked
-        +DATETIME last_login_at
-        +isOwner() bool
-        +isCashier() bool
-        +hasPermission(slug) bool
-    }
-    class Branch {
-        +BIGINT id
-        +VARCHAR name
-        +VARCHAR address
-        +VARCHAR phone
-    }
-    class Product {
-        +BIGINT id
-        +VARCHAR name
-        +VARCHAR sku
-        +DECIMAL price_retail
-        +DECIMAL price_wholesale
-        +BIGINT category_id
-    }
-    class Inventory {
-        +BIGINT id
-        +BIGINT product_id
-        +BIGINT branch_id
-        +BIGINT warehouse_id
-        +INTEGER current_stock
-        +INTEGER minimum_stock
-        +DECIMAL cost_per_unit
-        +DATE expiration_date
-        +VARCHAR batch_number
-    }
-    class InventoryMovement {
-        +BIGINT id
-        +BIGINT product_id
-        +BIGINT branch_id
-        +BIGINT inventory_id
-        +VARCHAR type
-        +INTEGER quantity
-        +INTEGER stock_before
-        +INTEGER stock_after
-        +VARCHAR reference_type
-        +BIGINT reference_id
-        +BIGINT user_id
-    }
-    class Transaction {
-        +BIGINT id
-        +VARCHAR invoice_number
-        +BIGINT customer_id
-        +BIGINT user_id
-        +BIGINT branch_id
-        +DECIMAL subtotal
-        +DECIMAL discount
-        +DECIMAL tax_amount
-        +DECIMAL total_amount
-        +DECIMAL paid_amount
-        +DECIMAL change_amount
-        +VARCHAR payment_method
-        +VARCHAR payment_status
-        +DECIMAL debt_amount
-        +BIGINT coupon_id
-    }
-    class TransactionDetail {
-        +BIGINT id
-        +BIGINT transaction_id
-        +BIGINT product_id
-        +INTEGER quantity
-        +DECIMAL price
-        +DECIMAL subtotal
-        +DECIMAL purchase_price
-        +INTEGER bonus_quantity
-    }
-    class Shift {
-        +BIGINT id
-        +BIGINT user_id
-        +BIGINT branch_id
-        +DATETIME start_time
-        +DATETIME end_time
-        +DECIMAL initial_cash
-        +DECIMAL expected_cash
-        +DECIMAL actual_cash
-        +DECIMAL discrepancy
-        +VARCHAR status
-    }
-    class Commission {
-        +BIGINT id
-        +BIGINT user_id
-        +BIGINT transaction_id
-        +DECIMAL commission_rate
-        +DECIMAL commission_amount
-        +VARCHAR month
-        +VARCHAR status
-    }
-    class Payroll {
-        +BIGINT id
-        +BIGINT user_id
-        +VARCHAR month
-        +DECIMAL basic_salary
-        +DECIMAL allowance
-        +DECIMAL deduction
-        +DECIMAL total_salary
-        +VARCHAR status
-    }
-    class Customer {
-        +BIGINT id
-        +VARCHAR name
-        +VARCHAR phone
-        +VARCHAR type
-        +DECIMAL credit_limit
-    }
-    class Supplier {
-        +BIGINT id
-        +VARCHAR name
-        +VARCHAR phone
-    }
-    class PurchaseOrder {
-        +BIGINT id
-        +BIGINT supplier_id
-        +BIGINT branch_id
-        +VARCHAR status
-        +DECIMAL total_amount
-    }
-
-    User "1" --> "0..*" Transaction : processes
-    User "1" --> "0..*" Shift : operates
-    User "1" --> "0..*" InventoryMovement : records
-    User "1" --> "0..* " Commission : earns
-    User "1" --> "0..*" Payroll : receives
-    Branch "1" --> "0..*" User : employs
-    Branch "1" --> "0..*" Transaction : hosts
-    Branch "1" --> "0..*" Inventory : houses
-    Branch "1" --> "0..*" Shift : reconciliation_site
-    Product "1" --> "0..*" Inventory : tracked_in
-    Product "1" --> "0..*" TransactionDetail : ordered_in
-    Inventory "1" --> "0..*" InventoryMovement : logged_in
-    Transaction "1" --> "1..*" TransactionDetail : contains
-    Transaction "1" --> "0..*" Commission : triggers
-    Customer "1" --> "0..*" Transaction : makes
-    Supplier "1" --> "0..*" PurchaseOrder : supplies
-    Supplier "1" --> "0..*" Inventory : provides
+```apache
+# Root .htaccess — redirect to /public
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
 ```
 
-### 9.2 Transaction Lifecycle (Sequence Diagram)
+### 8.2 Required PHP Settings
 
-The sequence below illustrates the POS Checkout pipeline, covering authentication, ACID transaction scopes, discount processing, stock checking, and concurrent stock updates:
+| Setting | Value |
+|---------|-------|
+| `upload_max_filesize` | 20M |
+| `post_max_size` | 20M |
+| `max_execution_time` | 300 |
+| `memory_limit` | 256M |
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Cashier as Kasir (Client Node)
-    participant Auth as Auth & Session Middleware
-    participant POS as TransactionController (Backend)
-    participant Coupon as Coupon / Discount Engine
-    participant Inv as InventoryManager (Laravel ORM)
-    participant DB as Database (ACID Transaction)
-    participant Reverb as Reverb (WebSocket Broadcast)
+### 8.3 Post-Deployment Checklist
 
-    Cashier->>POS: Submit Checkout Payload (Cart details, Branch, Coupon, Payment)
-    POS->>Auth: Validate API Token / Shift Status
-    Auth-->>POS: Authentication Confirmed
-    POS->>DB: Begin Database Transaction
-    
-    POS->>Coupon: Verify Coupon Code validity & constraints
-    alt Coupon is Valid
-        Coupon-->>POS: Return Discount Deduction
-    else Coupon is Invalid / Expired
-        Coupon-->>POS: Reject Discount Application
-    end
+```bash
+# 1. Set production mode
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://yourdomain.com
 
-    loop Each Cart Item
-        POS->>Inv: Check Current Stock (Product & Branch)
-        Inv-->>POS: Return Stock Status
-        alt Stock Available
-            POS->>Inv: Deduct Stock Level (Update Current Stock)
-            POS->>DB: Insert InventoryMovement Record (Type: sale, signed quantity)
-        else Stock Depleted
-            POS->>DB: Rollback Database Transaction
-            POS-->>Cashier: 422 Unprocessable Entity (Stock Insufficient)
-        end
-    end
+# 2. Database
+DB_HOST=localhost
+DB_DATABASE=your_database
+DB_USERNAME=your_user
+DB_PASSWORD=your_strong_password
 
-    POS->>DB: Create Transaction Record (Invoice, Subtotal, Debt, Status)
-    POS->>DB: Create TransactionDetail Records
-    
-    alt Payment Method is Debt (Kas Bon)
-        POS->>DB: Update Customer Credit Ledger & outstanding balance
-    end
+# 3. Cache everything
+php artisan optimize:clear
+php artisan optimize
+php artisan route:cache
+php artisan config:cache
+php artisan view:cache
 
-    POS->>DB: Compute Sales Commissions (If applicable)
-    POS->>DB: Commit Database Transaction
-    
-    POS->>Reverb: Broadcast DashboardUpdated Event (Real-time telemetry)
-    POS-->>Cashier: Return Transaction Success HTTP 201 + Invoice PDF Receipt
+# 4. Security
+SESSION_SECURE_COOKIE=true
+SESSION_SAME_SITE=strict
+TWO_FACTOR_ENFORCED=true
+ALLOW_REGISTRATION=false
+
+# 5. Verify
+curl -I https://yourdomain.com/.env   # → 403/404
+curl -I https://yourdomain.com         # → Security headers present
 ```
 
-### 9.3 Operational Lifecycle & Accounting Flow (Workflow Diagram)
+### 8.4 File Permissions
 
-The flowchart below demonstrates the business logic flow from the opening of a cashier shift to the monthly payroll/commission calculation:
-
-```mermaid
-flowchart TD
-    classDef process fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff;
-    classDef decision fill:#3b0764,stroke:#a855f7,stroke-width:2px,color:#fff;
-    classDef startend fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
-
-    Start([Start Shift]) --> OpenShift[Cashier Logs in & Input Initial Cash]:::process
-    OpenShift --> Serve[Execute Sales Transactions via POS]:::process
-    Serve --> CheckStock{Stock Available?}:::decision
-    CheckStock -- No --> Reorder[Generate Purchase Order / Stock Alert]:::process
-    CheckStock -- Yes --> CompleteSale[Complete POS Transaction]:::process
-    CompleteSale --> RecordMovement[Record Auto Stock Deduction & Movement Trail]:::process
-    RecordMovement --> Serve
-
-    Serve --> EndShift([Close Shift Request])
-    EndShift --> Counting[Cashier Performs Physical Cash Count - Blind Drop]:::process
-    Counting --> SubmitClosure[Submit Shift Data + Photo of Manual Ledger]:::process
-    SubmitClosure --> ManagerReview{System Expected Cash == Actual Cash?}:::decision
-
-    ManagerReview -- Yes --> ApproveShift[Approve Shift & Reconcile Balances]:::process
-    ManagerReview -- No --> PhotoInvestigation[Supervisor Investigates Discrepancy & Logs Reconciliation Details]:::process
-
-    ApproveShift --> Aggregation[Process Period Data]:::process
-    PhotoInvestigation --> Aggregation
-
-    subgraph Monthly Accounting Cycle
-        Aggregation --> CalcCommission[Calculate Base Salaries + Accumulate Item-based Commissions]:::process
-        CalcCommission --> CalcDeduction[Apply Shift Discrepancies & Attendance Deductions]:::process
-        CalcDeduction --> GeneratePayroll[Generate Employee Payroll & Audit Ledger]:::process
-        GeneratePayroll --> SendPayslip[Disburse Salaries & Archive Secure Backup]:::process
-    end
-
-    SendPayslip --> EndState([Process Complete])
+```
+files:       644
+directories: 755
+storage/:    775
+bootstrap/cache/: 775
 ```
 
 ---
 
-## 10. Legal, Proprietary & Licensing Notice
+## 9. API Reference
 
-**Corporate Headquarters:**
+### Authentication
+
+All API routes use Laravel Sanctum with bearer tokens.
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+    "email": "owner@asharparfum.com",
+    "password": "your_password"
+}
+```
+
+### Endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/v1/products/search?q=` | Sanctum | Search products |
+| GET | `/api/v1/products/{id}` | Sanctum | Product detail |
+| POST | `/api/v1/pos/validate-cart` | Sanctum | Validate cart prices/stock |
+| POST | `/api/v1/pos/calculate-change` | Sanctum | Calculate payment change |
+| GET | `/api/v1/pos/check-stock/{product}` | Sanctum | Check product stock |
+| GET | `/api/v1/inventory/low-stock` | Sanctum | Low stock alerts |
+| POST | `/api/v1/admin/security/unlock/{user}` | Sanctum+Admin | Force unlock user |
+| GET | `/api/v1/admin/security/active-sessions` | Sanctum+Admin | Active session count |
+
+### Rate Limiting
+
+| Endpoint Type | Limit |
+|--------------|-------|
+| Regular API | 60 requests/minute |
+| Admin API | 120 requests/minute |
+| Login | 5 attempts/15 minutes |
+| AI endpoints | 30 requests/minute |
+
+---
+
+## 10. Database Schema
+
+### Entity-Relationship Diagram
+
+The database contains **104 migrations** covering **48+ tables** across these domains:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        CORE DOMAINS                                 │
+├────────────┬────────────┬─────────────┬──────────────┬──────────────┤
+│    POS     │  Inventory │  Wholesale  │     HR       │   Security   │
+├────────────┼────────────┼─────────────┼──────────────┼──────────────┤
+│ transactions│ products   │ wholesale_  │ users        │ audit_logs   │
+│ transaction│ inventories│ orders      │ employees    │ login_       │
+│ _details   │ inventory_ │ wholesale_  │ attendances  │ activities   │
+│ shifts     │ movements  │ order_      │ shifts       │ ip_          │
+│ coupons    │ stock_     │ details     │ payrolls     │ blacklist    │
+│ cash_      │ requests   │ wholesale_  │ commissions  │ known_       │
+│ reconciliations│ goods_  │ products    │ payroll_     │ devices      │
+│ debt_      │ receipts   │ wholesale_  │ settings     │ password_    │
+│ payments   │ purchase_  │ customers   │              │ histories    │
+│            │ orders     │ credit_logs │              │ password_    │
+│            │ suppliers  │ redemptions │              │ reset_       │
+│            │ prices     │             │              │ requests     │
+└────────────┴────────────┴─────────────┴──────────────┴──────────────┘
+```
+
+### Key Financial Tables
+
+- **transactions** — `DECIMAL(15,2)` precision for all monetary fields
+- **transaction_details** — itemized breakdown with purchase_price (COGS)
+- **inventory_movements** — immutable stock-change audit with before/after snapshots
+- **payrolls** — monthly aggregated salary + commission + deductions
+- **commissions** — per-transaction earned commissions (item-based)
+
+---
+
+## 11. Development Workflow
+
+### Local Development
+
+```bash
+# Start all services (server + queue + logs + Vite)
+composer dev
+
+# Or individually:
+php artisan serve                    # HTTP server
+php artisan queue:listen --tries=1   # Queue worker
+npm run dev                          # Vite HMR
+```
+
+### Testing
+
+```bash
+# Run all tests
+php artisan test
+
+# Or
+composer test
+```
+
+Current coverage: **37 tests** (Feature: auth, RBAC, security, enterprise).
+
+### Static Analysis
+
+```bash
+vendor/bin/phpstan analyse
+```
+
+PHPStan configured at **level 5** across all code.
+
+### Code Style
+
+```bash
+# Laravel Pint
+vendor/bin/pint
+```
+
+### Commit Convention
+
+```
+feat:     New feature
+fix:      Bug fix
+security: Security improvement
+test:     Test addition/update
+docs:     Documentation
+chore:    Maintenance
+refactor: Code restructure
+```
+
+---
+
+## 12. Disaster Recovery
+
+### Backup Strategy
+
+| Frequency | Retention | Type |
+|-----------|-----------|------|
+| Daily | 7 days | Full database dump (AES-256 encrypted) |
+| Weekly | 4 weeks | Compressed SQL + files |
+| Monthly | 3 months | Archived snapshot |
+
+### Backup Commands
+
+```bash
+# Manual backup
+php artisan backup:run
+
+# Via web UI
+POST /settings/backup (requires manage_settings permission)
+
+# Restore (CLI ONLY — web restore disabled for security)
+mysql -u apms_user -p systemasharparfum < backup.sql
+```
+
+### Monitoring
+
+- **Health endpoint:** `GET /up` — returns 200 when application is healthy
+- **Log viewer:** `/admin/monitoring/logs` — real-time log inspection
+- **Security dashboard:** `/admin/security` — audit logs, IP blocks, account locks
+
+---
+
+## 13. License
+
+**Proprietary & Confidential**
+
+Copyright (c) 2024-2026 Ashar Grosir Parfum Group. All rights reserved.
+
+This software is proprietary and confidential. Unauthorized copying, distribution, modification, or use of this software, via any medium, is strictly prohibited without prior written permission from the owner.
+
+**Corporate:**
 Ashar Grosir Parfum Bekasi
 Bekasi, West Java, Indonesia
-[www.ashargrosirparfum.com](http://www.ashargrosirparfum.com)
 
-**Lead Technical Architect & Systems Engineer:**
-Wisnu Alfian Nur Ashar (wisnualfian117@gmail.com)
-
-**Terms of Use & Copyright Disclaimer:**
-Copyright (c) 2024-2026 Ashar Grosir Parfum Group. All Rights Reserved.
-
-The APMS software suite is classified as highly confidential, proprietary, and closed-source enterprise software. This repository, including its architectural models, database schemas, and interface designs, is the exclusive intellectual property of the Ashar Grosir Parfum Group. 
-
-Any unauthorized viewing, downloading, reproduction, reverse engineering, redistribution, or modification of this source code—in whole or in part—without explicit, cryptographically signed written permission from the technical architect is strictly prohibited. Violators will be subject to immediate litigation under international intellectual property statutes.
+**Technical Lead:**
+Wisnu Alfian Nur Ashar
+wisnualfian117@gmail.com
