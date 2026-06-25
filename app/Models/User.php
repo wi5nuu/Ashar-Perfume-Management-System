@@ -87,7 +87,7 @@ class User extends Authenticatable
             'bank_account_number' => 'encrypted',
             'npwp' => 'encrypted',
             'nik' => 'encrypted',
-            'basic_salary' => 'encrypted',
+
 
             'can_login' => 'boolean',
             'is_locked' => 'boolean',

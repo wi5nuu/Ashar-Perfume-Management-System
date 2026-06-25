@@ -28,7 +28,6 @@ class Customer extends Model
         'is_active' => 'boolean',
         'portal_token' => 'encrypted',
         'nik' => 'encrypted',
-        'phone' => 'encrypted',
     ];
 
     protected static function boot()
