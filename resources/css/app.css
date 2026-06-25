@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Custom APMS Styles */
+
+:root {
+    --primary-color: #FF6B35;
+    --primary-light: #FF8B5C;
+    --primary-dark: #E55A2B;
+    --secondary-color: #2D3047;
+    --success-color: #28a745;
+    --info-color: #17a2b8;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+}
+
+/* Card Styling */
+.card-apms {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.card-apms:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-apms .card-header {
+    background-color: white;
+    border-bottom: 2px solid #f0f0f0;
+    border-radius: 10px 10px 0 0 !important;
+    padding: 15px 20px;
+}
+
+.card-apms .card-title {
+    color: var(--secondary-color);
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Button Styling */
+.btn-primary-apms {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-apms:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 107, 53, 0.2);
+}
+
+.btn-primary-apms:active {
+    transform: translateY(0);
+}
+
+/* Badge Styling */
+.badge-premium {
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    color: #000;
+}
+
+.badge-wholesale {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+}
+
+.badge-vip {
+    background: linear-gradient(45deg, #9b59b6, #8e44ad);
+    color: white;
+}
+
+/* Table Styling */
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 107, 53, 0.05);
+}
+
+/* Form Styling */
+.form-control:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+}
+
+.select2-container--default .select2-selection--single {
+    border-color: #ced4da;
+    height: calc(2.25rem + 2px);
+}
+
+.select2-container--default .select2-selection--single:focus {
+    border-color: var(--primary-light);
+}
+
+/* Small Box Styling */
+.small-box {
+    border-radius: 10px;
+    position: relative;
+    display: block;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.small-box > .inner {
+    padding: 20px;
+}
+
+.small-box .icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 0;
+    font-size: 70px;
+    color: rgba(0,0,0,0.15);
+}
+
+/* Navbar Styling */
+.navbar-apms {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Sidebar Styling */
+.sidebar-apms {
+    background-color: white;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+}
+
+.sidebar-apms .nav-link {
+    color: var(--dark-color);
+    padding: 12px 20px;
+    margin: 2px 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-apms .nav-link:hover {
+    background-color: rgba(255, 107, 53, 0.1);
+    color: var(--primary-color);
+}
+
+.sidebar-apms .nav-link.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(255, 107, 53, 0.2);
+}
+
+/* Alert Styling */
+.alert-apms {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Progress Bar Styling */
+.progress-bar-apms {
+    background-color: var(--primary-color);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-light);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* Animation for alerts */
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.alert {
+    animation: slideIn 0.3s ease;
+}
+
+/* Tighter spacing for comparison KPI cards */
+#comparison-cards .info-box {
+    margin-bottom: 0;
+    min-height: 100px;
+}
+#comparison-cards .info-box-content {
+    padding: 8px 12px;
+}
+#comparison-cards .info-box-icon {
+    width: 60px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-apms {
+        margin-bottom: 15px;
+    }
+    
+    .btn-primary-apms {
+        padding: 8px 16px;
+    }
+}
