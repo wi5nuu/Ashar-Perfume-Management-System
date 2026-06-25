@@ -1414,12 +1414,14 @@ flowchart TD
     LAPORAN --> END([Selesai])
 
     subgraph KEAMANAN [Security Layer]
-        PWD[Password reset\nOwner approval]\n2FA[TOTP verification]\nLOCK[Account lockout\nafter 5 failures]
+        PWD[Password reset / Owner approval]
+        TFA[TOTP verification]
+        LOCK[Account lockout after 5 failures]
     end
 
     USER_AKUN --> PWD
-    PWD --> 2FA
-    2FA --> LOCK
+    PWD --> TFA
+    TFA --> LOCK
     LOCK --> ATTENDANCE
 ```
 
