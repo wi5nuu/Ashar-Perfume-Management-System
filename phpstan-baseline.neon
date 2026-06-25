@@ -1,0 +1,505 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:count\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Console/Commands/SecurityAuditCommand.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 3
+			path: app/Console/Commands/SecurityAuditCommand.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:whereNotNull\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Console/Commands/SecurityAuditCommand.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:whereNotNull\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Console/Kernel.php
+
+		-
+			message: '#^Static call to instance method App\\Services\\Security\\ActivityMonitor\:\:cleanOldLogs\(\)\.$#'
+			identifier: method.staticCall
+			count: 1
+			path: app/Console/Kernel.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/AuthenticatedSessionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/AuthenticatedSessionController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Guard\:\:logout\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/AuthenticatedSessionController.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Shift\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/AuthenticatedSessionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/ConfirmablePasswordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/NewPasswordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:check\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Middleware/IpSecurityMiddleware.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Http/Middleware/LoginThrottleMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/RoleMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/SessionSecurityMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$is_locked\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/SessionSecurityMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$last_login_ip\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/SessionSecurityMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$locked_until\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/SessionSecurityMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$requires_password_change\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/SessionSecurityMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$two_factor_secret\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/SessionSecurityMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Listeners/RecordLoginActivity.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Listeners/RecordLoginActivity.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Authenticatable\:\:recordLogin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Listeners/RecordLoginActivity.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/RecordLoginAttendance.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Mail/LoginNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$transactions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Customer\:\:\$wholesaleOrders\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:id\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/InventoryMovement.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\InventoryMovement\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/InventoryMovement.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\IpBlacklist\:\:active\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/IpBlacklist.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\IpBlacklist\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: app/Models/IpBlacklist.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\IpBlacklist\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/IpBlacklist.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\KnownDevice\:\:firstOrCreate\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/KnownDevice.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\KnownDevice\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/KnownDevice.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Permission\:\:orderBy\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/Permission.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Role\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Setting\:\:updateOrCreate\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/Setting.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Setting\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/Setting.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$debtPayments\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Transaction.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$paid_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Transaction.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$total_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Transaction.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TransactionDetail\:\:\$bonus_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/TransactionDetail.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$branch_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$password_changed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 8
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$roles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\LoginActivity\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Role\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Role\:\:whereIn\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\PasswordHistory\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Rules/PasswordHistoryRule.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Product\:\:join\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: app/Services/AiStrategicService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\TransactionDetail\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/AiStrategicService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Security/ActivityMonitor.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Security/ActivityMonitor.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\LoginActivity\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 3
+			path: app/Services/Security/ActivityMonitor.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Security/DataIntegrityService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Transaction\:\:\$integrity_hash\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Security/DataIntegrityService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Transaction\:\:chunk\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/Security/DataIntegrityService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Transaction\:\:whereColumn\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: app/Services/Security/DataIntegrityService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:id\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/Security/FileUploadSecurityService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Security/PosAntiTamperingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\:\:\$inventories\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Security/PosAntiTamperingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Product\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Services/Security/PosAntiTamperingService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:id\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Security/PosAntiTamperingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Role\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Security/RbacService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/Security/RbacService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$permissions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Security/RbacService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$roles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Security/RbacService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Permission\:\:firstOrCreate\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/Security/RbacService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Permission\:\:pluck\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: app/Services/Security/RbacService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Role\:\:firstOrCreate\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/Security/RbacService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Role\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/Security/RbacService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/Security/SecurityAlertService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Security/SecurityAlertService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:whereIn\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: app/Services/Security/SecurityAlertService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Product\:\:join\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/SmartInsightService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Transaction\:\:select\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/SmartInsightService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\Transaction\:\:whereBetween\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: app/Services/SmartInsightService.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\TransactionDetail\:\:join\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/SmartInsightService.php
