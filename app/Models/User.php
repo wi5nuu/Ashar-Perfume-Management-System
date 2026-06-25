@@ -88,7 +88,7 @@ class User extends Authenticatable
             'npwp' => 'encrypted',
             'nik' => 'encrypted',
             'basic_salary' => 'encrypted',
-            'phone' => 'encrypted',
+
             'can_login' => 'boolean',
             'is_locked' => 'boolean',
             'requires_password_change' => 'boolean',
