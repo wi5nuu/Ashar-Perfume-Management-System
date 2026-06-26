@@ -5,7 +5,7 @@
 <h1 align="center">APMS — Ashar Parfume Management System</h1>
 
 <p align="center">
-  <strong>Enterprise Point-of-Sale, Inventory, Wholesale & HR Management Platform</strong><br>
+  <strong>Enterprise Point-of-Sale (POS), Inventory, Wholesale & HR Management Platform</strong><br>
   <sub>Proprietary system for Ashar Grosir Parfum · Laravel 12 · PHP 8.2+ · MySQL 8.0</sub>
 </p>
 
