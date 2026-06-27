@@ -649,19 +649,28 @@ class AiDashboardController extends Controller
             ->with('product')
             ->orderBy('current_stock')
             ->take(10)
-            ->get()
-            ->map(function ($i) use ($dailySales) {
-                $dailySold = max(0.1, (float) ($dailySales[$i->product_id] ?? 0));
-                $daysLeft = round($i->current_stock / $dailySold);
-                return [
-                    'name' => $i->product->name ?? 'Produk #' . $i->product_id,
-                    'stock' => $i->current_stock,
-                    'min' => $i->minimum_stock,
-                    'days_left' => $daysLeft,
-                    'daily_sold' => round($dailySold, 1),
-                    'pct' => $i->minimum_stock > 0 ? round(($i->current_stock / $i->minimum_stock) * 100) : 0,
-                ];
-            });
+            ->get();
+
+        $productIds = $items->pluck('product_id');
+        $dailySales = TransactionDetail::whereIn('product_id', $productIds)
+            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->groupBy('product_id')
+            ->selectRaw('product_id, SUM(quantity) / 30 as daily_avg')
+            ->pluck('daily_avg', 'product_id')
+            ->toArray();
+
+        $items = $items->map(function ($i) use ($dailySales) {
+            $dailySold = max(0.1, (float) ($dailySales[$i->product_id] ?? 0));
+            $daysLeft = round($i->current_stock / $dailySold);
+            return [
+                'name' => $i->product->name ?? 'Produk #' . $i->product_id,
+                'stock' => $i->current_stock,
+                'min' => $i->minimum_stock,
+                'days_left' => $daysLeft,
+                'daily_sold' => round($dailySold, 1),
+                'pct' => $i->minimum_stock > 0 ? round(($i->current_stock / $i->minimum_stock) * 100) : 0,
+            ];
+        });
 
         $totalCritical = Inventory::whereColumn('current_stock', '<=', 'minimum_stock')
             ->where('current_stock', '>', 0)->count();

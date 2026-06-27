@@ -765,7 +765,7 @@
             <!-- Sidebar Menu -->
             <nav class="mt-2">
                 <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu">
-                    @php $ownerPendingResetCount = \App\Models\PasswordResetRequest::pending()->count(); @endphp
+                    @php $ownerPendingResetCount = $pendingResetCount ?? 0; @endphp
                     {{-- DASHBOARD --}}
                     <li class="nav-item">
                         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard', 'dashboard.index') ? 'active' : '' }}">
@@ -812,8 +812,7 @@
                         <a href="{{ route('wholesale.index') }}" class="nav-link {{ request()->routeIs('wholesale.index') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-boxes-packing"></i>
                             <p>Pesanan Grosir</p>
-                            @php $pendingGrosirCount = \App\Models\WholesaleOrder::where('status','pending')->count(); @endphp
-                            @if($pendingGrosirCount > 0)
+                            @if(($pendingGrosirCount ?? 0) > 0)
                             <span class="badge badge-warning right">{{ $pendingGrosirCount }}</span>
                             @endif
                         </a>
