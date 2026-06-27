@@ -378,7 +378,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                         <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
                             <div>
                                 <strong>{{ $e->category->name ?? 'Umum' }}</strong>
-                                <small class="d-block text-muted">{{ $e->description ?? $e->date->format('d/m/Y') }}</small>
+                                <small class="d-block text-muted">{{ $e->description ?? ($e->date ? $e->date->format('d/m/Y') : '-') }}</small>
                             </div>
                             <span class="font-weight-bold text-danger">Rp {{ number_format($e->amount, 0, ',', '.') }}</span>
                         </div>

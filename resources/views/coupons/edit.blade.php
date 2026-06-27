@@ -47,7 +47,7 @@
 
                         <div class="form-group">
                             <label>Tanggal Berlaku Hingga</label>
-                            <input type="date" name="expiration_date" class="form-control" value="{{ $coupon->expiration_date->format('Y-m-d') }}" required>
+                            <input type="date" name="expiration_date" class="form-control" value="{{ $coupon->expiration_date ? $coupon->expiration_date->format('Y-m-d') : '' }}" required>
                         </div>
 
                         <div class="form-group">

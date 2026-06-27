@@ -39,7 +39,7 @@
                                         Rp {{ number_format($coupon->value, 0, ',', '.') }}
                                     @endif
                                 </td>
-                                <td>{{ $coupon->expiration_date->format('d/m/Y') }}</td>
+                                <td>{{ $coupon->expiration_date ? $coupon->expiration_date->format('d/m/Y') : '-' }}</td>
                                 <td>{{ $coupon->used_count }} / {{ $coupon->max_usage }}</td>
                                 <td>
                                     @if($coupon->is_active)

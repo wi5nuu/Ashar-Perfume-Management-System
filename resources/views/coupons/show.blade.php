@@ -36,7 +36,7 @@
                         </tr>
                         <tr>
                             <th>Berlaku Hingga</th>
-                            <td>{{ $coupon->expiration_date->format('d/m/Y') }}</td>
+                            <td>{{ $coupon->expiration_date ? $coupon->expiration_date->format('d/m/Y') : '-' }}</td>
                         </tr>
                         <tr>
                             <th>Penggunaan</th>

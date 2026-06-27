@@ -1,5 +1,5 @@
-@php $title = 'Detail Penerimaan Barang'; @endphp
 @extends('layouts.app')
+@section('title', 'Detail Penerimaan Barang')
 
 @section('content')
 <div class="container-fluid">
@@ -42,7 +42,7 @@
                         </tr>
                         <tr>
                             <th>Tanggal Masuk</th>
-                            <td>{{ $goodsReceipt->received_date->format('d F Y') }}</td>
+                            <td>{{ $goodsReceipt->received_date ? $goodsReceipt->received_date->format('d F Y') : '-' }}</td>
                         </tr>
                         <tr>
                             <th>Biaya per Unit</th>
@@ -58,7 +58,7 @@
                         </tr>
                         <tr>
                             <th>Dicatat Oleh</th>
-                            <td>{{ $goodsReceipt->recorder->name ?? '-' }}</td>
+                            <td>{{ $goodsReceipt->recorder?->name ?? '-' }}</td>
                         </tr>
                         <tr>
                             <th>Cabang</th>

@@ -1,5 +1,5 @@
-@php $title = 'Catat Penerimaan Barang'; @endphp
 @extends('layouts.app')
+@section('title', 'Catat Penerimaan Barang')
 
 @section('content')
 <div class="container-fluid">

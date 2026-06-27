@@ -1237,6 +1237,7 @@
     });
 </script>
 
+@stack('styles')
 @stack('scripts')
 <script>
     // Fix sidebar navigation â€” force navigation using multiple methods

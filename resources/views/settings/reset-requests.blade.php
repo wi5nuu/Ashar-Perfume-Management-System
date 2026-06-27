@@ -38,9 +38,9 @@
                             <tbody>
                                 @foreach($pendingRequests as $req)
                                 <tr>
-                                    <td class="font-weight-bold">{{ $req->user->name ?? '-' }}</td>
-                                    <td>{{ $req->user->role ?? '-' }}</td>
-                                    <td>{{ $req->user->branch->name ?? 'Pusat' }}</td>
+                                    <td class="font-weight-bold">{{ $req->user?->name ?? '-' }}</td>
+                                    <td>{{ $req->user?->role ?? '-' }}</td>
+                                    <td>{{ $req->user?->branch?->name ?? 'Pusat' }}</td>
                                     <td>{{ $req->notes ?? '-' }}</td>
                                     <td>{{ $req->created_at->diffForHumans() }}</td>
                                     <td>
@@ -83,7 +83,7 @@
                             <tbody>
                                 @foreach($resolvedRequests as $req)
                                 <tr>
-                                    <td>{{ $req->user->name ?? '-' }}</td>
+                                    <td>{{ $req->user?->name ?? '-' }}</td>
                                     <td>
                                         @if($req->status === 'approved')
                                         <span class="badge badge-success">Disetujui</span>
@@ -98,7 +98,7 @@
                                         -
                                         @endif
                                     </td>
-                                    <td>{{ $req->resolver->name ?? '-' }}</td>
+                                    <td>{{ $req->resolver?->name ?? '-' }}</td>
                                     <td>{{ $req->resolved_at ? $req->resolved_at->format('d/m/Y H:i') : '-' }}</td>
                                 </tr>
                                 @endforeach

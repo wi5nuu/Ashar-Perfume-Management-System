@@ -116,7 +116,7 @@
                                                 <span class="badge badge-{{ $inventory->current_stock == 0 ? 'danger' : ($inventory->current_stock < $inventory->minimum_stock ? 'warning' : 'success') }}">
                                                     {{ $inventory->current_stock }}
                                                 </span>
-                                                @if($inventory->bulk_stock_ml > 0 || $inventory->product->is_refill)
+                                                @if($inventory->bulk_stock_ml > 0 || ($inventory->product && $inventory->product->is_refill))
                                                 <br><small class="text-info font-weight-bold">{{ number_format($inventory->bulk_stock_ml ?? 0) }} ml</small>
                                                 @endif
                                             </td>
@@ -259,7 +259,7 @@
                                             <h5 class="card-title">{{ $item->product->name }}</h5>
                                             <p class="card-text">
                                                 <i class="fas fa-box text-danger"></i> Stok: <strong>0</strong><br>
-                                                <i class="fas fa-tag text-muted"></i> Kategori: {{ $item->product->category->name }}<br>
+                                                <i class="fas fa-tag text-muted"></i> Kategori: {{ $item->product->category->name ?? '-' }}<br>
                                                 <i class="fas fa-money-bill-wave text-success"></i> Harga: Rp {{ number_format($item->product->selling_price, 0, ',', '.') }}
                                             </p>
                                             <button class="btn btn-primary btn-block" 

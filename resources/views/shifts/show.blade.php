@@ -31,7 +31,7 @@
                             </tr>
                             <tr>
                                 <th>Waktu Mulai</th>
-                                <td>{{ $shift->start_time->format('d/m/Y H:i') }}</td>
+                                <td>{{ $shift->start_time ? $shift->start_time->format('d/m/Y H:i') : '-' }}</td>
                             </tr>
                             <tr>
                                 <th>Waktu Selesai</th>
@@ -81,9 +81,9 @@
                         @if($shift->photo_status == 'pending')
                             <span class="badge badge-warning text-dark"><i class="fas fa-clock"></i> PENDING ACC</span>
                         @elseif($shift->photo_status == 'approved')
-                            <span class="badge badge-success"><i class="fas fa-check"></i> ACC oleh {{ $shift->reviewer->name ?? 'Admin' }}</span>
+                            <span class="badge badge-success"><i class="fas fa-check"></i> ACC oleh {{ $shift->reviewer?->name ?? 'Admin' }}</span>
                         @elseif($shift->photo_status == 'rejected')
-                            <span class="badge badge-danger"><i class="fas fa-times"></i> DITOLAK oleh {{ $shift->reviewer->name ?? 'Admin' }}</span>
+                            <span class="badge badge-danger"><i class="fas fa-times"></i> DITOLAK oleh {{ $shift->reviewer?->name ?? 'Admin' }}</span>
                         @endif
                     </div>
                 </div>

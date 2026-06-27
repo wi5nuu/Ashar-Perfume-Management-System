@@ -128,7 +128,7 @@
                                 @forelse($attendances as $attendance)
                                 <tr>
                                     <td class="pl-3">
-                                        <div class="font-weight-bold text-dark" style="font-size: 0.85rem;">{{ $attendance->date->format('d M Y') }}</div>
+                                        <div class="font-weight-bold text-dark" style="font-size: 0.85rem;">{{ $attendance->date ? $attendance->date->format('d M Y') : '-' }}</div>
                                         <div class="smaller text-muted d-flex align-items-center">
                                             @if($attendance->status == 'present')
                                                 <i class="fas fa-clock mr-1 text-success"></i> {{ \Carbon\Carbon::parse($attendance->time_in)->format('H:i') }}

@@ -23,7 +23,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="text-muted mb-0">Waktu Mulai</label>
-                            <p class="font-weight-bold mb-0">{{ $activeShift->start_time->format('d/m/Y H:i') }}</p>
+                            <p class="font-weight-bold mb-0">{{ $activeShift->start_time ? $activeShift->start_time->format('d/m/Y H:i') : '-' }}</p>
                         </div>
                         <div class="col-md-3">
                             <label class="text-muted mb-0">Modal Awal (Tunai)</label>

@@ -154,6 +154,21 @@ class PurchaseOrderController extends Controller
     /**
      * Show receive form for a sent PO.
      */
+    public function edit(PurchaseOrder $purchaseOrder)
+    {
+        return redirect()->route('purchase-orders.show', $purchaseOrder);
+    }
+
+    public function update(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        return redirect()->route('purchase-orders.show', $purchaseOrder);
+    }
+
+    public function destroy(PurchaseOrder $purchaseOrder)
+    {
+        return redirect()->route('purchase-orders.index');
+    }
+
     public function showReceive(PurchaseOrder $purchaseOrder)
     {
         Gate::authorize('manage_inventory');

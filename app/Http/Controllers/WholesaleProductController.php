@@ -32,6 +32,11 @@ class WholesaleProductController extends Controller
         return view('wholesale.products.index', compact('products', 'types'));
     }
 
+    public function show(WholesaleProduct $wholesaleProduct)
+    {
+        return redirect()->route('wholesale.products.edit', $wholesaleProduct);
+    }
+
     public function create()
     {
         Gate::authorize('wholesale.manage');

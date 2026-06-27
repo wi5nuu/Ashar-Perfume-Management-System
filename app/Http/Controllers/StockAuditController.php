@@ -90,6 +90,16 @@ class StockAuditController extends Controller
     /**
      * Update the items in the audit.
      */
+    public function edit(StockAudit $stockAudit)
+    {
+        return redirect()->route('stock_audits.show', $stockAudit);
+    }
+
+    public function update(Request $request, StockAudit $stockAudit)
+    {
+        return redirect()->route('stock_audits.show', $stockAudit);
+    }
+
     public function updateItems(Request $request, StockAudit $stockAudit)
     {
         Gate::authorize('manage_inventory');

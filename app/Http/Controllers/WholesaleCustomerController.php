@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Services\WholesaleLoyaltyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class WholesaleCustomerController extends Controller
 {

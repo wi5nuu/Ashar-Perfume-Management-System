@@ -26,6 +26,11 @@ class WarehouseController extends Controller
         return view('warehouses.index', compact('warehouses'));
     }
 
+    public function show(Warehouse $warehouse)
+    {
+        return redirect()->route('warehouses.edit', $warehouse);
+    }
+
     public function create()
     {
         Gate::authorize('manage_inventory');

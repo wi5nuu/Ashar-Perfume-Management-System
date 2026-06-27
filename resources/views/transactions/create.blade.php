@@ -661,7 +661,7 @@
 <script>
 let cart = [];
 let customerType = 'retail';
-const premiumCategoryId = @json($categories->firstWhere('name', 'like', '%Premium%')?->id ?? 1);
+const premiumCategoryId = @json($categories ? $categories->firstWhere('name', 'like', '%Premium%')?->id ?? 1 : 1);
 
 $(function() {
     try {

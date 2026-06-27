@@ -45,7 +45,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <p><strong>Invoice Asal:</strong> {{ $return->transaction->invoice_number ?? '-' }}</p>
-                            <p><strong>Customer:</strong> {{ $return->transaction->customer->name ?? 'Umum' }}</p>
+                            <p><strong>Customer:</strong> {{ $return->transaction->customer?->name ?? 'Umum' }}</p>
                             <p><strong>Cabang:</strong> {{ $return->branch->name ?? '-' }}</p>
                         </div>
                         <div class="col-md-6">

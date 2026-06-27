@@ -18,7 +18,7 @@
                 <td>{{ $item->branch->name ?? '-' }}</td>
                 <td><code>{{ $item->batch_number ?? '-' }}</code></td>
                 <td>{{ $item->current_stock }}</td>
-                <td>{{ $item->expiration_date->format('d/m/Y') }}</td>
+                <td>{{ $item->expiration_date ? $item->expiration_date->format('d/m/Y') : '-' }}</td>
                 <td class="text-center">
                     @if($item->days_left < 0)
                         <span class="badge badge-danger">Kadaluarsa {{ abs($item->days_left) }} hari lalu</span>

@@ -8,6 +8,7 @@ use App\Models\WholesaleRedemption;
 use App\Models\WholesaleCustomerRedemption;
 use App\Services\WholesaleLoyaltyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OwnerLoyaltyController extends Controller
 {

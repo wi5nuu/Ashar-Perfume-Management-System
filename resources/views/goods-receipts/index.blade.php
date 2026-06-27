@@ -1,8 +1,7 @@
-@php
-    $title = 'Penerimaan Barang';
-    $user = auth()->user();
+@php $user = auth()->user();
 @endphp
 @extends('layouts.app')
+@section('title', 'Penerimaan Barang')
 
 @section('content')
 <div class="container-fluid">
@@ -81,9 +80,9 @@
                                     <td>{{ number_format($receipt->quantity) }}</td>
                                     <td>{{ $receipt->supplier_name ?? '-' }}</td>
                                     <td>{{ $receipt->delivery_person ?? '-' }}</td>
-                                    <td>{{ $receipt->received_date->format('d/m/Y') }}</td>
+                                    <td>{{ $receipt->received_date ? $receipt->received_date->format('d/m/Y') : '-' }}</td>
                                     <td>Rp {{ number_format($receipt->total_cost) }}</td>
-                                    <td>{{ $receipt->recorder->name ?? '-' }}</td>
+                                    <td>{{ $receipt->recorder?->name ?? '-' }}</td>
                                     @if($user->isOwner())<td>{{ $receipt->branch->name ?? '-' }}</td>@endif
                                     <td>
                                         <a href="{{ route('goods-receipts.show', $receipt) }}" class="btn btn-sm btn-info">

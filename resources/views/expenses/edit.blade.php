@@ -16,7 +16,7 @@
                     <div class="card-body">
                         <div class="form-group">
                             <label for="date">Tanggal *</label>
-                            <input type="date" name="date" class="form-control @error('date') is-invalid @enderror" value="{{ old('date', $expense->date->format('Y-m-d')) }}" required>
+                            <input type="date" name="date" class="form-control @error('date') is-invalid @enderror" value="{{ old('date', $expense->date ? $expense->date->format('Y-m-d') : '') }}" required>
                             @error('date') <span class="invalid-feedback">{{ $message }}</span> @enderror
                         </div>
 

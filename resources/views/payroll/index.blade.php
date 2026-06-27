@@ -31,8 +31,8 @@
                     <tr>
                         <td class="pl-4 font-weight-bold">{{ $e->name }}</td>
                         <td>Rp {{ number_format($e->basic_salary, 0, ',', '.') }}</td>
-                        <td class="text-info">Rp {{ number_format($e->payrollSettings->allowance ?? 0, 0, ',', '.') }}</td>
-                        <td class="text-danger">Rp {{ number_format($e->payrollSettings->deduction ?? 0, 0, ',', '.') }}</td>
+                        <td class="text-info">Rp {{ number_format($e->payrollSettings?->allowance ?? 0, 0, ',', '.') }}</td>
+                        <td class="text-danger">Rp {{ number_format($e->payrollSettings?->deduction ?? 0, 0, ',', '.') }}</td>
                         <td class="font-weight-bold text-success">Rp {{ number_format($p->total_salary ?? 0, 0, ',', '.') }}</td>
                         <td>
                             @if($p) <span class="badge badge-success-soft">Terhitung</span> @else <span class="badge badge-secondary-soft">Belum Digenerate</span> @endif

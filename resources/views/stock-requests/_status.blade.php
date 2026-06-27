@@ -1,3 +1,4 @@
+@if(!isset($stockRequest)) @php return; @endphp @endif
 @if($stockRequest->status === 'pending')
     <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i>Pending</span>
 @elseif($stockRequest->status === 'approved')

@@ -32,7 +32,7 @@
                             <td>{{ $r->branch->name ?? '-' }}</td>
                             <td>{{ $r->requester->name ?? '-' }}</td>
                             <td class="text-center">{{ $r->items->count() }}</td>
-                            <td>@include('stock-requests._status')</td>
+                            <td>@include('stock-requests._status', ['stockRequest' => $r])</td>
                             <td>
                                 @if($r->delivery_date)
                                     <small>{{ $r->delivery_method ?? '-' }}<br>{{ $r->delivery_date->format('d/m/Y') }}</small>

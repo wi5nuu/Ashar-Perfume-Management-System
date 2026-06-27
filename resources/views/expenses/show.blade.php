@@ -18,7 +18,7 @@
                     <table class="table table-bordered">
                         <tr>
                             <th style="width:200px;">Tanggal</th>
-                            <td>{{ $expense->date->format('d/m/Y') }}</td>
+                            <td>{{ $expense->date ? $expense->date->format('d/m/Y') : '-' }}</td>
                         </tr>
                         <tr>
                             <th>Kategori</th>
