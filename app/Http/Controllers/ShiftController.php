@@ -26,7 +26,7 @@ class ShiftController extends Controller
         /** @var \App\Models\User $authUser */
         $authUser = Auth::user();
         $shifts = Shift::with('user')->latest()->paginate(20);
-        $activeShift = Shift::where('user_id', $authUser->id)->where('status', 'open')->first();
+        $activeShift = Shift::with('user')->where('user_id', $authUser->id)->where('status', 'open')->first();
         
         return view('shifts.index', compact('shifts', 'activeShift'));
     }
@@ -72,18 +72,26 @@ class ShiftController extends Controller
             'initial_cash' => 'required|numeric|min:0',
         ]);
 
-        // Check if there's already an open shift for this user
-        $activeShift = Shift::where('user_id', $user->id)->where('status', 'open')->first();
-        if ($activeShift) {
-            return back()->with('error', 'Anda masih memiliki shift yang terbuka. Tutup shift tersebut terlebih dahulu.');
-        }
+        try {
+            DB::beginTransaction();
+            $activeShift = Shift::where('user_id', $user->id)->where('status', 'open')->lockForUpdate()->first();
+            if ($activeShift) {
+                DB::rollBack();
+                return back()->with('error', 'Anda masih memiliki shift yang terbuka. Tutup shift tersebut terlebih dahulu.');
+            }
 
-        Shift::create([
-            'user_id' => $user->id,
-            'start_time' => now(),
-            'initial_cash' => $request->initial_cash,
-            'status' => 'open',
-        ]);
+            Shift::create([
+                'user_id' => $user->id,
+                'start_time' => now(),
+                'initial_cash' => $request->initial_cash,
+                'status' => 'open',
+            ]);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to open shift', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal membuka shift. Silakan coba lagi.');
+        }
 
         return redirect()->route('dashboard')->with('success', 'Shift berhasil dibuka! Selamat bekerja.');
     }

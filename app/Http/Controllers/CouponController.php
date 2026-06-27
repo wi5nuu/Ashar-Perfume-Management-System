@@ -34,6 +34,7 @@ class CouponController extends Controller
     public function show(Coupon $coupon)
     {
         Gate::authorize('manage_coupons');
+        $coupon->load('customer');
         return view('coupons.show', compact('coupon'));
     }
 

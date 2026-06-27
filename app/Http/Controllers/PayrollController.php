@@ -78,10 +78,11 @@ class PayrollController extends Controller
                         ->count();
 
                     $basic     = (float) ($employee->basic_salary ?? 0);
-                    $allowance = (float) ($settings->allowance ?? 0);
-                    $deduction = (float) ($settings->deduction ?? 0);
+                    $allowance = (float) ($settings?->allowance ?? 0);
+                    $deduction = (float) ($settings?->deduction ?? 0);
                     $total     = ($basic + $allowance) - $deduction;
 
+                    Payroll::where('user_id', $employee->id)->where('month', $month)->lockForUpdate()->first();
                     Payroll::updateOrCreate(
                         [
                             'user_id' => $employee->id,

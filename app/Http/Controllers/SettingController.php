@@ -364,7 +364,7 @@ class SettingController extends Controller
     {
         Gate::authorize('manage_employees');
 
-        $pendingRequests = PasswordResetRequest::with(['user'])->pending()->latest()->get();
+        $pendingRequests = PasswordResetRequest::with(['user.branch'])->pending()->latest()->get();
         $resolvedRequests = PasswordResetRequest::with(['user', 'resolver'])
             ->where('status', '!=', 'pending')->latest()->paginate(20);
 

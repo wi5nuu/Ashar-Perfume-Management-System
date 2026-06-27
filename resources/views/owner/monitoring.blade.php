@@ -143,7 +143,7 @@
                             <div class="text-nowrap">
                                 <form action="{{ route('settings.password.reset-approve', $req) }}" method="POST" class="d-inline">
                                     @csrf
-                                    <button class="btn btn-success btn-sm" onclick="return confirm('Setujui reset untuk {{ $req->user->name }}?')">
+                                    <button class="btn btn-success btn-sm" onclick="return confirm('Setujui reset untuk ' + @js($req->user->name) + '?')">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>

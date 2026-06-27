@@ -77,6 +77,10 @@ class PosController extends Controller
 
         $productData = Product::select('id', 'name', 'selling_price')->find($product);
 
+        if (!$productData) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
         return response()->json([
             'product_id' => $product,
             'name' => $productData->name ?? 'Unknown',

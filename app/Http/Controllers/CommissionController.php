@@ -75,7 +75,7 @@ class CommissionController extends Controller
                 $count = 0;
                 foreach ($transactions as $trx) {
                     // Skip if commission already exists
-                    if (Commission::where('transaction_id', $trx->id)->where('month', $month)->exists()) {
+                    if (Commission::where('transaction_id', $trx->id)->where('month', $month)->lockForUpdate()->exists()) {
                         continue;
                     }
 

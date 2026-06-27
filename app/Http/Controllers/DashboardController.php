@@ -109,7 +109,7 @@ class DashboardController extends Controller
 
         // ── 3. Recent Transactions (branch-scoped) ────────────────────────
         $recentTransactions = Cache::remember("dash_recent_transactions.{$branchKey}", 30, function () use ($scopeBranch) {
-            return $scopeBranch(Transaction::query())->with(['customer'])->latest()->take(10)->get();
+            return $scopeBranch(Transaction::query())->with(['customer', 'user'])->latest()->take(10)->get();
         });
 
         // ── 3b. Wholesale Summary ─────────────────────────────────────────
@@ -464,7 +464,7 @@ class DashboardController extends Controller
         for ($m = 1; $m <= 12; $m++) {
             $data[] = [
                 'month' => Carbon::create()->month($m)->format('M'),
-                'sales' => (float) ($monthlySales->get($m)->sales ?? 0),
+                'sales' => (float) ($monthlySales->get($m)?->sales ?? 0),
             ];
         }
         return $data;

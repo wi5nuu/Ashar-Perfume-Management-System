@@ -50,6 +50,10 @@ class SupplierPriceController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
+                SupplierPrice::where([
+                        'supplier_id' => $validated['supplier_id'],
+                        'product_id'  => $validated['product_id'],
+                    ])->lockForUpdate()->first();
                 SupplierPrice::updateOrCreate(
                     [
                         'supplier_id' => $validated['supplier_id'],

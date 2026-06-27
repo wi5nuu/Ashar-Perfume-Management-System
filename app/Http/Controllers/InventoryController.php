@@ -259,9 +259,9 @@ class InventoryController extends Controller
             'out_of_stock' => $outOfStock->count(),
             'expiring'     => $expiringSoon->count(),
             'items'        => [
-                'low_stock'    => $lowStock->map(fn($i) => ['product' => $i->product->name, 'stock' => $i->current_stock, 'minimum' => $i->minimum_stock]),
-                'out_of_stock' => $outOfStock->map(fn($i) => ['product' => $i->product->name]),
-                'expiring'     => $expiringSoon->map(fn($i) => ['product' => $i->product->name, 'expires' => $i->expiration_date->format('Y-m-d')]),
+                'low_stock'    => $lowStock->map(fn($i) => ['product' => $i->product?->name ?? 'Unknown', 'stock' => $i->current_stock, 'minimum' => $i->minimum_stock]),
+                'out_of_stock' => $outOfStock->map(fn($i) => ['product' => $i->product?->name ?? 'Unknown']),
+                'expiring'     => $expiringSoon->map(fn($i) => ['product' => $i->product?->name ?? 'Unknown', 'expires' => $i->expiration_date?->format('Y-m-d') ?? 'N/A']),
             ],
         ]);
     }

@@ -118,6 +118,7 @@ class EmployeeController extends Controller
     public function show(User $employee)
     {
         Gate::authorize('manage_employees');
+        $employee->load('branch');
         return view('employees.show', compact('employee'));
     }
 

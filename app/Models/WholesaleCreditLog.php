@@ -12,6 +12,11 @@ class WholesaleCreditLog extends Model
         'description', 'reference_type', 'reference_id',
     ];
 
+    protected $casts = [
+        'credits' => 'integer',
+        'gold_points' => 'integer',
+    ];
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

@@ -37,7 +37,7 @@ class ProductController extends Controller
                     'sku' => $product->sku,
                     'price' => (float) $product->selling_price,
                     'price_formatted' => 'Rp ' . number_format($product->selling_price, 0, ',', '.'),
-                    'stock' => (int) ($product->inventories->first()->current_stock ?? 0),
+                    'stock' => (int) ($product->inventories->first()?->current_stock ?? 0),
                     'image' => $product->image ? asset('storage/' . $product->image) : null,
                 ];
             });

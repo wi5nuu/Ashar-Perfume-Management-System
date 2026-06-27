@@ -280,7 +280,7 @@ class TransactionController extends Controller
         $stockBefore = (int) $inventory->current_stock;
 
         if ($type === 'deduct' && $stockBefore < $quantity) {
-            throw new \RuntimeException("Insufficient stock for product: {$inventory->product->name}");
+            throw new \RuntimeException("Insufficient stock for product: " . ($inventory->product?->name ?? "Product #{$productId}"));
         }
 
         $newStockOut = $type === 'deduct'
@@ -308,7 +308,7 @@ class TransactionController extends Controller
             refType:     'transaction',
         );
 
-        event(new StockUpdated($productId, $inventory->product->name, $newStock));
+        event(new StockUpdated($productId, $inventory->product?->name ?? "Product #{$productId}", $newStock));
     }
 
     /**
@@ -367,7 +367,7 @@ class TransactionController extends Controller
         $stockBefore = (float) ($inventory->bulk_stock_ml ?? 0);
 
         if ($type === 'deduct' && $stockBefore < $volumeMl) {
-            throw new \RuntimeException("Insufficient bulk stock for product: {$inventory->product->name}");
+            throw new \RuntimeException("Insufficient bulk stock for product: " . ($inventory->product?->name ?? "Product #{$productId}"));
         }
 
         $newBulkStock = $type === 'deduct'
@@ -388,7 +388,7 @@ class TransactionController extends Controller
             refType:     'refill_transaction',
         );
 
-        event(new StockUpdated($productId, $inventory->product->name, (int)$newBulkStock));
+        event(new StockUpdated($productId, $inventory->product?->name ?? "Product #{$productId}", (int)$newBulkStock));
     }
 
     /**

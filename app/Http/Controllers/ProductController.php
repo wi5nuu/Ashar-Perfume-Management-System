@@ -232,7 +232,7 @@ class ProductController extends Controller
             ->limit(20)
             ->get(['id', 'name', 'barcode', 'selling_price', 'image'])
             ->each(function ($p) {
-                $p->stock = (int) ($p->inventories->first()->current_stock ?? 0);
+                $p->stock = (int) ($p->inventories->first()?->current_stock ?? 0);
                 $p->price = (float) $p->selling_price;
                 unset($p->inventories);
             });
@@ -344,7 +344,7 @@ class ProductController extends Controller
                 $stock = 0;
                 if ($branchId) {
                     $inv = $product->inventories->firstWhere('branch_id', $branchId);
-                    $stock = $inv->current_stock ?? 0;
+                    $stock = $inv?->current_stock ?? 0;
                 } else {
                     $stock = $product->inventories->sum('current_stock');
                 }

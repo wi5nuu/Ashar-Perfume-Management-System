@@ -46,7 +46,7 @@
                                     <td>
                                         <form action="{{ route('settings.password.reset-approve', $req) }}" method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Setujui reset password untuk {{ $req->user->name }}?')">
+                                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Setujui reset password untuk ' + @js($req->user->name) + '?')">
                                                 <i class="fas fa-check"></i> Reset & Tampilkan
                                             </button>
                                         </form>

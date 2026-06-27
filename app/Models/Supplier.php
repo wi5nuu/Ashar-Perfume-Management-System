@@ -36,10 +36,10 @@ class Supplier extends Model
         return $this->hasManyThrough(
             Product::class,
             Inventory::class,
-            'supplier_id', // FK di inventories
-            'id',          // FK di products
-            'id',          // PK di suppliers
-            'product_id'   // FK di inventories ke products
+            'supplier_id',  // inventories.supplier_id
+            'id',           // products.id
+            'id',           // suppliers.id
+            'product_id'    // inventories.product_id
         );
     }
 

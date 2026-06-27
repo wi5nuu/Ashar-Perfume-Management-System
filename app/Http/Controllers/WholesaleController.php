@@ -293,12 +293,14 @@ class WholesaleController extends Controller
     public function confirm(WholesaleOrder $order)
     {
         Gate::authorize('wholesale.manage');
-        if ($order->status !== 'pending') {
-            return back()->with('error', "Hanya order berstatus 'pending' yang bisa dikonfirmasi.");
-        }
 
         try {
             DB::beginTransaction();
+            $order = WholesaleOrder::lockForUpdate()->findOrFail($order->id);
+            if ($order->status !== 'pending') {
+                DB::rollBack();
+                return back()->with('error', "Hanya order berstatus 'pending' yang bisa dikonfirmasi.");
+            }
 
             $branchId = $order->branch_id ?? Auth::user()->branch_id;
 

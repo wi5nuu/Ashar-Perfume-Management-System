@@ -185,7 +185,7 @@ class AiAssistantController extends Controller
         $shift = Shift::whereNull('end_time')->with('user')->first();
         $shiftInfo = '';
         if ($shift) {
-            $shiftInfo = "\n\nShift saat ini dipandu oleh *{$shift->user->name}* sejak {$shift->start_time->format('H:i')}.";
+            $shiftInfo = "\n\nShift saat ini dipandu oleh *" . ($shift->user?->name ?? 'Unknown') . "* sejak " . ($shift->start_time?->format('H:i') ?? '-') . ".";
         }
         return "Selamat {$greet}! Saya adalah *APMS Assistant*, asisten cerdas sistem manajemen Ashar Parfum.\n\nSaya siap membantu Anda memantau penjualan, stok, pengeluaran, dan memberikan analisis bisnis secara real-time. Ada yang bisa saya bantu?{$shiftInfo}";
     }
@@ -551,7 +551,7 @@ class AiAssistantController extends Controller
         $openTime = $startTime ? $startTime->format('H:i') : '-';
         $todaySales = (float) $this->scope(Transaction::query())->whereDate('created_at', Carbon::today())
             ->where('shift_id', $shift->id)->sum('total_amount');
-        return "⏰ *Shift Aktif*\n\n▸ Petugas: {$shift->user->name}\n▸ Dibuka: {$openTime} ({$durasi} lalu)\n▸ Modal: Rp " . number_format($shift->initial_cash ?? 0, 0, ',', '.') . "\n▸ Penjualan shift: Rp " . number_format($todaySales, 0, ',', '.');
+        return "⏰ *Shift Aktif*\n\n▸ Petugas: " . ($shift->user?->name ?? 'Unknown') . "\n▸ Dibuka: {$openTime} ({$durasi} lalu)\n▸ Modal: Rp " . number_format($shift->initial_cash ?? 0, 0, ',', '.') . "\n▸ Penjualan shift: Rp " . number_format($todaySales, 0, ',', '.');
     }
 
     private function employeeSummary(): string

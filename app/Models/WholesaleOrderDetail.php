@@ -27,7 +27,7 @@ class WholesaleOrderDetail extends Model
         'price' => 'decimal:2',
         'price_per_ml' => 'decimal:2',
         'subtotal' => 'decimal:2',
-        'volume_ml' => 'decimal:2',
+        'volume_ml' => 'integer',
     ];
 
     public function order()

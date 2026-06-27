@@ -98,6 +98,10 @@ class PurchaseOrderController extends Controller
                     ]);
 
                     // Update supplier price list
+                    SupplierPrice::where([
+                            'supplier_id' => $validated['supplier_id'],
+                            'product_id' => $item['product_id'],
+                        ])->lockForUpdate()->first();
                     SupplierPrice::updateOrCreate(
                         ['supplier_id' => $validated['supplier_id'], 'product_id' => $item['product_id']],
                         ['unit_cost' => $item['unit_cost'], 'last_quoted_at' => now()]

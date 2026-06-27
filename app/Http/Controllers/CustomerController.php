@@ -51,6 +51,7 @@ class CustomerController extends Controller
     public function show(Customer $customer)
     {
         Gate::authorize('manage_customers');
+        $customer->load('transactions');
         if (request()->expectsJson()) {
             return response()->json([
                 'customer' => $customer,
@@ -63,6 +64,7 @@ class CustomerController extends Controller
     public function edit(Customer $customer)
     {
         Gate::authorize('manage_customers');
+        $customer->load('transactions');
         return view('customers.edit', compact('customer'));
     }
 

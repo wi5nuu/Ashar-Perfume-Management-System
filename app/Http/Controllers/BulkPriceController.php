@@ -48,7 +48,7 @@ class BulkPriceController extends Controller
                 $count = 0;
                 $user = auth()->user();
 
-                $products = Product::whereIn('id', $validated['product_ids'])->get()->keyBy('id');
+                $products = Product::whereIn('id', $validated['product_ids'])->lockForUpdate()->get()->keyBy('id');
                 foreach ($validated['product_ids'] as $productId) {
                     $product = $products->get($productId);
                     if (!$product) continue;

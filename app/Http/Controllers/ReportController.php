@@ -81,7 +81,7 @@ class ReportController extends Controller
             ->whereMonth('transactions.created_at', now()->month)
             ->whereYear('transactions.created_at', now()->year)
             ->select(DB::raw('SUM(transaction_details.purchase_price * transaction_details.quantity) as total_cogs'))
-            ->first()->total_cogs ?? 0;
+            ->value('total_cogs') ?? 0;
 
         $monthlyStats = [
             'revenue' => $totalCombinedRevenue,
@@ -213,7 +213,7 @@ class ReportController extends Controller
             ->whereMonth('transactions.created_at', $month)
             ->whereYear('transactions.created_at', $year)
             ->selectRaw('SUM(transaction_details.purchase_price * transaction_details.quantity) as total')
-            ->first()->total ?? 0;
+            ->value('total') ?? 0;
 
         // Gross Profit
         $grossProfit = $totalRevenue - $cogs;
@@ -248,7 +248,7 @@ class ReportController extends Controller
             'totalRevenue', 'retailRevenue', 'wholesaleRevenue',
             'cogs', 'grossProfit', 'expenses', 'netProfit', 'profit',
             'month', 'year', 'expenseBreakdown', 'revenueByMethod'
-        ));
+        ) + ['revenue' => $totalRevenue]);
     }
     
     public function exportSales(Request $request)
@@ -391,7 +391,7 @@ class ReportController extends Controller
                     "'" . $t->invoice_number,
                     $t->created_at->format('d/m/Y H:i'),
                     $t->user->name ?? '-',
-                    $t->customer->name ?? 'Umum',
+                    $t->customer?->name ?? 'Umum',
                     strtoupper($t->payment_method),
                     $t->subtotal,
                     $t->discount,
