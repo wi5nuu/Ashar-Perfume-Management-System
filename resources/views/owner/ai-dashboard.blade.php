@@ -212,9 +212,9 @@
                     <div class="row text-center" style="font-size:0.65rem;">
                         <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Total</div><strong style="font-size:0.9rem;">{{ $suppliers['total'] }}</strong></div>
                         <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">PO</div><strong style="font-size:0.9rem;">{{ $suppliers['poCount'] }}</strong></div>
-                        <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Rata2 Telat</div><strong style="font-size:0.9rem;" class="text-{{ $suppliers['avgLeadTime']>0?'danger':'success' }}">{{ $suppliers['avgLeadTime'] }} hari</strong></div>
+                        <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Rata2 Telat</div><strong style="font-size:0.9rem;" class="text-{{ ($suppliers['avgLeadTime']??0)>0?'danger':'success' }}">{{ $suppliers['avgLeadTime'] ?? 0 }} hari</strong></div>
                     </div>
-                    @if($suppliers['top'])
+                    @if(!empty($suppliers['top']))
                     <hr class="my-1">
                     <div style="font-size:0.6rem;">
                         <span class="text-muted">Top: </span><strong>{{ $suppliers['top']->name }}</strong>
@@ -230,11 +230,11 @@
                 <div class="card-header py-2"><h3 class="card-title" style="font-size:0.85rem;"><i class="fas fa-tags mr-1 text-warning"></i> Kupon & Promo</h3></div>
                 <div class="card-body py-2">
                     <div class="row text-center" style="font-size:0.65rem;">
-                        <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Aktif</div><strong style="font-size:0.9rem;" class="text-success">{{ $promos['active'] }}</strong></div>
-                        <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Total</div><strong style="font-size:0.9rem;">{{ $promos['totalCoupons'] }}</strong></div>
-                        <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Digunakan</div><strong style="font-size:0.9rem;">{{ $promos['totalUsage'] }}</strong></div>
+                        <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Aktif</div><strong style="font-size:0.9rem;" class="text-success">{{ $promos['active'] ?? 0 }}</strong></div>
+                        <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Total</div><strong style="font-size:0.9rem;">{{ $promos['totalCoupons'] ?? 0 }}</strong></div>
+                        <div class="col-4"><div class="text-muted" style="font-size:0.55rem;">Digunakan</div><strong style="font-size:0.9rem;">{{ $promos['totalUsage'] ?? 0 }}</strong></div>
                     </div>
-                    @if($promos['topPromo'])
+                    @if(!empty($promos['topPromo']))
                     <hr class="my-1">
                     <div style="font-size:0.6rem;"><span class="text-muted">Terpopuler: </span><strong>{{ $promos['topPromo']->code }}</strong> <span class="text-muted">({{ $promos['topPromo']->used_count }}x)</span></div>
                     @endif

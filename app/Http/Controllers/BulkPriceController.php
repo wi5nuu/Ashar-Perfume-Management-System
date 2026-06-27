@@ -48,8 +48,10 @@ class BulkPriceController extends Controller
                 $count = 0;
                 $user = auth()->user();
 
+                $products = Product::whereIn('id', $validated['product_ids'])->get()->keyBy('id');
                 foreach ($validated['product_ids'] as $productId) {
-                    $product = Product::findOrFail($productId);
+                    $product = $products->get($productId);
+                    if (!$product) continue;
                     $oldPrice = (float) $product->{$priceType};
 
                     $newPrice = match ($changeMode) {

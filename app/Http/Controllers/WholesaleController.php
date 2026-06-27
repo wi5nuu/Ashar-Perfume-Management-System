@@ -162,7 +162,11 @@ class WholesaleController extends Controller
                 }
             }
 
-            $customerName = $request->customer_id ? (Customer::find($request->customer_id)->name ?? 'Customer') : 'Walk-in';
+            $customerName = 'Walk-in';
+            if ($request->customer_id) {
+                $customer = Customer::find($request->customer_id);
+                $customerName = $customer?->name ?? 'Customer';
+            }
             event(new NewWholesaleOrder($order->id, $order->invoice_number, $customerName, $totalAmount));
 
             $this->notifyCustomer($order, 'pending');

@@ -55,7 +55,8 @@ class RbacController extends Controller
             }
         }
         $users = $query->paginate(20);
-        return view('admin.rbac.users', compact('role', 'users'));
+        $availableUsers = \App\Models\User::whereDoesntHave('roles', fn($q) => $q->where('role_id', $role->id))->get();
+        return view('admin.rbac.users', compact('role', 'users', 'availableUsers'));
     }
 
     public function assignUser(Request $request, Role $role)

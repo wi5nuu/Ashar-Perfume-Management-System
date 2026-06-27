@@ -232,11 +232,14 @@ class DashboardController extends Controller
         if ($user->isOwner()) {
             $branchRevenueData = Branch::where('is_active', true)
                 ->withCount('users')
+                ->withAggregate('transactions as period_revenue', 'sum(total_amount)', fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
+                ->withAggregate('transactions as today_revenue', 'sum(total_amount)', fn($q) => $q->whereDate('created_at', $today))
+                ->withAggregate('expenses as period_expenses', 'sum(amount)', fn($q) => $q->whereBetween('date', [$startDate, $endDate]))
                 ->get()
-                ->map(function ($branch) use ($startDate, $endDate, $today) {
-                    $branch->period_revenue  = (float) $branch->transactions()->whereBetween('created_at', [$startDate, $endDate])->sum('total_amount');
-                    $branch->today_revenue   = (float) $branch->transactions()->whereDate('created_at', $today)->sum('total_amount');
-                    $branch->period_expenses = (float) $branch->expenses()->whereBetween('date', [$startDate, $endDate])->sum('amount');
+                ->map(function ($branch) {
+                    $branch->period_revenue  = (float) ($branch->period_revenue ?? 0);
+                    $branch->today_revenue   = (float) ($branch->today_revenue ?? 0);
+                    $branch->period_expenses = (float) ($branch->period_expenses ?? 0);
                     $branch->period_profit   = $branch->period_revenue - $branch->period_expenses;
                     return $branch;
                 });
@@ -263,19 +266,26 @@ class DashboardController extends Controller
      */
     public function getStats(Request $request)
     {
+        if (!auth()->user()->can('view_reports')) {
+            return response()->json([]);
+        }
+
+        $user = auth()->user();
         $period = $request->get('period', 'this_month');
         [$startDate, $endDate] = $this->resolvePeriod($period);
 
-        $canViewFinance = auth()->user()->can('expenses.view');
+        $scope = fn($q) => $user->isOwner() || !$user->branch_id ? $q : $q->where('branch_id', $user->branch_id);
 
-        $todaySales  = Transaction::whereDate('created_at', Carbon::today())->sum('total_amount');
-        $periodSales = Transaction::whereBetween('created_at', [$startDate, $endDate])->sum('total_amount');
+        $canViewFinance = $user->can('expenses.view');
+
+        $todaySales  = $scope(Transaction::query())->whereDate('created_at', Carbon::today())->sum('total_amount');
+        $periodSales = $scope(Transaction::query())->whereBetween('created_at', [$startDate, $endDate])->sum('total_amount');
 
         $periodExpenses = 0;
         $netProfit      = 0;
 
         if ($canViewFinance) {
-            $periodExpenses = Expense::whereBetween('date', [$startDate, $endDate])->sum('amount');
+            $periodExpenses = $scope(Expense::query())->whereBetween('date', [$startDate, $endDate])->sum('amount');
 
             $periodCOGS = TransactionDetail::join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
                 ->whereBetween('transactions.created_at', [$startDate, $endDate])
@@ -285,22 +295,23 @@ class DashboardController extends Controller
             $netProfit = $periodSales - $periodCOGS - $periodExpenses;
         }
 
-        $lowStockCount = Cache::remember('dash_low_stock_count_stats', 120, function () {
-            return DB::table('inventories')
-                ->where(function ($q) {
+        $inventoryScope = $user->isOwner() || !$user->branch_id ? '' : $user->branch_id;
+        $lowStockCount = Cache::remember('dash_low_stock_count_stats_' . $inventoryScope, 120, function () use ($inventoryScope) {
+            $q = DB::table('inventories');
+            if ($inventoryScope) $q->where('branch_id', $inventoryScope);
+            return $q->where(function ($q) {
                     $q->whereColumn('current_stock', '<=', 'minimum_stock')
                       ->orWhere('current_stock', '<', 5);
-                })
-                ->count();
+                })->count();
         });
 
         $totalCustomers = Cache::remember('dash_total_customers_stats', 300, fn() => Customer::count());
 
-        $wholesaleToday = WholesaleOrder::whereDate('created_at', Carbon::today())
+        $wholesaleToday = $scope(WholesaleOrder::query())->whereDate('created_at', Carbon::today())
             ->where('status', '!=', 'cancelled')
             ->sum('total_amount');
 
-        $wholesalePeriod = WholesaleOrder::whereBetween('created_at', [$startDate, $endDate])
+        $wholesalePeriod = $scope(WholesaleOrder::query())->whereBetween('created_at', [$startDate, $endDate])
             ->where('status', '!=', 'cancelled')
             ->sum('total_amount');
 
@@ -315,7 +326,7 @@ class DashboardController extends Controller
             'netProfit'       => $fmt($netProfit),
             'lowStockCount'   => $lowStockCount,
             'totalCustomers'  => $totalCustomers,
-            'smartInsights'   => $this->insightService->getRoleSpecificInsights(auth()->user()->role),
+            'smartInsights'   => $this->insightService->getRoleSpecificInsights($user->role),
         ]);
     }
 

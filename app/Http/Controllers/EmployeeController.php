@@ -94,7 +94,11 @@ class EmployeeController extends Controller
         if (!auth()->user()->isOwner()) {
             $validated['branch_id'] = auth()->user()->branch_id;
         } else {
-            $validated['branch_id'] = $request->input('branch_id') ?? \App\Models\Branch::first()->id;
+            $defaultBranch = \App\Models\Branch::first();
+            if (!$defaultBranch) {
+                return back()->withInput()->with('error', 'Tidak ada cabang yang tersedia. Buat cabang terlebih dahulu.');
+            }
+            $validated['branch_id'] = $request->input('branch_id') ?? $defaultBranch->id;
         }
 
         $user = User::create($validated);
@@ -210,7 +214,16 @@ class EmployeeController extends Controller
             'date' => 'required|date',
         ]);
 
-        // Store attendance logic here
+        \App\Models\Attendance::create([
+            'user_id' => $employee->id,
+            'branch_id' => $employee->branch_id,
+            'employee_name' => $employee->name,
+            'date' => $validated['date'],
+            'time_in' => $validated['check_in'] ?? null,
+            'time_out' => $validated['check_out'] ?? null,
+            'status' => 'present',
+        ]);
+
         return response()->json(['message' => 'Absensi berhasil dicatat']);
     }
 }

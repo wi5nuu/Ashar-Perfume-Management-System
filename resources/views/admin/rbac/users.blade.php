@@ -33,7 +33,7 @@
                 <div class="form-group mr-2 flex-grow-1">
                     <select name="user_id" class="form-control w-100 select2" required>
                         <option value="">-- Pilih Pengguna --</option>
-                        @foreach(\App\Models\User::whereDoesntHave('roles', fn($q) => $q->where('role_id', $role->id))->get() as $user)
+                        @foreach($availableUsers as $user)
                             <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
                         @endforeach
                     </select>
@@ -67,7 +67,7 @@
                             <td>{{ $user->branch->name ?? 'Pusat' }}</td>
                             <td><span class="badge badge-info">{{ $user->role }}</span></td>
                             <td>
-                                <form method="POST" action="{{ route('admin.rbac.remove-user', [$role, $user]) }}" onsubmit="return confirm('Hapus {{ addslashes($user->name) }} dari role ini?')">
+                                <form method="POST" action="{{ route('admin.rbac.remove-user', [$role, $user]) }}" onsubmit="return confirm('Hapus {{ $user->name }} dari role ini?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-user-minus"></i></button>
                                 </form>

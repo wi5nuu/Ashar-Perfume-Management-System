@@ -192,7 +192,7 @@
 @push('scripts')
 <script>
 $(function() {
-    const expectedCash = {{ $expectedCash }};
+    const expectedCash = @json($expectedCash);
 
     function formatRp(num) {
         return 'Rp ' + num.toLocaleString('id-ID');

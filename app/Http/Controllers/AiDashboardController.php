@@ -571,21 +571,21 @@ class AiDashboardController extends Controller
         $start = Carbon::now()->startOfMonth();
         $end = Carbon::now()->endOfMonth();
 
-        $branchData = Branch::where('is_active', true)->get()->map(function ($b) use ($start, $end) {
-            $revenue = (float) Transaction::where('branch_id', $b->id)
-                ->whereBetween('created_at', [$start, $end])->sum('total_amount');
-            $txCount = Transaction::where('branch_id', $b->id)
-                ->whereBetween('created_at', [$start, $end])->count();
-            $expenses = (float) Expense::where('branch_id', $b->id)
-                ->whereBetween('created_at', [$start, $end])->sum('amount');
-            return [
-                'name' => $b->name,
-                'revenue' => $revenue,
-                'transactions' => $txCount,
-                'expenses' => $expenses,
-                'profit' => $revenue - $expenses,
-            ];
-        })->sortByDesc('revenue')->values();
+        $branchData = Branch::where('is_active', true)
+            ->withAggregate('transactions as revenue', 'sum(total_amount)', fn($q) => $q->whereBetween('created_at', [$start, $end]))
+            ->withAggregate('transactions as tx_count', 'count(*)', fn($q) => $q->whereBetween('created_at', [$start, $end]))
+            ->withAggregate('expenses as expenses_sum', 'sum(amount)', fn($q) => $q->whereBetween('created_at', [$start, $end]))
+            ->get()
+            ->map(function ($b) {
+                $revenue = (float) ($b->revenue ?? 0);
+                return [
+                    'name' => $b->name,
+                    'revenue' => $revenue,
+                    'transactions' => (int) ($b->tx_count ?? 0),
+                    'expenses' => (float) ($b->expenses_sum ?? 0),
+                    'profit' => $revenue - (float) ($b->expenses_sum ?? 0),
+                ];
+            })->sortByDesc('revenue')->values();
 
         $totalRevenue = $branchData->sum('revenue');
         $totalExpenses = $branchData->sum('expenses');
@@ -598,10 +598,12 @@ class AiDashboardController extends Controller
     private function getWholesaleOverview(): array
     {
         $statuses = ['pending', 'reviewed', 'on_progress', 'packed', 'shipped', 'delivered', 'completed', 'cancelled'];
-        $counts = [];
-        foreach ($statuses as $s) {
-            $counts[$s] = WholesaleOrder::where('status', $s)->count();
-        }
+        $rawCounts = WholesaleOrder::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+        $defaults = array_fill_keys($statuses, 0);
+        $counts = array_merge($defaults, $rawCounts);
         $total = WholesaleOrder::count();
         $totalRevenue = (float) WholesaleOrder::whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount');
         $pendingCount = WholesaleOrder::whereIn('status', ['pending', 'reviewed'])->count();
@@ -648,11 +650,8 @@ class AiDashboardController extends Controller
             ->orderBy('current_stock')
             ->take(10)
             ->get()
-            ->map(function ($i) {
-                $dailySold = (float) TransactionDetail::where('product_id', $i->product_id)
-                    ->where('created_at', '>=', Carbon::now()->subDays(30))
-                    ->sum('quantity') / 30;
-                $dailySold = max(0.1, $dailySold);
+            ->map(function ($i) use ($dailySales) {
+                $dailySold = max(0.1, (float) ($dailySales[$i->product_id] ?? 0));
                 $daysLeft = round($i->current_stock / $dailySold);
                 return [
                     'name' => $i->product->name ?? 'Produk #' . $i->product_id,

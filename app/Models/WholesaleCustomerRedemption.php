@@ -14,6 +14,7 @@ class WholesaleCustomerRedemption extends Model
     protected $casts = [
         'used_at' => 'datetime',
         'expires_at' => 'datetime',
+        'credits_spent' => 'integer',
     ];
 
     public function customer()

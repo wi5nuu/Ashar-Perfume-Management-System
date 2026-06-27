@@ -168,17 +168,11 @@ class CustomerController extends Controller
     {
         Gate::authorize('manage_customers');
 
-        $customer->load(['transactions' => function ($q) {
-            $q->withTrashed()->latest();
-        }]);
-
-        // Get all transactions for this customer
-        $transactions = \App\Models\Transaction::withTrashed()
-            ->where('customer_id', $customer->id)
-            ->orderBy('created_at', 'asc')
+        $transactions = $customer->transactions()
+            ->withTrashed()
+            ->latest()
             ->get();
 
-        // Get all debt payments
         $payments = \App\Models\DebtPayment::whereIn('transaction_id', $transactions->pluck('id'))
             ->orderBy('payment_date', 'asc')
             ->get();

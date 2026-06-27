@@ -33,6 +33,8 @@ class WholesaleProduct extends Model
         'is_active' => 'boolean',
         'price_per_unit' => 'decimal:2',
         'price_per_ml' => 'decimal:2',
+        'pieces_per_unit' => 'integer',
+        'stock' => 'integer',
     ];
 
     public function branch()

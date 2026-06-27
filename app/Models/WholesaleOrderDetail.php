@@ -22,6 +22,14 @@ class WholesaleOrderDetail extends Model
         'subtotal',
     ];
 
+    protected $casts = [
+        'quantity' => 'integer',
+        'price' => 'decimal:2',
+        'price_per_ml' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'volume_ml' => 'decimal:2',
+    ];
+
     public function order()
     {
         return $this->belongsTo(WholesaleOrder::class, 'wholesale_order_id');

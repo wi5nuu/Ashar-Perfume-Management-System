@@ -14,6 +14,11 @@ class StockRequest extends Model
         'received_date', 'receipt_notes',
     ];
 
+    protected $casts = [
+        'delivery_date' => 'date',
+        'received_date' => 'date',
+    ];
+
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);

@@ -12,6 +12,12 @@ class StockRequestItem extends Model
         'quantity_requested', 'quantity_prepared', 'quantity_received',
     ];
 
+    protected $casts = [
+        'quantity_requested' => 'integer',
+        'quantity_prepared' => 'integer',
+        'quantity_received' => 'integer',
+    ];
+
     public function stockRequest(): BelongsTo
     {
         return $this->belongsTo(StockRequest::class);

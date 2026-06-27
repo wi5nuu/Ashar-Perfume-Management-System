@@ -15,6 +15,12 @@ class StockAuditItem extends Model
         'notes',
     ];
 
+    protected $casts = [
+        'system_stock' => 'integer',
+        'physical_stock' => 'integer',
+        'discrepancy' => 'integer',
+    ];
+
     public function audit()
     {
         return $this->belongsTo(StockAudit::class, 'stock_audit_id');

@@ -64,7 +64,7 @@ class SalesReturnController extends Controller
         try {
             $return = DB::transaction(function () use ($validated) {
                 $user = auth()->user();
-                $transaction = Transaction::findOrFail($validated['transaction_id']);
+                $transaction = Transaction::lockForUpdate()->findOrFail($validated['transaction_id']);
 
                 $return = SalesReturn::create([
                     'return_number'  => SalesReturn::generateReturnNumber(),
@@ -75,9 +75,12 @@ class SalesReturnController extends Controller
                     'status'         => 'pending',
                 ]);
 
+                $detailIds = collect($validated['items'])->pluck('detail_id');
+                $details = TransactionDetail::whereIn('id', $detailIds)->get()->keyBy('id');
                 $totalRefund = 0;
                 foreach ($validated['items'] as $item) {
-                    $detail = TransactionDetail::findOrFail($item['detail_id']);
+                    $detail = $details->get($item['detail_id']);
+                    if (!$detail) continue;
 
                     // Ensure return qty doesn't exceed original
                     $qty = min((int) $item['quantity'], (int) $detail->quantity);

@@ -46,15 +46,16 @@ class CustomerPortalController extends Controller
             abort(410, 'Token ini sudah kedaluwarsa. Hubungi toko untuk token baru.');
         }
 
-        $totalOrders = $customer->wholesaleOrders()->where('status', '!=', 'cancelled')->count();
-        $pendingOrders = $customer->wholesaleOrders()->whereIn('status', ['pending', 'processing'])->count();
+        $ordersQuery = $customer->wholesaleOrders();
+        $totalOrders = (clone $ordersQuery)->where('status', '!=', 'cancelled')->count();
+        $pendingOrders = (clone $ordersQuery)->whereIn('status', ['pending', 'processing'])->count();
 
         // Debt summary: sum of debt_amount - sum of payments
         $totalDebt = (float) $customer->transactions()->where('debt_amount', '>', 0)->sum('debt_amount');
         $totalPaid = (float) DebtPayment::whereIn('transaction_id', $customer->transactions()->pluck('id'))->sum('amount');
         $remainingDebt = max(0, $totalDebt - $totalPaid);
 
-        $recentOrders = $customer->wholesaleOrders()
+        $recentOrders = (clone $ordersQuery)
             ->with('details.product')
             ->latest()
             ->take(5)

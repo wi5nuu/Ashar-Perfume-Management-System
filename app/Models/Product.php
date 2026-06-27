@@ -35,10 +35,15 @@ protected $hidden = [
 ];
 
 protected $casts = [
-    'is_active'           => 'boolean',
-    'track_inventory'     => 'boolean',
-    'is_refill'           => 'boolean',
-    'refill_price_per_ml' => 'decimal:2',
+    'is_active'            => 'boolean',
+    'track_inventory'      => 'boolean',
+    'is_refill'            => 'boolean',
+    'refill_price_per_ml'  => 'decimal:2',
+    'purchase_price'       => 'decimal:2',
+    'selling_price'        => 'decimal:2',
+    'wholesale_price'      => 'decimal:2',
+    'initial_stock'        => 'integer',
+    'minimum_stock'        => 'integer',
 ];
 
 public function scopeRefill($query)

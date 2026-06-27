@@ -189,12 +189,13 @@ class WholesaleCustomerController extends Controller
             return response()->json(['success' => false, 'message' => 'Akun tidak ditemukan.']);
         }
 
-        $redemption = \App\Models\WholesaleRedemption::find($redemptionId);
-        if (!$redemption || !$redemption->is_active) {
-            return response()->json(['success' => false, 'message' => 'Promo tidak ditemukan.']);
-        }
-
-        $result = app(WholesaleLoyaltyService::class)->redeemCredits($customer, $redemption);
+        $result = DB::transaction(function () use ($redemptionId, $customer) {
+            $redemption = \App\Models\WholesaleRedemption::lockForUpdate()->find($redemptionId);
+            if (!$redemption || !$redemption->is_active) {
+                return ['success' => false, 'message' => 'Promo tidak ditemukan.'];
+            }
+            return app(WholesaleLoyaltyService::class)->redeemCredits($customer, $redemption);
+        });
         return response()->json($result);
     }
 

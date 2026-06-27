@@ -281,6 +281,9 @@ class ProductController extends Controller
         if (! Gate::allows('manage_products') && ! auth()->user()->can('products.view')) {
             abort(403);
         }
+        if (!$product->barcode) {
+            abort(404, 'Produk tidak memiliki barcode.');
+        }
         $generator = new BarcodeGeneratorPNG();
         $barcode = $generator->getBarcode($product->barcode, $generator::TYPE_CODE_128, 2, 60);
         return response($barcode, 200, ['Content-Type' => 'image/png']);
@@ -335,14 +338,23 @@ class ProductController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
+            $branchId = auth()->user()->branch_id;
+
             foreach ($products as $product) {
+                $stock = 0;
+                if ($branchId) {
+                    $inv = $product->inventories->firstWhere('branch_id', $branchId);
+                    $stock = $inv->current_stock ?? 0;
+                } else {
+                    $stock = $product->inventories->sum('current_stock');
+                }
                 fputcsv($file, [
                     $product->internal_id,
                     "'" . $product->barcode,
                     $product->name,
                     $product->category->name ?? '-',
                     $product->size . ' ' . $product->unit,
-                    $product->inventory->current_stock ?? 0,
+                    $stock,
                     $product->purchase_price,
                     $product->selling_price,
                     $product->wholesale_price,

@@ -27,7 +27,6 @@ class WholesaleOrder extends Model
         'handler_id',
         'packing_days',
         'estimated_arrival',
-        'shipping_cost',
         'notes',
         'barcode',
         'tracking_number',
@@ -50,6 +49,10 @@ class WholesaleOrder extends Model
         'delivered_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'completed_at' => 'datetime',
+        'package_target_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'shipping_cost' => 'decimal:2',
+        'packing_days' => 'integer',
     ];
 
     public function user()

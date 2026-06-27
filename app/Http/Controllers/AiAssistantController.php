@@ -24,11 +24,21 @@ class AiAssistantController extends Controller
 {
     protected $strategicService;
     protected $copilotService;
+    protected ?int $scopeBranchId = null;
 
     public function __construct(AiStrategicService $strategicService, AiCopilotService $copilotService)
     {
         $this->strategicService = $strategicService;
         $this->copilotService = $copilotService;
+        $user = auth()->user();
+        if ($user && !$user->isOwner() && $user->branch_id) {
+            $this->scopeBranchId = $user->branch_id;
+        }
+    }
+
+    private function scope($query): mixed
+    {
+        return $this->scopeBranchId ? $query->where('branch_id', $this->scopeBranchId) : $query;
     }
 
     public function ask(Request $request)
@@ -197,10 +207,10 @@ class AiAssistantController extends Controller
     private function salesToday(): string
     {
         $today = Carbon::today();
-        $retail = (float) Transaction::whereDate('created_at', $today)->sum('total_amount');
-        $retailCount = Transaction::whereDate('created_at', $today)->count();
-        $wholesale = (float) WholesaleOrder::whereDate('created_at', $today)->where('status', '!=', 'cancelled')->sum('total_amount');
-        $wholesaleCount = WholesaleOrder::whereDate('created_at', $today)->where('status', '!=', 'cancelled')->count();
+        $retail = (float) $this->scope(Transaction::query())->whereDate('created_at', $today)->sum('total_amount');
+        $retailCount = $this->scope(Transaction::query())->whereDate('created_at', $today)->count();
+        $wholesale = (float) $this->scope(WholesaleOrder::query())->whereDate('created_at', $today)->where('status', '!=', 'cancelled')->sum('total_amount');
+        $wholesaleCount = $this->scope(WholesaleOrder::query())->whereDate('created_at', $today)->where('status', '!=', 'cancelled')->count();
 
         $response = "📊 *Ringkasan Penjualan — " . $today->format('d/m/Y') . "*\n\n";
         if ($retailCount > 0) {
@@ -221,12 +231,12 @@ class AiAssistantController extends Controller
     private function salesYesterday(): string
     {
         $yesterday = Carbon::yesterday();
-        $retail = (float) Transaction::whereDate('created_at', $yesterday)->sum('total_amount');
-        $retailCount = Transaction::whereDate('created_at', $yesterday)->count();
+        $retail = (float) $this->scope(Transaction::query())->whereDate('created_at', $yesterday)->sum('total_amount');
+        $retailCount = $this->scope(Transaction::query())->whereDate('created_at', $yesterday)->count();
         $response = "📊 *Penjualan " . $yesterday->format('d/m/Y') . "*\n\n";
         $response .= "▸ Eceran: *Rp " . number_format($retail, 0, ',', '.') . "* ({$retailCount} transaksi)";
 
-        $todaySales = (float) Transaction::whereDate('created_at', Carbon::today())->sum('total_amount');
+        $todaySales = (float) $this->scope(Transaction::query())->whereDate('created_at', Carbon::today())->sum('total_amount');
         if ($retail > 0 && $todaySales > 0) {
             $pct = round(($todaySales / $retail) * 100, 1);
             $response .= "\n\nHari ini: " . ($pct >= 100 ? "naik {$pct}%" : "baru {$pct}% dari kemarin");
@@ -238,12 +248,12 @@ class AiAssistantController extends Controller
     {
         $start = Carbon::now()->startOfMonth();
         $end = Carbon::now()->endOfMonth();
-        $retail = (float) Transaction::whereBetween('created_at', [$start, $end])->sum('total_amount');
-        $retailCount = Transaction::whereBetween('created_at', [$start, $end])->count();
+        $retail = (float) $this->scope(Transaction::query())->whereBetween('created_at', [$start, $end])->sum('total_amount');
+        $retailCount = $this->scope(Transaction::query())->whereBetween('created_at', [$start, $end])->count();
 
         $lastStart = Carbon::now()->subMonth()->startOfMonth();
         $lastEnd = Carbon::now()->subMonth()->endOfMonth();
-        $lastRetail = (float) Transaction::whereBetween('created_at', [$lastStart, $lastEnd])->sum('total_amount');
+        $lastRetail = (float) $this->scope(Transaction::query())->whereBetween('created_at', [$lastStart, $lastEnd])->sum('total_amount');
 
         $response = "📊 *Penjualan Bulan " . $start->translatedFormat('F Y') . "*\n\n";
         $response .= "▸ Total: *Rp " . number_format($retail, 0, ',', '.') . "*\n";
@@ -260,11 +270,11 @@ class AiAssistantController extends Controller
 
     private function stockSummary(): string
     {
-        $totalItems = (int) Inventory::sum('current_stock');
+        $totalItems = (int) $this->scope(Inventory::query())->sum('current_stock');
         $totalProd = Product::count();
-        $lowCount = Inventory::whereColumn('current_stock', '<=', 'minimum_stock')->where('current_stock', '>', 0)->count();
-        $outCount = Inventory::where('current_stock', '<=', 0)->count();
-        $totalVal = (float) Inventory::sum(DB::raw('current_stock * COALESCE(cost_per_unit, 0)'));
+        $lowCount = $this->scope(Inventory::query())->whereColumn('current_stock', '<=', 'minimum_stock')->where('current_stock', '>', 0)->count();
+        $outCount = $this->scope(Inventory::query())->where('current_stock', '<=', 0)->count();
+        $totalVal = (float) $this->scope(Inventory::query())->sum(DB::raw('current_stock * COALESCE(cost_per_unit, 0)'));
 
         $response = "📦 *Ringkasan Inventaris*\n\n";
         $response .= "▸ Total produk: {$totalProd}\n";
@@ -281,7 +291,8 @@ class AiAssistantController extends Controller
 
     private function criticalStock(): string
     {
-        $items = Inventory::whereColumn('current_stock', '<=', 'minimum_stock')
+        $items = $this->scope(Inventory::query())
+            ->whereColumn('current_stock', '<=', 'minimum_stock')
             ->where('current_stock', '>', 0)
             ->with('product')
             ->orderBy('current_stock')
@@ -297,7 +308,7 @@ class AiAssistantController extends Controller
             $pct = $i->minimum_stock > 0 ? round(($i->current_stock / $i->minimum_stock) * 100) : 0;
             $response .= "▸ *{$i->product->name}*: sisa {$i->current_stock} dari minimum {$i->minimum_stock} ({$pct}%)\n";
         }
-        $total = Inventory::whereColumn('current_stock', '<=', 'minimum_stock')->where('current_stock', '>', 0)->count();
+        $total = $this->scope(Inventory::query())->whereColumn('current_stock', '<=', 'minimum_stock')->where('current_stock', '>', 0)->count();
         if ($total > 5) {
             $response .= "\n...dan " . ($total - 5) . " produk lainnya.";
         }
@@ -307,7 +318,7 @@ class AiAssistantController extends Controller
 
     private function outOfStock(): string
     {
-        $count = Inventory::where('current_stock', '<=', 0)->count();
+        $count = $this->scope(Inventory::query())->where('current_stock', '<=', 0)->count();
         if ($count === 0) {
             return "✅ Tidak ada produk yang stoknya habis. Kondisi gudang terkendali.";
         }
@@ -316,7 +327,8 @@ class AiAssistantController extends Controller
 
     private function expiringStock(): string
     {
-        $nearExp = Inventory::whereNotNull('expiration_date')
+        $nearExp = $this->scope(Inventory::query())
+            ->whereNotNull('expiration_date')
             ->whereBetween('expiration_date', [Carbon::now(), Carbon::now()->addDays(90)])
             ->where('current_stock', '>', 0)
             ->with('product')
@@ -333,7 +345,8 @@ class AiAssistantController extends Controller
             $expDate = Carbon::parse($i->expiration_date)->format('d/m/Y');
             $response .= "▸ *{$i->product->name}*: {$i->current_stock} unit — kedaluwarsa {$expDate}\n";
         }
-        $total = Inventory::whereNotNull('expiration_date')
+        $total = $this->scope(Inventory::query())
+            ->whereNotNull('expiration_date')
             ->whereBetween('expiration_date', [Carbon::now(), Carbon::now()->addDays(90)])
             ->where('current_stock', '>', 0)->count();
         if ($total > 5) {
@@ -352,11 +365,16 @@ class AiAssistantController extends Controller
                 DB::raw('SUM(transaction_details.subtotal) as total_rev')
             )
             ->join('products', 'transaction_details.product_id', '=', 'products.id')
+            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
             ->where('transaction_details.created_at', '>=', Carbon::now()->subDays(30))
             ->groupBy('products.id', 'products.name', 'products.brand')
             ->orderByDesc('total_qty')
-            ->take(5)
-            ->get();
+            ->take(5);
+
+        if ($this->scopeBranchId) {
+            $tops->where('transactions.branch_id', $this->scopeBranchId);
+        }
+        $tops = $tops->get();
 
         if ($tops->isEmpty()) {
             return "Belum ada data penjualan yang cukup untuk menentukan produk terlaris.";
@@ -373,7 +391,8 @@ class AiAssistantController extends Controller
 
     private function wholesaleSummary(): string
     {
-        $counts = WholesaleOrder::select('status', DB::raw('COUNT(*) as count'))
+        $counts = $this->scope(WholesaleOrder::query())
+            ->select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
             ->pluck('count', 'status');
 
@@ -444,10 +463,10 @@ class AiAssistantController extends Controller
     {
         $start = Carbon::now()->startOfMonth();
         $end = Carbon::now()->endOfMonth();
-        $total = (float) Expense::whereBetween('created_at', [$start, $end])->sum('amount');
-        $count = Expense::whereBetween('created_at', [$start, $end])->count();
+        $total = (float) $this->scope(Expense::query())->whereBetween('created_at', [$start, $end])->sum('amount');
+        $count = $this->scope(Expense::query())->whereBetween('created_at', [$start, $end])->count();
 
-        $topCat = Expense::whereBetween('created_at', [$start, $end])
+        $topCat = $this->scope(Expense::query())->whereBetween('created_at', [$start, $end])
             ->select('category', DB::raw('SUM(amount) as total'))
             ->groupBy('category')
             ->orderByDesc('total')
@@ -461,7 +480,7 @@ class AiAssistantController extends Controller
             $response .= "▸ Kategori terbesar: {$topCat->category} ({$pct}%)\n";
         }
 
-        $prevTotal = (float) Expense::whereMonth('created_at', Carbon::now()->subMonth()->month)->sum('amount');
+        $prevTotal = (float) $this->scope(Expense::query())->whereMonth('created_at', Carbon::now()->subMonth()->month)->sum('amount');
         if ($prevTotal > 0) {
             $change = round((($total - $prevTotal) / $prevTotal) * 100, 1);
             $trend = $change >= 0 ? 'naik' : 'turun';
@@ -474,11 +493,15 @@ class AiAssistantController extends Controller
     {
         $start = Carbon::now()->startOfMonth();
         $end = Carbon::now()->endOfMonth();
-        $revenue = (float) Transaction::whereBetween('created_at', [$start, $end])->sum('total_amount');
-        $cogs = (float) TransactionDetail::whereBetween('created_at', [$start, $end])
+        $revenue = (float) $this->scope(Transaction::query())->whereBetween('created_at', [$start, $end])->sum('total_amount');
+        $cogsQuery = TransactionDetail::whereBetween('transaction_details.created_at', [$start, $end])
             ->join('products', 'transaction_details.product_id', '=', 'products.id')
-            ->sum(DB::raw('transaction_details.quantity * COALESCE(products.purchase_price, 0)'));
-        $expenses = (float) Expense::whereBetween('created_at', [$start, $end])->sum('amount');
+            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id');
+        if ($this->scopeBranchId) {
+            $cogsQuery->where('transactions.branch_id', $this->scopeBranchId);
+        }
+        $cogs = (float) $cogsQuery->sum(DB::raw('transaction_details.quantity * COALESCE(products.purchase_price, 0)'));
+        $expenses = (float) $this->scope(Expense::query())->whereBetween('created_at', [$start, $end])->sum('amount');
 
         $gross = $revenue - $cogs;
         $net = $gross - $expenses;
@@ -523,17 +546,19 @@ class AiAssistantController extends Controller
         if (!$shift) {
             return "⏰ Saat ini *tidak ada shift aktif*. Belum ada petugas yang melakukan Open Shift.";
         }
-        $durasi = $shift->start_time->diffForHumans(Carbon::now(), ['parts' => 2]);
-        $todaySales = (float) Transaction::whereDate('created_at', Carbon::today())
+        $startTime = $shift->start_time;
+        $durasi = $startTime ? $startTime->diffForHumans(Carbon::now(), ['parts' => 2]) : 'baru saja';
+        $openTime = $startTime ? $startTime->format('H:i') : '-';
+        $todaySales = (float) $this->scope(Transaction::query())->whereDate('created_at', Carbon::today())
             ->where('shift_id', $shift->id)->sum('total_amount');
-        return "⏰ *Shift Aktif*\n\n▸ Petugas: {$shift->user->name}\n▸ Dibuka: {$shift->start_time->format('H:i')} ({$durasi} lalu)\n▸ Modal: Rp " . number_format($shift->initial_cash ?? 0, 0, ',', '.') . "\n▸ Penjualan shift: Rp " . number_format($todaySales, 0, ',', '.');
+        return "⏰ *Shift Aktif*\n\n▸ Petugas: {$shift->user->name}\n▸ Dibuka: {$openTime} ({$durasi} lalu)\n▸ Modal: Rp " . number_format($shift->initial_cash ?? 0, 0, ',', '.') . "\n▸ Penjualan shift: Rp " . number_format($todaySales, 0, ',', '.');
     }
 
     private function employeeSummary(): string
     {
         $active = User::where('is_active', true)->count();
-        $todayPresent = Attendance::whereDate('date', Carbon::today())->whereNull('time_out')->count();
-        $todayAll = Attendance::whereDate('date', Carbon::today())->count();
+        $todayPresent = $this->scope(Attendance::query())->whereDate('date', Carbon::today())->whereNull('time_out')->count();
+        $todayAll = $this->scope(Attendance::query())->whereDate('date', Carbon::today())->count();
 
         $response = "👥 *Ringkasan Karyawan*\n\n";
         $response .= "▸ Karyawan aktif: {$active}\n";
@@ -553,16 +578,20 @@ class AiAssistantController extends Controller
     private function businessHealth(): string
     {
         $now = Carbon::now();
-        $revenue = (float) Transaction::whereMonth('created_at', $now->month)->sum('total_amount');
-        $cogs = (float) TransactionDetail::whereMonth('created_at', $now->month)
+        $revenue = (float) $this->scope(Transaction::query())->whereMonth('created_at', $now->month)->sum('total_amount');
+        $cogsQuery = TransactionDetail::whereMonth('transaction_details.created_at', $now->month)
             ->join('products', 'transaction_details.product_id', '=', 'products.id')
-            ->sum(DB::raw('transaction_details.quantity * COALESCE(products.purchase_price, 0)'));
-        $expenses = (float) Expense::whereMonth('created_at', $now->month)->sum('amount');
+            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id');
+        if ($this->scopeBranchId) {
+            $cogsQuery->where('transactions.branch_id', $this->scopeBranchId);
+        }
+        $cogs = (float) $cogsQuery->sum(DB::raw('transaction_details.quantity * COALESCE(products.purchase_price, 0)'));
+        $expenses = (float) $this->scope(Expense::query())->whereMonth('created_at', $now->month)->sum('amount');
         $netProfit = $revenue - $cogs - $expenses;
         $margin = $revenue > 0 ? round(($netProfit / $revenue) * 100, 1) : 0;
 
-        $lowStock = Inventory::whereColumn('current_stock', '<=', 'minimum_stock')->count();
-        $outStock = Inventory::where('current_stock', '<=', 0)->count();
+        $lowStock = $this->scope(Inventory::query())->whereColumn('current_stock', '<=', 'minimum_stock')->count();
+        $outStock = $this->scope(Inventory::query())->where('current_stock', '<=', 0)->count();
         $totalInv = Product::count();
 
         $stockScore = $totalInv > 0 ? max(0, 100 - (($lowStock + $outStock) / $totalInv) * 100) : 100;
@@ -585,8 +614,8 @@ class AiAssistantController extends Controller
 
     private function customerSummary(): string
     {
-        $total = \App\Models\Customer::count();
-        $recent = \App\Models\Customer::where('created_at', '>=', Carbon::now()->subDays(30))->count();
+        $total = $this->scope(\App\Models\Customer::query())->count();
+        $recent = $this->scope(\App\Models\Customer::query())->where('created_at', '>=', Carbon::now()->subDays(30))->count();
         $wholesaleUsers = User::where('role', 'wholesale_customer')->count();
 
         return "👤 *Ringkasan Pelanggan*\n\n▸ Total pelanggan retail: {$total}\n▸ Pelanggan baru (30 hari): {$recent}\n▸ Pelanggan grosir terdaftar: {$wholesaleUsers}";

@@ -36,15 +36,17 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'total_amount'   => 'decimal:2',
-        'subtotal'       => 'decimal:2',
-        'discount'       => 'decimal:2',   // BUG-08 fix: was 'discount_amount' but column is 'discount'
-        'tax_amount'     => 'decimal:2',
-        'debt_amount'    => 'decimal:2',
-        'paid_amount'    => 'decimal:2',
-        'change_amount'  => 'decimal:2',
-        'tax_enabled'    => 'boolean',
-        'created_at'     => 'datetime',
+        'total_amount'     => 'decimal:2',
+        'subtotal'         => 'decimal:2',
+        'final_amount'     => 'decimal:2',
+        'discount'         => 'decimal:2',
+        'discount_percent' => 'decimal:2',
+        'tax_amount'       => 'decimal:2',
+        'debt_amount'      => 'decimal:2',
+        'paid_amount'      => 'decimal:2',
+        'change_amount'    => 'decimal:2',
+        'tax_enabled'      => 'boolean',
+        'created_at'       => 'datetime',
     ];
 
     public function customer()

@@ -65,7 +65,7 @@ class AttendanceController extends Controller
             'cashier_names.required' => 'Nama karyawan wajib diisi.'
         ]);
 
-        $employee = \App\Models\User::find($request->user_id);
+        $employee = \App\Models\User::findOrFail($request->user_id);
 
         Attendance::create([
             'user_id' => $request->user_id,

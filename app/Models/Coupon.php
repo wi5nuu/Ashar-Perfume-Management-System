@@ -22,6 +22,9 @@ class Coupon extends Model
         'expiration_date' => 'date',
         'is_percentage' => 'boolean',
         'is_active' => 'boolean',
+        'value' => 'decimal:2',
+        'max_usage' => 'integer',
+        'used_count' => 'integer',
     ];
 
     public function customer()

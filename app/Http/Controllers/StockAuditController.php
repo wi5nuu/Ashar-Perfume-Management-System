@@ -104,8 +104,11 @@ class StockAuditController extends Controller
             'items.*.notes' => 'nullable|string',
         ]);
 
+        $itemIds = array_keys($request->items);
+        $existingItems = StockAuditItem::whereIn('id', $itemIds)->get()->keyBy('id');
         foreach ($request->items as $itemId => $itemData) {
-            $item = StockAuditItem::findOrFail($itemId);
+            $item = $existingItems->get($itemId);
+            if (!$item) continue;
             $item->update([
                 'physical_stock' => $itemData['physical_stock'],
                 'notes' => $itemData['notes'] ?? null,
@@ -121,8 +124,10 @@ class StockAuditController extends Controller
                         $query = Inventory::where('product_id', $item->product_id);
                         $invBranchId = $stockAudit->branch_id ?? auth()->user()->branch_id;
                         if ($invBranchId) $query->where('branch_id', $invBranchId);
-                        $query->first()
-                            ?->update(['current_stock' => $item->physical_stock]);
+                        $inventory = $query->lockForUpdate()->first();
+                        if ($inventory) {
+                            $inventory->update(['current_stock' => $item->physical_stock]);
+                        }
                     }
                 }
                 $stockAudit->update(['status' => 'completed']);

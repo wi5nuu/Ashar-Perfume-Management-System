@@ -45,24 +45,27 @@ class OwnerLoyaltyController extends Controller
             'reason' => 'required|string|max:255',
         ]);
 
-        $credits = (int) $request->credits;
+        DB::transaction(function () use ($request, $customer) {
+            $locked = Customer::lockForUpdate()->findOrFail($customer->id);
+            $credits = (int) $request->credits;
 
-        if ($credits > 0) {
-            $customer->increment('total_credits_earned', $credits);
-        } else {
-            $customer->increment('total_credits_spent', abs($credits));
-        }
+            if ($credits > 0) {
+                $locked->increment('total_credits_earned', $credits);
+            } else {
+                $locked->increment('total_credits_spent', abs($credits));
+            }
 
-        $this->loyalty->checkRankUp($customer);
+            $this->loyalty->checkRankUp($locked);
 
-        WholesaleCreditLog::create([
-            'customer_id' => $customer->id,
-            'credits' => $credits,
-            'gold_points' => 0,
-            'type' => 'admin',
-            'description' => $request->reason,
-            'reference_type' => 'admin',
-        ]);
+            WholesaleCreditLog::create([
+                'customer_id' => $locked->id,
+                'credits' => $credits,
+                'gold_points' => 0,
+                'type' => 'admin',
+                'description' => $request->reason,
+                'reference_type' => 'admin',
+            ]);
+        });
 
         return back()->with('success', 'Kredit berhasil disesuaikan.');
     }
