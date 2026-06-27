@@ -398,7 +398,7 @@
                 <div class="card-body p-0">
                     @if($employeeToday['activeShift'])
                     <div class="p-2 bg-light border-bottom" style="font-size:0.6rem;">
-                        <span class="text-muted">Shift: </span><strong>{{ $employeeToday['activeShift']->user->name ?? '-' }}</strong>
+                        <span class="text-muted">Shift: </span><strong>{{ $employeeToday['activeShift']->user?->name ?? '-' }}</strong>
                         @if($employeeToday['activeShift']->start_time)<small class="text-muted d-block">Buka: {{ \Carbon\Carbon::parse($employeeToday['activeShift']->start_time)->format('H:i') }}</small>@endif
                     </div>
                     @else
