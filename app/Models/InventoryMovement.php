@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * Records every stock movement for full audit trail.
@@ -51,6 +52,11 @@ class InventoryMovement extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reference(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     /**

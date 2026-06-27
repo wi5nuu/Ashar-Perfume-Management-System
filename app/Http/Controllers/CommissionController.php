@@ -64,12 +64,12 @@ class CommissionController extends Controller
 
         try {
             $count = DB::transaction(function () use ($month, $rate) {
-                // Get all transactions in the month
                 $startDate = $month . '-01';
                 $endDate = now()->parse($startDate)->endOfMonth();
 
                 $transactions = Transaction::whereBetween('created_at', [$startDate, $endDate])
                     ->where('payment_status', '!=', 'cancelled')
+                    ->when(!auth()->user()->isOwner(), fn($q) => $q->where('branch_id', auth()->user()->branch_id))
                     ->get();
 
                 $count = 0;

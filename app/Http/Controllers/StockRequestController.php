@@ -189,10 +189,20 @@ class StockRequestController extends Controller
 
                 $itemModel = StockRequestItem::find($item['id']);
                 if ($itemModel && $item['quantity_received'] > 0) {
-                    \App\Models\Inventory::firstOrCreate(
-                        ['product_id' => $itemModel->product_id, 'branch_id' => $stockRequest->branch_id],
-                        ['stock' => 0, 'min_stock' => 0]
-                    )->increment('stock', $item['quantity_received']);
+                    $inventory = \App\Models\Inventory::where([
+                        'product_id' => $itemModel->product_id,
+                        'branch_id' => $stockRequest->branch_id,
+                    ])->lockForUpdate()->first();
+
+                    if (!$inventory) {
+                        $inventory = \App\Models\Inventory::create([
+                            'product_id' => $itemModel->product_id,
+                            'branch_id' => $stockRequest->branch_id,
+                            'current_stock' => 0,
+                        ]);
+                    }
+
+                    $inventory->increment('current_stock', $item['quantity_received']);
                 }
             }
 

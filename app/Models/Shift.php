@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Shift extends Model
 {
@@ -38,6 +39,11 @@ class Shift extends Model
         'denominations' => 'array',
         'reviewed_at' => 'datetime',
     ];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function user()
     {

@@ -112,39 +112,45 @@ class OwnerController extends Controller
     {
         Gate::authorize('owner');
 
-        $customers = User::where('role', 'wholesale_customer')
-            ->get()
-            ->map(function ($u) {
-                $total = WholesaleOrder::where(function ($q) use ($u) {
-                    $q->where('recipient_phone', $u->phone)
-                      ->orWhereHas('customer', fn($cq) => $cq->where('email', $u->email));
-                })->whereIn('status', ['completed', 'delivered', 'shipped'])
-                  ->sum('total_amount');
+        $customers = User::where('role', 'wholesale_customer')->get();
 
-                $tiers = [
-                    ['label'=>'Platinum','min'=>50000000],
-                    ['label'=>'Gold','min'=>30000000],
-                    ['label'=>'Silver','min'=>20000000],
-                    ['label'=>'VIP','min'=>10000000],
-                ];
-                $tierLabel = 'Regular';
-                foreach ($tiers as $t) { if ($total >= $t['min']) { $tierLabel = $t['label']; break; } }
+        $phones = $customers->pluck('phone')->filter();
+        $emails = $customers->pluck('email')->filter();
 
-                $orderCount = WholesaleOrder::where(function ($q) use ($u) {
-                    $q->where('recipient_phone', $u->phone)
-                      ->orWhereHas('customer', fn($cq) => $cq->where('email', $u->email));
-                })->whereIn('status', ['completed', 'delivered', 'shipped'])->count();
-
-                $u->total_spent = $total;
-                $u->order_count = $orderCount;
-                $u->tier_label = $tierLabel;
-                $u->last_order = WholesaleOrder::where(function ($q) use ($u) {
-                    $q->where('recipient_phone', $u->phone)
-                      ->orWhereHas('customer', fn($cq) => $cq->where('email', $u->email));
-                })->latest()->first()?->created_at;
-
-                return $u;
+        $orders = WholesaleOrder::whereIn('status', ['completed', 'delivered', 'shipped'])
+            ->where(function ($q) use ($phones, $emails) {
+                $q->whereIn('recipient_phone', $phones)
+                  ->orWhereHas('customer', fn($cq) => $cq->whereIn('email', $emails));
             })
+            ->get(['id', 'recipient_phone', 'total_amount', 'customer_id', 'created_at']);
+
+        $grouped = [];
+        foreach ($orders as $o) {
+            $key = $o->recipient_phone;
+            $grouped[$key][] = $o;
+        }
+
+        $customers = $customers->map(function ($u) use ($grouped) {
+            $key = $u->phone;
+            $userOrders = $grouped[$key] ?? collect();
+            $total = (float) collect($userOrders)->sum('total_amount');
+
+            $tiers = [
+                ['label'=>'Platinum','min'=>50000000],
+                ['label'=>'Gold','min'=>30000000],
+                ['label'=>'Silver','min'=>20000000],
+                ['label'=>'VIP','min'=>10000000],
+            ];
+            $tierLabel = 'Regular';
+            foreach ($tiers as $t) { if ($total >= $t['min']) { $tierLabel = $t['label']; break; } }
+
+            $u->total_spent = $total;
+            $u->order_count = count($userOrders);
+            $u->tier_label = $tierLabel;
+            $u->last_order = collect($userOrders)->sortByDesc('created_at')->first()?->created_at;
+
+            return $u;
+        })
             ->sortByDesc('total_spent')
             ->values();
 

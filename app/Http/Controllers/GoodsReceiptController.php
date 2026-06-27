@@ -98,17 +98,20 @@ class GoodsReceiptController extends Controller
                 'branch_id' => $validated['branch_id'],
             ]);
 
-            $inventory = Inventory::firstOrCreate(
-                [
+            $inventory = Inventory::where([
+                'product_id' => $validated['product_id'],
+                'branch_id' => $validated['branch_id'],
+            ])->lockForUpdate()->first();
+
+            if (!$inventory) {
+                $inventory = Inventory::create([
                     'product_id' => $validated['product_id'],
                     'branch_id' => $validated['branch_id'],
-                ],
-                [
                     'current_stock' => 0,
                     'stock_in' => 0,
                     'stock_out' => 0,
-                ]
-            );
+                ]);
+            }
 
             $inventory->increment('current_stock', $validated['quantity']);
             $inventory->increment('stock_in', $validated['quantity']);

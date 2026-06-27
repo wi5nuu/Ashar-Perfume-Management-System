@@ -549,56 +549,7 @@
         <!-- Right navbar links -->
         <ul class="navbar-nav ml-auto align-items-center">
             {{-- Comprehensive Notifications Dropdown --}}
-            @php
-                // ── Gather all notification data ──
-                $today = date('Y-m-d');
-                $now = time();
-
-                // Wholesale pending orders
-                $pendingGrosirCount = \App\Models\WholesaleOrder::where('status','pending')->count();
-                $pendingGrosirOrders = \App\Models\WholesaleOrder::where('status','pending')
-                    ->with('customer')->latest()->take(5)->get();
-
-                // Login activities today (unique users)
-                $loginToday = DB::table('login_activities')
-                    ->join('users', 'login_activities.user_id', '=', 'users.id')
-                    ->whereDate('login_activities.created_at', $today)
-                    ->select('users.name', 'users.role', 'login_activities.created_at', 'login_activities.ip_address')
-                    ->latest('login_activities.created_at')
-                    ->take(10)
-                    ->get();
-                $loginTodayCount = DB::table('login_activities')
-                    ->whereDate('created_at', $today)
-                    ->distinct('user_id')->count('user_id');
-
-                // Audit logs today
-                $auditToday = DB::table('audit_logs')
-                    ->leftJoin('users', 'audit_logs.user_id', '=', 'users.id')
-                    ->whereDate('audit_logs.created_at', $today)
-                    ->select('audit_logs.*', 'users.name as user_name', 'users.role as user_role')
-                    ->latest('audit_logs.created_at')
-                    ->take(5)
-                    ->get();
-                $auditTodayCount = DB::table('audit_logs')->whereDate('created_at', $today)->count();
-
-                // Unread DB notifications
-                $dbNotifs = DB::table('notifications')
-                    ->whereNull('read_at')
-                    ->latest()
-                    ->take(5)
-                    ->get();
-                $dbNotifCount = DB::table('notifications')->whereNull('read_at')->count();
-
-                // Password reset requests
-                $pendingResetCount = \App\Models\PasswordResetRequest::pending()->count();
-
-                // Active sessions count
-                $activeSessions = DB::table('sessions')
-                    ->where('last_activity', '>=', $now - 3600)
-                    ->distinct('user_id')->count('user_id');
-
-                $totalNotif = $pendingGrosirCount + $dbNotifCount + $pendingResetCount;
-            @endphp
+            {{-- Data provided by AppServiceProvider ViewComposer (cached 60s) --}}
             <li class="nav-item dropdown mr-2">
                 <a class="nav-link position-relative" data-toggle="dropdown" href="#" id="notifDropdownToggle">
                     <i class="fas fa-bell" style="font-size:1.15rem"></i>

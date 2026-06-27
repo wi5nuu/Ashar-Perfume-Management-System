@@ -127,9 +127,7 @@ class ShiftController extends Controller
             ->value('net_cash') ?? 0;
 
         $cashExpenses = Expense::where('user_id', $shift->user_id)
-            // Assuming we add a payment_method to expenses or just assume all are cash for now
-            // For now let's assume all are cash as it's a small shop
-            ->whereBetween('date', [$shift->start_time->format('Y-m-d H:i:s'), now()->format('Y-m-d H:i:s')])
+            ->whereBetween('date', [$shift->start_time?->format('Y-m-d H:i:s') ?? now()->subDay()->format('Y-m-d H:i:s'), now()->format('Y-m-d H:i:s')])
             ->sum('amount') ?? 0;
 
         $expectedCash = $shift->initial_cash + $cashSales - $cashExpenses;

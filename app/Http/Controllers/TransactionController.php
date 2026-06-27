@@ -133,8 +133,14 @@ class TransactionController extends Controller
                     'tax_enabled'    => $taxEnabled,
                 ]);
 
+                $productIds = collect($validated['items'])->pluck('product_id')->unique();
+                $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
                 foreach ($validated['items'] as $item) {
-                    $product = Product::findOrFail($item['product_id']);
+                    $product = $products->get($item['product_id']);
+                    if (!$product) {
+                        throw new \RuntimeException("Product #{$item['product_id']} not found.");
+                    }
 
                     $isRefill = $product->is_refill && !empty($item['refill_volume_ml']);
                     $quantity = $isRefill ? 1 : $item['quantity'];

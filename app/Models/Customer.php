@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Customer extends Model
 {
@@ -41,12 +42,16 @@ class Customer extends Model
         });
     }
 
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
     }
 
-    // BUG-03 FIX: Relasi yang hilang ke WholesaleOrder
     public function wholesaleOrders()
     {
         return $this->hasMany(WholesaleOrder::class);

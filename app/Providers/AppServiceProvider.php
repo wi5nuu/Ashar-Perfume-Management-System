@@ -48,32 +48,97 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, [\App\Listeners\RecordLoginAttendance::class, 'handle']);
         Event::listen(Login::class, [\App\Listeners\RecordLoginActivity::class, 'handle']);
 
-        // Share urgent wholesale notifications (cached per-user branch for 60s)
-        // BEFORE: Queried DB on every page load for every user.
-        // AFTER: Cached per branch, only counts (not full collection).
+        // Provide all notification data to layout (cached 60s)
+        // MOVED FROM BLADE: Previously raw DB::table() queries ran on every page load.
         view()->composer('layouts.app', function ($view) {
-            $urgentCount = 0;
+            $data = [
+                'pendingGrosirCount' => 0,
+                'pendingGrosirOrders' => collect(),
+                'loginToday' => collect(),
+                'loginTodayCount' => 0,
+                'auditToday' => collect(),
+                'auditTodayCount' => 0,
+                'dbNotifs' => collect(),
+                'dbNotifCount' => 0,
+                'pendingResetCount' => 0,
+                'activeSessions' => 0,
+                'urgentWholesaleCount' => 0,
+                'totalNotif' => 0,
+            ];
 
-            if (Auth::check()) {
-                $user = Auth::user();
-                $branchId = $user->branch_id ?? 0;
-
-                $urgentCount = Cache::remember(
-                    "urgent_orders_count_branch_{$branchId}",
-                    60,
-                    function () use ($branchId) {
-                        $query = \App\Models\WholesaleOrder::where('status', 'pending');
-
-                        if ($branchId > 0) {
-                            $query->where('branch_id', $branchId);
-                        }
-
-                        return $query->where('packing_days', 1)->count();
-                    }
-                );
+            if (!Auth::check()) {
+                $view->with($data);
+                return;
             }
 
-            $view->with('urgentWholesaleCount', $urgentCount);
+            $user = Auth::user();
+            $branchId = $user->branch_id ?? 0;
+            $today = date('Y-m-d');
+            $now = time();
+            $cacheKey = "notif_data_branch_{$branchId}_role_{$user->role}";
+
+            $cached = Cache::remember($cacheKey, 60, function () use ($branchId, $today, $now, $user) {
+                $d = [];
+                $ownerOrAdmin = $user->isOwner() || $user->isAdminPusat();
+
+                // Urgent wholesale count (existing)
+                $urgentQuery = \App\Models\WholesaleOrder::where('status', 'pending');
+                if ($branchId > 0 && !$ownerOrAdmin) {
+                    $urgentQuery->where('branch_id', $branchId);
+                }
+                $d['urgentWholesaleCount'] = $urgentQuery->where('packing_days', 1)->count();
+
+                // Pending wholesale orders
+                $pendingQuery = \App\Models\WholesaleOrder::where('status', 'pending');
+                if ($branchId > 0 && !$ownerOrAdmin) {
+                    $pendingQuery->where('branch_id', $branchId);
+                }
+                $d['pendingGrosirCount'] = $pendingQuery->count();
+                $d['pendingGrosirOrders'] = (clone $pendingQuery)->with('customer')->latest()->take(5)->get();
+
+                // Login activities today
+                $loginQuery = \Illuminate\Support\Facades\DB::table('login_activities')
+                    ->whereDate('created_at', $today);
+                $d['loginToday'] = (clone $loginQuery)
+                    ->join('users', 'login_activities.user_id', '=', 'users.id')
+                    ->select('users.name', 'users.role', 'login_activities.created_at', 'login_activities.ip_address')
+                    ->latest('login_activities.created_at')
+                    ->take(10)
+                    ->get();
+                $d['loginTodayCount'] = $loginQuery->distinct('user_id')->count('user_id');
+
+                // Audit logs today
+                $auditQuery = \Illuminate\Support\Facades\DB::table('audit_logs')
+                    ->whereDate('created_at', $today);
+                $d['auditToday'] = (clone $auditQuery)
+                    ->leftJoin('users', 'audit_logs.user_id', '=', 'users.id')
+                    ->select('audit_logs.*', 'users.name as user_name', 'users.role as user_role')
+                    ->latest('audit_logs.created_at')
+                    ->take(5)
+                    ->get();
+                $d['auditTodayCount'] = $auditQuery->count();
+
+                // DB notifications
+                $notifQuery = \Illuminate\Support\Facades\DB::table('notifications')
+                    ->whereNull('read_at');
+                $d['dbNotifs'] = (clone $notifQuery)->latest()->take(5)->get();
+                $d['dbNotifCount'] = $notifQuery->count();
+
+                // Password reset requests
+                $d['pendingResetCount'] = \App\Models\PasswordResetRequest::pending()->count();
+
+                // Active sessions
+                $d['activeSessions'] = \Illuminate\Support\Facades\DB::table('sessions')
+                    ->where('last_activity', '>=', $now - 3600)
+                    ->distinct('user_id')->count('user_id');
+
+                // Total
+                $d['totalNotif'] = $d['pendingGrosirCount'] + $d['dbNotifCount'] + $d['pendingResetCount'];
+
+                return $d;
+            });
+
+            $view->with($cached);
         });
 
         // Share settings globally (cached for 5 minutes — already optimized)

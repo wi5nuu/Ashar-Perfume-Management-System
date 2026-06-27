@@ -45,10 +45,59 @@ class Branch extends Model
         return $this->hasMany(Expense::class);
     }
 
-    // BUG-04 FIX: Relasi wholesale yang hilang
     public function wholesaleOrders(): HasMany
     {
         return $this->hasMany(WholesaleOrder::class);
+    }
+
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(Inventory::class);
+    }
+
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function goodsReceipts(): HasMany
+    {
+        return $this->hasMany(GoodsReceipt::class);
+    }
+
+    public function stockRequests(): HasMany
+    {
+        return $this->hasMany(StockRequest::class);
+    }
+
+    public function shifts(): HasMany
+    {
+        return $this->hasMany(Shift::class);
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function stockAudits(): HasMany
+    {
+        return $this->hasMany(StockAudit::class);
+    }
+
+    public function salesReturns(): HasMany
+    {
+        return $this->hasMany(SalesReturn::class);
+    }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
+    public function inventoryMovements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class);
     }
 
     /**
