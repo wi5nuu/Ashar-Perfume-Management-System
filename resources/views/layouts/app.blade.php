@@ -727,6 +727,7 @@
             </li>
 
             <!-- User Profile Dropdown -->
+            @auth
             <li class="nav-item dropdown">
                 <a class="nav-link d-flex align-items-center" data-toggle="dropdown" href="#" style="padding: 0.5rem;">
                     <div class="d-none d-md-block text-right mr-2" style="line-height: 1;">
@@ -749,6 +750,7 @@
                     </form>
                 </div>
             </li>
+            @endauth
         </ul>
     </nav>
 

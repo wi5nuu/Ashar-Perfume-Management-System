@@ -15,7 +15,7 @@ class SessionSecurityMiddleware
         if (Auth::check()) {
             $user = Auth::user();
 
-            if ($user->is_locked && $user->locked_until && now()->lessThan($user->locked_until)) {
+            if ($user->is_locked && ($user->locked_until === null || now()->lessThan($user->locked_until))) {
                 Auth::logoutCurrentDevice();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();

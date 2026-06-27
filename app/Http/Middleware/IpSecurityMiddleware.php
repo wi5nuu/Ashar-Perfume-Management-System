@@ -31,10 +31,9 @@ class IpSecurityMiddleware
         }
 
         $cacheKey = "request_count:{$ip}";
-        $count = (int) Cache::increment($cacheKey);
-        if ($count === 1) {
-            Cache::put($cacheKey, 1, now()->addMinute());
-        }
+        $count = (int) Cache::remember($cacheKey, now()->addMinute(), fn () => 0);
+        $count++;
+        Cache::put($cacheKey, $count, now()->addMinute());
 
         if ($count > self::MAX_ANONYMOUS_REQUESTS) {
             IpBlacklist::block($ip, 'rate_limit_exceeded', self::BLOCK_MINUTES);

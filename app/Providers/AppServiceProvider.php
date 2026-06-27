@@ -141,8 +141,12 @@ class AppServiceProvider extends ServiceProvider
             $view->with($cached);
         });
 
-        // Share settings globally (cached for 5 minutes — already optimized)
+        // Share settings globally (cached for 5 minutes — skip error views to prevent nested crashes)
         view()->composer('*', function ($view) {
+            if (str_starts_with($view->getName(), 'errors.')) {
+                $view->with('app_settings', collect());
+                return;
+            }
             $settings = Cache::remember('app_settings', 300, function () {
                 return \App\Models\Setting::pluck('value', 'key');
             });

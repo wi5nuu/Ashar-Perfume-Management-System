@@ -11,6 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+        then: function () {
+            require __DIR__.'/../routes/auth.php';
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -40,8 +43,9 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            if ($e->getStatusCode() === 500) {
-                return response()->view('errors.500', [], 500);
+            $status = $e->getStatusCode();
+            if (in_array($status, [500, 503, 429], true)) {
+                return response()->view("errors.{$status}", [], $status);
             }
         });
     })->create();
