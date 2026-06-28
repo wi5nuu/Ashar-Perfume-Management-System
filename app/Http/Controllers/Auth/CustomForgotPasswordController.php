@@ -49,6 +49,8 @@ class CustomForgotPasswordController extends Controller
         if ($existing && $existing->status === 'approved') {
             $password   = $existing->new_password;
             $statusType = 'approved';
+            session()->flash('_once_pw', $password);
+            $password = null;
         } elseif ($existing && $existing->status === 'pending') {
             $elapsed = now()->diffInSeconds($existing->created_at);
 
@@ -71,6 +73,8 @@ class CustomForgotPasswordController extends Controller
 
                     $password   = $newPassword;
                     $statusType = 'auto_approved';
+                    session()->flash('_once_pw', $password);
+                    $password = null;
                 } else {
                     $statusType = 'outside_hours';
                 }

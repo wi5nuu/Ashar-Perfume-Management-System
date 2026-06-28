@@ -78,7 +78,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
 
         // Bulk Price Update
         Route::get('/bulk-price', [BulkPriceController::class, 'index'])->name('bulk-price.index');
-        Route::post('/bulk-price', [BulkPriceController::class, 'update'])->name('bulk-price.update');
+        Route::post('/bulk-price', [BulkPriceController::class, 'update'])->middleware('throttle:5,1')->name('bulk-price.update');
         
         // Inventory
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
@@ -95,7 +95,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
                 // Goods Receipts (Barang Masuk)
                 Route::get('/goods-receipts', [\App\Http\Controllers\GoodsReceiptController::class, 'index'])->name('goods-receipts.index');
                 Route::get('/goods-receipts/create', [\App\Http\Controllers\GoodsReceiptController::class, 'create'])->name('goods-receipts.create');
-                Route::post('/goods-receipts', [\App\Http\Controllers\GoodsReceiptController::class, 'store'])->name('goods-receipts.store');
+                Route::post('/goods-receipts', [\App\Http\Controllers\GoodsReceiptController::class, 'store'])->middleware('throttle:10,1')->name('goods-receipts.store');
                 Route::get('/goods-receipts/{goodsReceipt}', [\App\Http\Controllers\GoodsReceiptController::class, 'show'])->name('goods-receipts.show');
 
         // Purchase Orders
@@ -120,18 +120,22 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::post('/coupons/{coupon}/redeem', [CouponController::class, 'redeem'])->middleware('throttle:10,1')->name('coupons.redeem');
 
         // Wholesale Products (BEFORE wholesale resource to avoid {order} matching "products")
-        Route::resource('wholesale/products', \App\Http\Controllers\WholesaleProductController::class)->names([
-            'index' => 'wholesale.products.index',
-            'create' => 'wholesale.products.create',
-            'store' => 'wholesale.products.store',
-            'show' => 'wholesale.products.show',
-            'edit' => 'wholesale.products.edit',
-            'update' => 'wholesale.products.update',
-            'destroy' => 'wholesale.products.destroy',
-        ]);
+        Route::get('/wholesale/products', [\App\Http\Controllers\WholesaleProductController::class, 'index'])->name('wholesale.products.index');
+        Route::get('/wholesale/products/create', [\App\Http\Controllers\WholesaleProductController::class, 'create'])->name('wholesale.products.create');
+        Route::post('/wholesale/products', [\App\Http\Controllers\WholesaleProductController::class, 'store'])->middleware('throttle:10,1')->name('wholesale.products.store');
+        Route::get('/wholesale/products/{product}', [\App\Http\Controllers\WholesaleProductController::class, 'show'])->name('wholesale.products.show');
+        Route::get('/wholesale/products/{product}/edit', [\App\Http\Controllers\WholesaleProductController::class, 'edit'])->name('wholesale.products.edit');
+        Route::put('/wholesale/products/{product}', [\App\Http\Controllers\WholesaleProductController::class, 'update'])->middleware('throttle:10,1')->name('wholesale.products.update');
+        Route::delete('/wholesale/products/{product}', [\App\Http\Controllers\WholesaleProductController::class, 'destroy'])->name('wholesale.products.destroy');
 
         // Wholesale
-        Route::resource('wholesale', \App\Http\Controllers\WholesaleController::class)->parameters(['wholesale' => 'order']);
+        Route::get('/wholesale', [\App\Http\Controllers\WholesaleController::class, 'index'])->name('wholesale.index');
+        Route::get('/wholesale/create', [\App\Http\Controllers\WholesaleController::class, 'create'])->name('wholesale.create');
+        Route::post('/wholesale', [\App\Http\Controllers\WholesaleController::class, 'store'])->middleware('throttle:10,1')->name('wholesale.store');
+        Route::get('/wholesale/{order}', [\App\Http\Controllers\WholesaleController::class, 'show'])->name('wholesale.show');
+        Route::get('/wholesale/{order}/edit', [\App\Http\Controllers\WholesaleController::class, 'edit'])->name('wholesale.edit');
+        Route::put('/wholesale/{order}', [\App\Http\Controllers\WholesaleController::class, 'update'])->middleware('throttle:10,1')->name('wholesale.update');
+        Route::delete('/wholesale/{order}', [\App\Http\Controllers\WholesaleController::class, 'destroy'])->name('wholesale.destroy');
         Route::post('/wholesale/{order}/confirm', [\App\Http\Controllers\WholesaleController::class, 'confirm'])->middleware('throttle:10,1')->name('wholesale.confirm');
         Route::post('/wholesale/{order}/process', [\App\Http\Controllers\WholesaleController::class, 'process'])->middleware('throttle:10,1')->name('wholesale.process');
         Route::post('/wholesale/{order}/pack', [\App\Http\Controllers\WholesaleController::class, 'markPacked'])->middleware('throttle:10,1')->name('wholesale.pack');
@@ -147,7 +151,13 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::get('/transactions/{transaction}/receipt', [TransactionController::class, 'printInvoice'])->name('transactions.receipt');
 
         // Extra Ops
-        Route::resource('expenses', \App\Http\Controllers\ExpenseController::class);
+        Route::get('/expenses', [\App\Http\Controllers\ExpenseController::class, 'index'])->name('expenses.index');
+        Route::get('/expenses/create', [\App\Http\Controllers\ExpenseController::class, 'create'])->name('expenses.create');
+        Route::post('/expenses', [\App\Http\Controllers\ExpenseController::class, 'store'])->middleware('throttle:10,1')->name('expenses.store');
+        Route::get('/expenses/{expense}', [\App\Http\Controllers\ExpenseController::class, 'show'])->name('expenses.show');
+        Route::get('/expenses/{expense}/edit', [\App\Http\Controllers\ExpenseController::class, 'edit'])->name('expenses.edit');
+        Route::put('/expenses/{expense}', [\App\Http\Controllers\ExpenseController::class, 'update'])->middleware('throttle:10,1')->name('expenses.update');
+        Route::delete('/expenses/{expense}', [\App\Http\Controllers\ExpenseController::class, 'destroy'])->name('expenses.destroy');
         Route::resource('stock_audits', \App\Http\Controllers\StockAuditController::class);
         Route::post('stock_audits/{stock_audit}/update-items', [\App\Http\Controllers\StockAuditController::class, 'updateItems'])->middleware('throttle:10,1')->name('stock_audits.update-items');
         Route::get('debts', [\App\Http\Controllers\DebtController::class, 'index'])->name('debts.index');
@@ -188,7 +198,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
 
         // Settings (Sensitive)
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-        Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings', [SettingController::class, 'update'])->middleware('throttle:10,1')->name('settings.update');
         Route::post('/settings/backup', [SettingController::class, 'backup'])->name('settings.backup')->middleware('throttle:5,1');
         Route::post('/settings/restore', [SettingController::class, 'restore'])->name('settings.restore')->middleware('throttle:5,1');
 
@@ -198,8 +208,8 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
 
         // Commissions
         Route::get('/commissions', [CommissionController::class, 'index'])->name('commissions.index');
-        Route::post('/commissions/calculate', [CommissionController::class, 'calculate'])->name('commissions.calculate');
-        Route::post('/commissions/mark-paid', [CommissionController::class, 'markPaid'])->name('commissions.mark-paid');
+        Route::post('/commissions/calculate', [CommissionController::class, 'calculate'])->middleware('throttle:5,1')->name('commissions.calculate');
+        Route::post('/commissions/mark-paid', [CommissionController::class, 'markPaid'])->middleware('throttle:10,1')->name('commissions.mark-paid');
         
         // Employee Management
         Route::resource('employees', EmployeeController::class);
@@ -209,11 +219,14 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
 
     // 📦 STOCK REQUESTS: Owner, Admin, Manager, Supervisor (view), Warehouse
     Route::middleware(['verified', 'role:owner,admin,admin_pusat,manager,supervisor,warehouse'])->group(function () {
-        Route::resource('stock-requests', StockRequestController::class)->only(['index', 'create', 'store', 'show']);
+        Route::get('/stock-requests', [StockRequestController::class, 'index'])->name('stock-requests.index');
+        Route::get('/stock-requests/create', [StockRequestController::class, 'create'])->name('stock-requests.create');
+        Route::get('/stock-requests/{stockRequest}', [StockRequestController::class, 'show'])->name('stock-requests.show');
+        Route::post('stock-requests', [StockRequestController::class, 'store'])->middleware('throttle:10,1')->name('stock-requests.store');
         Route::patch('stock-requests/{stockRequest}/approve', [StockRequestController::class, 'approve'])->name('stock-requests.approve');
         Route::patch('stock-requests/{stockRequest}/prepare', [StockRequestController::class, 'prepare'])->name('stock-requests.prepare');
-        Route::patch('stock-requests/{stockRequest}/ship', [StockRequestController::class, 'ship'])->name('stock-requests.ship');
-        Route::patch('stock-requests/{stockRequest}/receive', [StockRequestController::class, 'receive'])->name('stock-requests.receive');
+        Route::patch('stock-requests/{stockRequest}/ship', [StockRequestController::class, 'ship'])->middleware('throttle:5,1')->name('stock-requests.ship');
+        Route::patch('stock-requests/{stockRequest}/receive', [StockRequestController::class, 'receive'])->middleware('throttle:5,1')->name('stock-requests.receive');
         Route::patch('stock-requests/{stockRequest}/cancel', [StockRequestController::class, 'cancel'])->name('stock-requests.cancel');
     });
 

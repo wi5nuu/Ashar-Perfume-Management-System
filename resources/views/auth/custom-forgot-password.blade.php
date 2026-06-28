@@ -26,6 +26,7 @@
             @endif
 
             @if ($statusType === 'approved' || $statusType === 'auto_approved')
+                @php $oncePw = session('_once_pw'); @endphp
                 <div class="text-center mb-3">
                     <i class="fas fa-check-circle fa-2x mb-1 d-block" style="color:#28a745"></i>
                     <h6 class="font-weight-bold" style="color:#28a745">Password Berhasil Direset</h6>
@@ -36,15 +37,21 @@
                             Owner telah mereset password Anda.
                         @endif
                     </p>
+                    @if ($oncePw)
                     <div style="background:#fff3cd;padding:10px;border-radius:4px;border:1px solid #ffc107">
                         <p class="small text-muted mb-1">Password baru Anda (hanya ditampilkan SEKALI):</p>
                         <h5 class="font-weight-bold mb-0" style="letter-spacing:2px;font-family:monospace;color:#222">
-                            {{ $password }}
+                            {{ $oncePw }}
                         </h5>
                         <p class="small text-danger mt-2 mb-0 font-weight-bold">
                             <i class="fas fa-exclamation-triangle mr-1"></i> Salin dan simpan password ini sekarang! Halaman ini tidak akan menampilkannya lagi setelah dimuat ulang.
                         </p>
                     </div>
+                    @else
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle mr-1"></i> Password telah direset. Silakan login dengan password baru yang telah dikirim.
+                    </div>
+                    @endif
                     <a href="{{ route('login') }}" class="btn btn-sm btn-success btn-block mt-2 font-weight-bold" style="border-radius:4px">
                         <i class="fas fa-sign-in-alt mr-1"></i> Login Sekarang
                     </a>
