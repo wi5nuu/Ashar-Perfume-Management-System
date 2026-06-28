@@ -131,7 +131,7 @@
                                         <div class="font-weight-bold text-dark" style="font-size: 0.85rem;">{{ $attendance->date ? $attendance->date->format('d M Y') : '-' }}</div>
                                         <div class="smaller text-muted d-flex align-items-center">
                                             @if($attendance->status == 'present')
-                                                <i class="fas fa-clock mr-1 text-success"></i> {{ \Carbon\Carbon::parse($attendance->time_in)->format('H:i') }}
+                                                <i class="fas fa-clock mr-1 text-success"></i> {{ $attendance->time_in ? \Carbon\Carbon::parse($attendance->time_in)->format('H:i') : '-' }}
                                                 @if($attendance->time_out)
                                                     <span class="mx-1">-</span> <i class="fas fa-sign-out-alt mr-1 text-danger"></i> {{ \Carbon\Carbon::parse($attendance->time_out)->format('H:i') }}
                                                 @endif

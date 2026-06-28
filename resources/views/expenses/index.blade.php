@@ -45,7 +45,7 @@
                                 <tr>
                                     <td class="d-none d-md-table-cell">{{ $loop->iteration }}</td>
                                     <td class="text-nowrap">
-                                        <div class="font-weight-bold">{{ \Carbon\Carbon::parse($expense->date)->format('d/m/Y') }}</div>
+                                        <div class="font-weight-bold">{{ $expense->date ? \Carbon\Carbon::parse($expense->date)->format('d/m/Y') : '-' }}</div>
                                         <div class="d-sm-none text-xs-mobile text-muted">
                                             {{ $expense->category->name }}
                                         </div>

@@ -75,7 +75,7 @@
                             @foreach($payments->where('transaction_id', $trx->id) as $pay)
                                 @php $balance -= (float) $pay->amount; @endphp
                                 <tr>
-                                    <td>{{ \Carbon\Carbon::parse($pay->payment_date)->format('d/m/Y') }}</td>
+                                    <td>{{ $pay->payment_date ? \Carbon\Carbon::parse($pay->payment_date)->format('d/m/Y') : '-' }}</td>
                                     <td>
                                         <span class="badge badge-success">Pembayaran</span>
                                         {{ $pay->payment_method ?? '' }}

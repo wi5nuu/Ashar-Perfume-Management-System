@@ -253,12 +253,18 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                             <div class="product-info">
                                 <a href="javascript:void(0)" class="product-title">
                                     {{ $alert->product->name }}
+                                    @if($alert->expiration_date)
                                     <span class="badge badge-danger float-right">
                                         {{ \Carbon\Carbon::parse($alert->expiration_date)->diffForHumans() }}
                                     </span>
+                                    @endif
                                 </a>
                                 <span class="product-description">
+                                    @if($alert->expiration_date)
                                     Exp: {{ \Carbon\Carbon::parse($alert->expiration_date)->format('d/m/Y') }}
+                                    @else
+                                    Exp: -
+                                    @endif
                                 </span>
                             </div>
                         </li>
@@ -511,11 +517,11 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                             <div class="col-md-3">
                                 <div class="d-flex align-items-start">
                                     <div class="mr-2">
-                                        <i class="fas {{ $insight['icon'] }} fa-lg {{ $insight['color'] }}"></i>
+                                        <i class="fas {{ $insight['icon'] ?? '' }} fa-lg {{ $insight['color'] ?? '' }}"></i>
                                     </div>
                                     <div>
-                                        <strong style="font-size:0.85rem;">{{ $insight['title'] }}</strong>
-                                        <p class="small text-muted mb-0" style="font-size:0.75rem;">{{ $insight['text'] }}</p>
+                                        <strong style="font-size:0.85rem;">{{ $insight['title'] ?? '' }}</strong>
+                                        <p class="small text-muted mb-0" style="font-size:0.75rem;">{{ $insight['text'] ?? '' }}</p>
                                     </div>
                                 </div>
                             </div>

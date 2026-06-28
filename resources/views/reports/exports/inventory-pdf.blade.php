@@ -87,9 +87,9 @@
                     <td>{{ $item->minimum_stock }}</td>
                     <td class="text-danger font-weight-bold">SEGERA RESTOCK</td>
                 @else
-                    <td>{{ \Carbon\Carbon::parse($item->expiration_date)->format('d/m/Y') }}</td>
-                    <td class="{{ \Carbon\Carbon::parse($item->expiration_date)->diffInDays(now()) < 7 ? 'text-danger' : 'text-warning' }}">
-                        {{ \Carbon\Carbon::parse($item->expiration_date)->diffInDays(now()) }} Hari Lagi
+                    <td>{{ $item->expiration_date ? \Carbon\Carbon::parse($item->expiration_date)->format('d/m/Y') : '-' }}</td>
+                    <td class="{{ $item->expiration_date ? (\Carbon\Carbon::parse($item->expiration_date)->diffInDays(now()) < 7 ? 'text-danger' : 'text-warning') : 'text-muted' }}">
+                        {{ $item->expiration_date ? \Carbon\Carbon::parse($item->expiration_date)->diffInDays(now()).' Hari Lagi' : '-' }}
                     </td>
                 @endif
             </tr>

@@ -42,7 +42,7 @@
                 <div class="card-body">
                     <table class="table table-sm table-borderless">
                         <tr><th>Kasir</th><td>{{ $shift->user->name ?? '-' }}</td></tr>
-                        <tr><th>Mulai</th><td>{{ $shift->start_time->format('d/m/Y H:i') }}</td></tr>
+                        <tr><th>Mulai</th><td>{{ $shift->start_time ? $shift->start_time->format('d/m/Y H:i') : '-' }}</td></tr>
                         <tr><th>Selesai</th><td>{{ $shift->end_time ? $shift->end_time->format('d/m/Y H:i') : '-' }}</td></tr>
                         <tr><th>Modal Awal</th><td>Rp {{ number_format($shift->initial_cash, 0, ',', '.') }}</td></tr>
                         <tr><th>Penjualan Kas</th><td class="text-success">+ Rp {{ number_format($cashSales, 0, ',', '.') }}</td></tr>

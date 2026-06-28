@@ -83,7 +83,7 @@
                                     <td>{{ $shift->user->name }}</td>
                                     <td>
                                         <small>
-                                            Mulai: {{ $shift->start_time->format('d/m/Y H:i') }}<br>
+                                            Mulai: {{ $shift->start_time ? $shift->start_time->format('d/m/Y H:i') : '-' }}<br>
                                             Selesai: {{ $shift->end_time ? $shift->end_time->format('d/m/Y H:i') : '-' }}
                                         </small>
                                     </td>

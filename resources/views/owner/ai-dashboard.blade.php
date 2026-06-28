@@ -13,8 +13,8 @@
                     <div class="mt-1">
                         @foreach($insights as $ins)
                         <div class="d-flex align-items-start mb-1">
-                            <span class="badge badge-{{ $ins['type'] === 'positive' ? 'success' : ($ins['type'] === 'warning' ? 'warning' : 'danger') }} p-1 mr-2 mt-1" style="font-size:8px;"><i class="fas {{ $ins['icon'] }}"></i></span>
-                            <small style="font-size:0.7rem;">{{ $ins['text'] }}</small>
+                            <span class="badge badge-{{ ($ins['type'] ?? 'info') === 'positive' ? 'success' : (($ins['type'] ?? 'info') === 'warning' ? 'warning' : 'danger') }} p-1 mr-2 mt-1" style="font-size:8px;"><i class="fas {{ $ins['icon'] ?? 'fa-circle' }}"></i></span>
+                            <small style="font-size:0.7rem;">{{ $ins['text'] ?? '' }}</small>
                         </div>
                         @endforeach
                     </div>
