@@ -123,10 +123,10 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::get('/wholesale/products', [\App\Http\Controllers\WholesaleProductController::class, 'index'])->name('wholesale.products.index');
         Route::get('/wholesale/products/create', [\App\Http\Controllers\WholesaleProductController::class, 'create'])->name('wholesale.products.create');
         Route::post('/wholesale/products', [\App\Http\Controllers\WholesaleProductController::class, 'store'])->middleware('throttle:10,1')->name('wholesale.products.store');
-        Route::get('/wholesale/products/{product}', [\App\Http\Controllers\WholesaleProductController::class, 'show'])->name('wholesale.products.show');
-        Route::get('/wholesale/products/{product}/edit', [\App\Http\Controllers\WholesaleProductController::class, 'edit'])->name('wholesale.products.edit');
-        Route::put('/wholesale/products/{product}', [\App\Http\Controllers\WholesaleProductController::class, 'update'])->middleware('throttle:10,1')->name('wholesale.products.update');
-        Route::delete('/wholesale/products/{product}', [\App\Http\Controllers\WholesaleProductController::class, 'destroy'])->name('wholesale.products.destroy');
+        Route::get('/wholesale/products/{wholesaleProduct}', [\App\Http\Controllers\WholesaleProductController::class, 'show'])->name('wholesale.products.show');
+        Route::get('/wholesale/products/{wholesaleProduct}/edit', [\App\Http\Controllers\WholesaleProductController::class, 'edit'])->name('wholesale.products.edit');
+        Route::put('/wholesale/products/{wholesaleProduct}', [\App\Http\Controllers\WholesaleProductController::class, 'update'])->middleware('throttle:10,1')->name('wholesale.products.update');
+        Route::delete('/wholesale/products/{wholesaleProduct}', [\App\Http\Controllers\WholesaleProductController::class, 'destroy'])->name('wholesale.products.destroy');
 
         // Wholesale
         Route::get('/wholesale', [\App\Http\Controllers\WholesaleController::class, 'index'])->name('wholesale.index');
