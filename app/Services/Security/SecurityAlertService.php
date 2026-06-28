@@ -17,7 +17,7 @@ class SecurityAlertService
 
     public function suspiciousLogin(User $user, string $ip): void
     {
-        Log::warning("SECURITY ALERT: Suspicious login for {$user->email} from {$ip}");
+        Log::warning("SECURITY ALERT: Suspicious login for user#{$user->id} from {$ip}");
 
         try {
             $admins = User::whereIn('role', ['owner', 'admin'])->get();
@@ -39,7 +39,7 @@ class SecurityAlertService
 
     public function accountLocked(User $user): void
     {
-        Log::warning("SECURITY ALERT: Account locked for {$user->email}");
+        Log::warning("SECURITY ALERT: Account locked for user#{$user->id}");
 
         try {
             $admins = User::whereIn('role', ['owner', 'admin'])->get();

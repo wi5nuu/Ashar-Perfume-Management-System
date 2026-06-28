@@ -32,7 +32,7 @@ class BulkPriceController extends Controller
         Gate::authorize('manage_products');
 
         $validated = $request->validate([
-            'product_ids'   => 'required|array|min:1',
+            'product_ids'   => 'required|array|min:1|max:200',
             'product_ids.*' => 'exists:products,id',
             'price_type'    => 'required|in:selling_price,wholesale_price,purchase_price',
             'change_mode'   => 'required|in:percentage,fixed',

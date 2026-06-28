@@ -263,7 +263,7 @@ Route::prefix('api')->middleware(['auth', 'throttle:60,1'])->group(function () {
 require __DIR__.'/auth.php';
 
 // ── Customer Portal (public, token-authenticated) ──
-Route::prefix('portal')->group(function () {
+Route::prefix('portal')->middleware('throttle:30,1')->group(function () {
     Route::get('/{token}', [CustomerPortalController::class, 'dashboard'])->name('portal.dashboard');
     Route::get('/{token}/orders', [CustomerPortalController::class, 'orders'])->name('portal.orders');
     Route::get('/{token}/statement', [CustomerPortalController::class, 'statement'])->name('portal.statement');
@@ -279,7 +279,7 @@ Route::prefix('wholesale-customer')->name('wholesale.customer.')->group(function
     Route::get('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'login'])->middleware('throttle:5,1');
     Route::get('/auth/google', [\App\Http\Controllers\WholesaleGoogleAuthController::class, 'redirect'])->name('auth.google');
-    Route::get('/auth/google/callback', [\App\Http\Controllers\WholesaleGoogleAuthController::class, 'callback']);
+    Route::get('/auth/google/callback', [\App\Http\Controllers\WholesaleGoogleAuthController::class, 'callback'])->middleware('throttle:10,1');
 
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\WholesaleCustomerController::class, 'dashboard'])->name('dashboard');

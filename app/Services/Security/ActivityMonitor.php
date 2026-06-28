@@ -56,7 +56,6 @@ class ActivityMonitor
         if ($timeDiff < self::SUSPICIOUS_WINDOW_MINUTES) {
             Log::warning("Suspicious login detected", [
                 'user_id' => $user->id,
-                'email' => $user->email,
                 'previous_ip' => $lastIp,
                 'current_ip' => $ip,
                 'time_diff_minutes' => $timeDiff,
