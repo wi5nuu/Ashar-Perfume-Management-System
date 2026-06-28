@@ -168,6 +168,6 @@ class SecurityController extends Controller
             ->delete();
 
         Log::info("Password changed by user {$user->name}");
-        return redirect()->route('home')->with('success', 'Kata sandi berhasil diubah.');
+        return redirect()->route('dashboard')->with('success', 'Kata sandi berhasil diubah.');
     }
 }
