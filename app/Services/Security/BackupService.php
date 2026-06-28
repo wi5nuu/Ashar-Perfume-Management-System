@@ -78,7 +78,7 @@ class BackupService
             $db['database'],
         ]);
 
-        $process->setEnv(['MYSQL_PWD' => $db['password'], 'MYSQL_TCP_PORT' => $db['port'] ?? '3306'] + $_ENV);
+        $process->setEnv(['MYSQL_PWD' => $db['password'], 'MYSQL_TCP_PORT' => $db['port'] ?? '3306']);
         $process->setTimeout(300);
         $process->run();
 
@@ -155,7 +155,7 @@ class BackupService
             $db['database'],
         ]);
 
-        $process->setEnv(['MYSQL_PWD' => $db['password'], 'MYSQL_TCP_PORT' => $db['port'] ?? '3306'] + $_ENV);
+        $process->setEnv(['MYSQL_PWD' => $db['password'], 'MYSQL_TCP_PORT' => $db['port'] ?? '3306']);
         $process->setTimeout(300);
         $process->setInput(file_get_contents($sqlPath));
         $process->run();

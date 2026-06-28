@@ -36,11 +36,14 @@
                             Owner telah mereset password Anda.
                         @endif
                     </p>
-                    <div style="background:#f0f0f0;padding:10px;border-radius:4px">
-                        <p class="small text-muted mb-1">Password baru Anda:</p>
+                    <div style="background:#fff3cd;padding:10px;border-radius:4px;border:1px solid #ffc107">
+                        <p class="small text-muted mb-1">Password baru Anda (hanya ditampilkan SEKALI):</p>
                         <h5 class="font-weight-bold mb-0" style="letter-spacing:2px;font-family:monospace;color:#222">
                             {{ $password }}
                         </h5>
+                        <p class="small text-danger mt-2 mb-0 font-weight-bold">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> Salin dan simpan password ini sekarang! Halaman ini tidak akan menampilkannya lagi setelah dimuat ulang.
+                        </p>
                     </div>
                     <a href="{{ route('login') }}" class="btn btn-sm btn-success btn-block mt-2 font-weight-bold" style="border-radius:4px">
                         <i class="fas fa-sign-in-alt mr-1"></i> Login Sekarang

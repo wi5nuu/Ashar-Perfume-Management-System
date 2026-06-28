@@ -35,14 +35,7 @@
                             <td class="font-weight-bold">{{ $c->name }}</td>
                             <td><code class="email-display-{{ $c->id }}">{{ $c->email }}</code></td>
                             <td>
-                                <span class="pw-wrapper" style="position:relative;cursor:pointer;font-family:monospace;user-select:none"
-                                      data-password="password123"
-                                      ondblclick="copyPassword(this)">
-                                    <span class="pw-mask">*****</span>
-                                    <span class="pw-text" style="display:none">password123</span>
-                                    <i class="pw-eye fas fa-eye ml-1" style="font-size:13px;color:#6c757d;cursor:pointer;opacity:0.4"
-                                       onclick="event.stopPropagation();togglePassword(this)"></i>
-                                </span>
+                                <span class="text-muted" style="font-family:monospace">••••••••</span>
                             </td>
                             <td><small>{{ $c->created_at->format('d/m/Y') }}</small></td>
                             <td>{{ $c->order_count }}</td>
@@ -102,7 +95,7 @@
                     </div>
                     <div class="form-group">
                         <label>Password Baru <small class="text-muted">(kosongkan jika tidak diubah)</small></label>
-                        <input type="password" id="editPassword" class="form-control" placeholder="password123">
+                        <input type="password" id="editPassword" class="form-control" placeholder="Kosongkan jika tidak diubah">
                         <small class="text-muted">Min. 6 karakter</small>
                     </div>
                 </div>
@@ -120,32 +113,6 @@
 
 @push('scripts')
 <script>
-function togglePassword(icon) {
-    const wrapper = icon.closest('.pw-wrapper');
-    const mask = wrapper.querySelector('.pw-mask');
-    const text = wrapper.querySelector('.pw-text');
-    const isHidden = mask.style.display !== 'none';
-    if (isHidden) {
-        mask.style.display = 'none';
-        text.style.display = 'inline';
-        icon.className = 'pw-eye fas fa-eye-slash ml-1';
-    } else {
-        mask.style.display = 'inline';
-        text.style.display = 'none';
-        icon.className = 'pw-eye fas fa-eye ml-1';
-    }
-}
-
-function copyPassword(el) {
-    const wrapper = el.closest('.pw-wrapper');
-    const pw = wrapper.dataset.password;
-    navigator.clipboard.writeText(pw).then(() => {
-        Swal.fire({icon:'success', title:'Tersalin!', text:'Password disalin ke clipboard', timer:1500, showConfirmButton:false});
-    }).catch(() => {
-        prompt('Salin password berikut:', pw);
-    });
-}
-
 function editAccount(id, name, email) {
     $('#editId').val(id);
     $('#editName').val(name);
@@ -193,7 +160,7 @@ $('#editForm').submit(function(e) {
 function resetPassword(id, email) {
     Swal.fire({
         title: 'Reset Password?',
-        html: 'Reset password <strong>' + email + '</strong> ke <code>password123</code>?',
+        html: 'Reset password <strong>' + email + '</strong>?',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Ya, Reset!',
@@ -204,8 +171,9 @@ function resetPassword(id, email) {
                 url: '/owner/wholesale-customers/' + id + '/reset-password',
                 method: 'POST',
                 data: { _token: '{{ csrf_token() }}' },
-                success: function() {
-                    Swal.fire({icon:'success', title:'Berhasil!', text:'Password ' + email + ' di-reset ke password123', timer:2000, showConfirmButton:false});
+                success: function(res) {
+                    const newPw = res.password || '(lihat log)';
+                    Swal.fire({icon:'success', title:'Berhasil!', html:'Password baru: <code>' + newPw + '</code><br><small class="text-muted">Simpan password ini sekarang. Hanya ditampilkan sekali.</small>', timer:60000, showConfirmButton:true, confirmButtonText:'Saya sudah menyimpannya'});
                 },
                 error: function() {
                     Swal.fire({icon:'error', title:'Gagal!', text:'Gagal mereset password.'});
@@ -215,12 +183,4 @@ function resetPassword(id, email) {
     });
 }
 </script>
-<style>
-.pw-wrapper:hover .pw-eye {
-    opacity: 1 !important;
-}
-.pw-eye {
-    transition: opacity 0.15s;
-}
-</style>
 @endpush

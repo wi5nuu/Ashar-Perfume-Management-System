@@ -93,7 +93,7 @@
                                     </td>
                                     <td>
                                         @if($req->status === 'approved' && $req->new_password)
-                                        <code class="text-success font-weight-bold">{{ $req->new_password }}</code>
+                                        <span class="text-muted">••••••••</span>
                                         @else
                                         -
                                         @endif
