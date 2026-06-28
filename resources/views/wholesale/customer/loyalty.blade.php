@@ -151,7 +151,7 @@
                     <div class="cost"><i class="fas fa-coins mr-1"></i>{{ number_format($r->credits_required, 0, ',', '.') }} kredit</div>
                 </div>
                 <button class="btn-redeem" {{ $canRedeem ? '' : 'disabled' }}
-                    onclick="redeem({{ $r->id }}, '{{ $r->name }}', {{ $r->credits_required }})">
+                    onclick="redeem({{ $r->id }}, @js($r->name), {{ $r->credits_required }})">
                     {{ $canRedeem ? 'Tukar' : 'Kurang' }}
                 </button>
             </div>

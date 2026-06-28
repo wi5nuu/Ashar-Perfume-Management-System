@@ -337,6 +337,7 @@ class ProductController extends Controller
         $callback = function() use($products, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
+            $safe = fn($v) => is_string($v) && strlen($v) > 0 && in_array($v[0], ['=', '+', '-', '@']) ? "'" . $v : $v;
 
             $branchId = auth()->user()->branch_id;
 
@@ -351,9 +352,9 @@ class ProductController extends Controller
                 fputcsv($file, [
                     $product->internal_id,
                     "'" . $product->barcode,
-                    $product->name,
-                    $product->category->name ?? '-',
-                    $product->size . ' ' . $product->unit,
+                    $safe($product->name),
+                    $safe($product->category->name ?? '-'),
+                    $safe($product->size . ' ' . $product->unit),
                     $stock,
                     $product->purchase_price,
                     $product->selling_price,

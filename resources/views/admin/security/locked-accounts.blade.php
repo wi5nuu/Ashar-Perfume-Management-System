@@ -43,13 +43,13 @@
                             <td>
                                 <form method="POST" action="{{ route('admin.security.unlock-account', $user) }}" class="d-inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Buka kunci akun {{ $user->name }}?')">
+                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Buka kunci akun ' + @js($user->name) + '?')">
                                         <i class="fas fa-unlock mr-1"></i> Buka
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ route('admin.security.force-logout', $user) }}" class="d-inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Akhiri sesi {{ $user->name }}?')">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Akhiri sesi ' + @js($user->name) + '?')">
                                         <i class="fas fa-sign-out-alt mr-1"></i> Logout Paksa
                                     </button>
                                 </form>

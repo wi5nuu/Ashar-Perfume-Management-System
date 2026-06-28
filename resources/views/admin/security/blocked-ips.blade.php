@@ -35,7 +35,7 @@
                             <td>
                                 <form method="POST" action="{{ route('admin.security.unblock-ip', $ip->ip_address) }}" class="d-inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Buka blokir IP {{ $ip->ip_address }}?')">
+                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Buka blokir IP ' + @js($ip->ip_address) + '?')">
                                         <i class="fas fa-unlock mr-1"></i> Buka
                                     </button>
                                 </form>

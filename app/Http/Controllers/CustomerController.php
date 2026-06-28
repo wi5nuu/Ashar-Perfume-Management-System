@@ -152,10 +152,11 @@ class CustomerController extends Controller
         $filename = 'pelanggan-' . date('Y-m-d') . '.csv';
         $handle = fopen('php://temp', 'w');
         fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        $safe = fn($v) => is_string($v) && strlen($v) > 0 && in_array($v[0], ['=', '+', '-', '@']) ? "'" . $v : $v;
         fputcsv($handle, ['No', 'Nama', 'No Telepon', 'Email', 'Tipe', 'Poin', 'Alamat']);
         $no = 1;
         foreach ($customers as $c) {
-            fputcsv($handle, [$no++, $c->name, $c->phone, $c->email, $c->type, $c->points ?? 0, $c->address]);
+            fputcsv($handle, [$no++, $safe($c->name), $safe($c->phone), $safe($c->email), $safe($c->type), $c->points ?? 0, $safe($c->address)]);
         }
         rewind($handle);
         $content = stream_get_contents($handle);

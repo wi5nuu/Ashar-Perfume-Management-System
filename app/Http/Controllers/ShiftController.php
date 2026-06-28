@@ -27,7 +27,11 @@ class ShiftController extends Controller
         }
         /** @var \App\Models\User $authUser */
         $authUser = Auth::user();
-        $shifts = Shift::with('user')->latest()->paginate(20);
+        $shifts = Shift::with('user');
+        if (!$authUser->isOwner() && !$authUser->isAdminPusat()) {
+            $shifts->where('branch_id', $authUser->branch_id);
+        }
+        $shifts = $shifts->latest()->paginate(20);
         $activeShift = Shift::with('user')->where('user_id', $authUser->id)->where('status', 'open')->first();
         
         return view('shifts.index', compact('shifts', 'activeShift'));
@@ -51,8 +55,12 @@ class ShiftController extends Controller
     public function show(Shift $shift)
     {
         Gate::authorize('manage_transactions');
-        if (Auth::user()->isOwner()) {
+        $user = Auth::user();
+        if ($user->isOwner()) {
             abort(403);
+        }
+        if (!$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+            abort(403, 'Anda hanya dapat melihat shift di cabang Anda.');
         }
         $shift->load(['user', 'reviewer']);
         return view('shifts.show', compact('shift'));
@@ -127,22 +135,6 @@ class ShiftController extends Controller
             return back()->with('error', 'Shift ini sudah ditutup.');
         }
 
-        // Calculate expected cash
-        // Expected = Initial + Cash Sales - Cash Expenses
-        
-        $cashSales = Transaction::where('user_id', $shift->user_id)
-            ->where('payment_method', 'cash')
-            ->whereBetween('created_at', [$shift->start_time, now()])
-            ->selectRaw('SUM(paid_amount - change_amount) as net_cash')
-            ->value('net_cash') ?? 0;
-
-        $cashExpenses = Expense::where('user_id', $shift->user_id)
-            ->whereBetween('date', [$shift->start_time?->format('Y-m-d H:i:s') ?? now()->subDay()->format('Y-m-d H:i:s'), now()->format('Y-m-d H:i:s')])
-            ->sum('amount') ?? 0;
-
-        $expectedCash = $shift->initial_cash + $cashSales - $cashExpenses;
-        $discrepancy = $request->actual_cash - $expectedCash;
-
         // Handle File Upload
         $photoPath = null;
         /** @var User $closer */
@@ -153,16 +145,44 @@ class ShiftController extends Controller
             $photoPath = $file->storeAs('shifts/closing_photos', $filename, 'public');
         }
 
-        $shift->update([
-            'end_time' => now(),
-            'expected_cash' => $expectedCash,
-            'actual_cash' => $request->actual_cash,
-            'discrepancy' => $discrepancy,
-            'status' => 'closed',
-            'notes' => $request->notes,
-            'closing_photo_path' => $photoPath,
-            'photo_status' => 'pending',
-        ]);
+        try {
+            DB::beginTransaction();
+            $shiftLock = Shift::lockForUpdate()->findOrFail($shift->id);
+            if ($shiftLock->status === 'closed') {
+                DB::rollBack();
+                return back()->with('error', 'Shift ini sudah ditutup.');
+            }
+
+            // Calculate expected cash inside transaction with lock
+            $cashSales = Transaction::where('user_id', $shift->user_id)
+                ->where('payment_method', 'cash')
+                ->whereBetween('created_at', [$shift->start_time, now()])
+                ->selectRaw('SUM(paid_amount - change_amount) as net_cash')
+                ->value('net_cash') ?? 0;
+
+            $cashExpenses = Expense::where('user_id', $shift->user_id)
+                ->whereBetween('date', [$shift->start_time?->format('Y-m-d H:i:s') ?? now()->subDay()->format('Y-m-d H:i:s'), now()->format('Y-m-d H:i:s')])
+                ->sum('amount') ?? 0;
+
+            $expectedCash = $shift->initial_cash + $cashSales - $cashExpenses;
+            $discrepancy = $request->actual_cash - $expectedCash;
+
+            $shift->update([
+                'end_time' => now(),
+                'expected_cash' => $expectedCash,
+                'actual_cash' => $request->actual_cash,
+                'discrepancy' => $discrepancy,
+                'status' => 'closed',
+                'notes' => $request->notes,
+                'closing_photo_path' => $photoPath,
+                'photo_status' => 'pending',
+            ]);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to close shift', ['shift_id' => $shift->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal menutup shift. Silakan coba lagi.');
+        }
 
         return redirect()->route('shifts.index')->with('success', 'Shift berhasil ditutup beserta foto buktinya. Laporan selisih: Rp ' . number_format($discrepancy, 0, ',', '.'));
     }
@@ -191,10 +211,14 @@ class ShiftController extends Controller
      */
     public function destroy(Shift $shift)
     {
-        if (Auth::user()->isOwner()) {
+        $user = Auth::user();
+        if ($user->isOwner()) {
             abort(403);
         }
         Gate::authorize('manage_employees');
+        if (!$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+            abort(403, 'Anda hanya dapat menghapus shift di cabang Anda.');
+        }
 
         $shift->delete();
 
@@ -206,12 +230,15 @@ class ShiftController extends Controller
      */
     public function reviewPhoto(Request $request, Shift $shift)
     {
-        if (Auth::user()->isOwner()) {
+        /** @var User $reviewer */
+        $reviewer = Auth::user();
+        if ($reviewer->isOwner()) {
             abort(403);
         }
         Gate::authorize('manage_employees');
-        /** @var User $reviewer */
-        $reviewer = Auth::user();
+        if (!$reviewer->isAdminPusat() && $shift->branch_id !== $reviewer->branch_id) {
+            abort(403, 'Anda hanya dapat mereview shift di cabang Anda.');
+        }
 
         $request->validate([
             'action' => 'required|in:approve,reject'

@@ -18,6 +18,10 @@ class CashReconciliationController extends Controller
     public function show(Shift $shift)
     {
         Gate::authorize('manage_transactions');
+        $user = auth()->user();
+        if (!$user->isOwner() && !$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+            abort(403, 'Anda hanya dapat merekonsiliasi shift di cabang Anda.');
+        }
 
         if ($shift->status !== 'closed') {
             return redirect()->route('shifts.show', $shift)
@@ -53,6 +57,10 @@ class CashReconciliationController extends Controller
     public function store(Request $request, Shift $shift)
     {
         Gate::authorize('manage_transactions');
+        $user = auth()->user();
+        if (!$user->isOwner() && !$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+            abort(403, 'Anda hanya dapat merekonsiliasi shift di cabang Anda.');
+        }
 
         if ($shift->status !== 'closed') {
             return back()->with('error', 'Shift harus sudah ditutup.');
@@ -109,6 +117,10 @@ class CashReconciliationController extends Controller
     public function review(Request $request, Shift $shift)
     {
         Gate::authorize('manage_employees');
+        $user = auth()->user();
+        if (!$user->isOwner() && !$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+            abort(403, 'Anda hanya dapat mereview rekonsiliasi shift di cabang Anda.');
+        }
 
         if ($shift->reviewed_at) {
             return back()->with('error', 'Rekonsiliasi sudah direview.');

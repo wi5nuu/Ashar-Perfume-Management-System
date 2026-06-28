@@ -264,7 +264,7 @@ Route::get('/view-invoice/{invoice_number}', [TransactionController::class, 'pub
 // ── Wholesale Customer Portal (login disediakan owner, tanpa registrasi mandiri) ──
 Route::prefix('wholesale-customer')->name('wholesale.customer.')->group(function () {
     Route::get('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'login']);
+    Route::post('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'login'])->middleware('throttle:5,1');
     Route::get('/auth/google', [\App\Http\Controllers\WholesaleGoogleAuthController::class, 'redirect'])->name('auth.google');
     Route::get('/auth/google/callback', [\App\Http\Controllers\WholesaleGoogleAuthController::class, 'callback']);
 

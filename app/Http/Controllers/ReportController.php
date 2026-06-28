@@ -382,16 +382,15 @@ class ReportController extends Controller
 
         $callback = function () use ($transactions) {
             $handle = fopen('php://output', 'w');
-            // UTF-8 BOM agar Excel tidak garbled
             fputs($handle, "\xEF\xBB\xBF");
-            // Header row
+            $safe = fn($v) => is_string($v) && strlen($v) > 0 && in_array($v[0], ['=', '+', '-', '@']) ? "'" . $v : $v;
             fputcsv($handle, ['No Invoice', 'Tanggal', 'Kasir', 'Pelanggan', 'Metode Bayar', 'Subtotal', 'Diskon', 'PPN', 'Total', 'Bayar', 'Kembalian', 'Tipe']);
             foreach ($transactions as $t) {
                 fputcsv($handle, [
                     "'" . $t->invoice_number,
                     $t->created_at->format('d/m/Y H:i'),
-                    $t->user->name ?? '-',
-                    $t->customer?->name ?? 'Umum',
+                    $safe($t->user->name ?? '-'),
+                    $safe($t->customer?->name ?? 'Umum'),
                     strtoupper($t->payment_method),
                     $t->subtotal,
                     $t->discount,
@@ -439,13 +438,14 @@ class ReportController extends Controller
         $callback = function () use ($items) {
             $handle = fopen('php://output', 'w');
             fputs($handle, "\xEF\xBB\xBF");
+            $safe = fn($v) => is_string($v) && strlen($v) > 0 && in_array($v[0], ['=', '+', '-', '@']) ? "'" . $v : $v;
             fputcsv($handle, ['Nama Produk', 'Ukuran', 'Satuan', 'Kategori', 'Stok Saat Ini', 'Stok Minimum', 'Harga Beli/Unit', 'Status', 'Tgl Kadaluarsa']);
             foreach ($items as $item) {
                 fputcsv($handle, [
-                    $item->product_name,
-                    $item->size,
-                    $item->unit,
-                    $item->category ?? '-',
+                    $safe($item->product_name),
+                    $safe($item->size),
+                    $safe($item->unit),
+                    $safe($item->category ?? '-'),
                     $item->current_stock,
                     $item->minimum_stock,
                     $item->cost_per_unit,

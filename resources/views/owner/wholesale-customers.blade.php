@@ -63,10 +63,10 @@
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="editAccount({{ $c->id }}, '{{ $c->name }}', '{{ $c->email }}')" title="Edit akun">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editAccount({{ $c->id }}, @js($c->name), @js($c->email))" title="Edit akun">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="resetPassword({{ $c->id }}, '{{ $c->email }}')" title="Reset password">
+                                <button class="btn btn-sm btn-outline-danger" onclick="resetPassword({{ $c->id }}, @js($c->email))" title="Reset password">
                                     <i class="fas fa-key"></i>
                                 </button>
                             </td>

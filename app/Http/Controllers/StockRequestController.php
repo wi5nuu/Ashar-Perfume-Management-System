@@ -154,19 +154,29 @@ class StockRequestController extends Controller
 
     public function ship(StockRequest $stockRequest)
     {
-        DB::transaction(function () use ($stockRequest) {
-            $stockRequest->update(['status' => 'shipped']);
+        try {
+            DB::transaction(function () use ($stockRequest) {
+                $sr = StockRequest::lockForUpdate()->findOrFail($stockRequest->id);
+                $sr->update(['status' => 'shipped']);
 
-            foreach ($stockRequest->items as $item) {
-                $inventory = \App\Models\Inventory::where('product_id', $item->product_id)
-                    ->whereNull('branch_id')
-                    ->lockForUpdate()
-                    ->first();
-                if ($inventory && $item->quantity_prepared > 0) {
-                    $inventory->decrement('current_stock', $item->quantity_prepared);
+                foreach ($sr->items()->lockForUpdate()->get() as $item) {
+                    $inventory = \App\Models\Inventory::where('product_id', $item->product_id)
+                        ->whereNull('branch_id')
+                        ->lockForUpdate()
+                        ->first();
+                    if ($inventory && $item->quantity_prepared > 0) {
+                        if ($inventory->current_stock < $item->quantity_prepared) {
+                            throw new \RuntimeException(
+                                "Stok tidak mencukupi untuk produk ID {$item->product_id}: tersedia {$inventory->current_stock}, dibutuhkan {$item->quantity_prepared}."
+                            );
+                        }
+                        $inventory->decrement('current_stock', $item->quantity_prepared);
+                    }
                 }
-            }
-        });
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('stock-requests.show', $stockRequest)
             ->with('success', "{$stockRequest->request_number} telah dikirim.");
