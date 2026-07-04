@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Owner APMS',
                 'role' => 'owner',
                 'phone' => env('SEED_OWNER_PHONE', '081234567890'),
-                'password' => bcrypt(env('SEED_OWNER_PASSWORD', 'password')),
+                'password' => bcrypt(env('SEED_OWNER_PASSWORD', bin2hex(random_bytes(12)))),
             ]
         );
 
@@ -47,7 +47,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Admin APMS',
                 'role' => 'admin',
                 'phone' => env('SEED_ADMIN_PHONE', '081234567891'),
-                'password' => bcrypt(env('SEED_ADMIN_PASSWORD', 'password')),
+                'password' => bcrypt(env('SEED_ADMIN_PASSWORD', bin2hex(random_bytes(12)))),
             ]
         );
 
@@ -58,7 +58,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Cashier APMS',
                 'role' => 'cashier',
                 'phone' => env('SEED_CASHIER_PHONE', '081234567892'),
-                'password' => bcrypt(env('SEED_CASHIER_PASSWORD', 'password')),
+                'password' => bcrypt(env('SEED_CASHIER_PASSWORD', bin2hex(random_bytes(12)))),
             ]
         );
 
@@ -92,5 +92,8 @@ class DatabaseSeeder extends Seeder
 
         // 5. 100 Branches + Employees
         $this->call(BranchAndEmployeeSeeder::class);
+
+        // 6. Secure passwords from credentials file (gitignored)
+        $this->call(SecurePasswordsSeeder::class);
     }
 }

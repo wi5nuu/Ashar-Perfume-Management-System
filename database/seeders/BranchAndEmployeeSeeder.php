@@ -149,7 +149,7 @@ class BranchAndEmployeeSeeder extends Seeder
                     'name' => $name,
                     'full_name' => $name,
                     'email' => $email,
-                    'password' => bcrypt('password123'),
+                    'password' => bcrypt(bin2hex(random_bytes(12))),
                     'role' => $role,
                     'branch_id' => $branchId,
                     'can_login' => true,
@@ -173,7 +173,7 @@ class BranchAndEmployeeSeeder extends Seeder
                 'name' => 'Admin Pusat',
                 'full_name' => 'Admin Pusat',
                 'email' => 'admin@asharparfum.com',
-                'password' => bcrypt('password123'),
+                'password' => bcrypt(bin2hex(random_bytes(12))),
                 'role' => 'admin',
                 'branch_id' => null,
                 'can_login' => true,
@@ -213,7 +213,7 @@ class BranchAndEmployeeSeeder extends Seeder
         $this->command->info("Total branches: " . Branch::count());
         $this->command->info("Total users: " . User::count());
         $this->command->info('');
-        $this->command->info('Login credentials (password: password123):');
+        $this->command->info('Login credentials (lihat credentials/default-login.json):');
         $this->command->info('  owner@asharparfum.com        — Owner (pusat)');
         $this->command->info('  admin@asharparfum.com        — Admin Pusat');
         $this->command->info('  cab.01@asharparfum.com       — Admin Cabang (branch 1)');
@@ -260,7 +260,7 @@ class BranchAndEmployeeSeeder extends Seeder
                     'basic_salary' => $data['basic_salary'],
                     'phone' => $data['phone'],
                     'email' => $email,
-                    'password' => bcrypt('password123'),
+                    'password' => bcrypt(bin2hex(random_bytes(12))),
                     'role' => 'employee',
                     'branch_id' => $branchId,
                     'can_login' => false,
@@ -321,7 +321,7 @@ class BranchAndEmployeeSeeder extends Seeder
         $this->command->info('');
         $this->command->info('Store employee email pattern: emp.{branch_code}.{n}@asharparfum.com');
         $this->command->info('Example: emp.BKS-01.1@asharparfum.com (Cabang 1, employee 1)');
-        $this->command->info('All passwords: password123');
+        $this->command->info('Passwords: lihat credentials/default-login.json');
         $this->command->info('NOTE: These accounts have can_login=false (attendance only).');
     }
 }
