@@ -98,18 +98,18 @@ class AppServiceProvider extends ServiceProvider
 
                 // Login activities today
                 $loginQuery = \Illuminate\Support\Facades\DB::table('login_activities')
-                    ->whereDate('created_at', $today);
+                    ->whereDate('login_activities.created_at', $today);
                 $d['loginToday'] = (clone $loginQuery)
                     ->join('users', 'login_activities.user_id', '=', 'users.id')
                     ->select('users.name', 'users.role', 'login_activities.created_at', 'login_activities.ip_address')
                     ->latest('login_activities.created_at')
                     ->take(10)
                     ->get();
-                $d['loginTodayCount'] = $loginQuery->distinct('user_id')->count('user_id');
+                $d['loginTodayCount'] = $loginQuery->distinct('login_activities.user_id')->count('login_activities.user_id');
 
                 // Audit logs today
                 $auditQuery = \Illuminate\Support\Facades\DB::table('audit_logs')
-                    ->whereDate('created_at', $today);
+                    ->whereDate('audit_logs.created_at', $today);
                 $d['auditToday'] = (clone $auditQuery)
                     ->leftJoin('users', 'audit_logs.user_id', '=', 'users.id')
                     ->select('audit_logs.*', 'users.name as user_name', 'users.role as user_role')

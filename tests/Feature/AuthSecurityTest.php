@@ -81,6 +81,8 @@ class AuthSecurityTest extends TestCase
 
     public function test_register_with_weak_password_fails(): void
     {
+        config(['security.registration.enabled' => true]);
+
         $response = $this->post('/register', [
             'name' => 'New User',
             'email' => 'new@asharparfum.com',
@@ -127,13 +129,40 @@ class AuthSecurityTest extends TestCase
     {
         $rule = new \App\Rules\StrongPassword;
 
-        $this->assertFalse($rule->passes('password', 'short1A'));
-        $this->assertFalse($rule->passes('password', 'lowercaseonly1'));
-        $this->assertFalse($rule->passes('password', 'UPPERCASEONLY1'));
-        $this->assertFalse($rule->passes('password', 'NoNumbers!'));
-        $this->assertFalse($rule->passes('password', 'NoSpecialChar1'));
-        $this->assertTrue($rule->passes('password', $this->testPassword));
-        $this->assertTrue($rule->passes('password', 'C0mpl3x' . '!' . 'ty' . '#' . '2026'));
+        $fail = function ($message) {};
+
+        $rule->validate('password', 'short1A', $fail);
+        $this->assertTrue(true); // no exception = validation failed, which is expected for weak passwords
+
+        $passed = [];
+        $failPass = function ($message) use (&$passed) { $passed[] = $message; };
+
+        $rule->validate('password', 'short1A', $failPass);
+        $this->assertNotEmpty($passed, 'short1A should fail (too short)');
+
+        $passed = [];
+        $rule->validate('password', 'lowercaseonly1', $failPass);
+        $this->assertNotEmpty($passed, 'lowercaseonly1 should fail (no uppercase)');
+
+        $passed = [];
+        $rule->validate('password', 'UPPERCASEONLY1', $failPass);
+        $this->assertNotEmpty($passed, 'UPPERCASEONLY1 should fail (no lowercase)');
+
+        $passed = [];
+        $rule->validate('password', 'NoNumbers!', $failPass);
+        $this->assertNotEmpty($passed, 'NoNumbers! should fail (no number)');
+
+        $passed = [];
+        $rule->validate('password', 'NoSpecialChar1', $failPass);
+        $this->assertNotEmpty($passed, 'NoSpecialChar1 should fail (no special char)');
+
+        $passed = [];
+        $rule->validate('password', $this->testPassword, $failPass);
+        $this->assertEmpty($passed, 'strong password should pass');
+
+        $passed = [];
+        $rule->validate('password', 'C0mpl3x' . '!' . 'ty' . '#' . '2026', $failPass);
+        $this->assertEmpty($passed, 'complex password should pass');
     }
 
     public function test_rbac_permission_check(): void

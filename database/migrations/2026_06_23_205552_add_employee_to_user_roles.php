@@ -9,11 +9,13 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') return;
         DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('owner','admin','cashier','manager','packing','supervisor','employee') DEFAULT 'cashier'");
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') return;
         DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('owner','admin','cashier','manager','packing','supervisor') DEFAULT 'cashier'");
     }
 };

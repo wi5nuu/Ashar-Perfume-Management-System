@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @auth
-    <meta name="user-role" content="{{ auth()->user()->role }}">
+    <meta name="user-role" content="{{ auth()->user()->role ?? '' }}">
     @endauth
     <title>APMS - @yield('title')</title>
     
@@ -858,7 +858,7 @@
                     </li>
                     @endcan
                     @can('inventory.manage')
-                    @if(auth()->user()->role !== 'warehouse')
+                    @auth @if(auth()->user()->role !== 'warehouse')
                     <li class="nav-item">
                         <a href="{{ route('purchase-orders.index') }}" class="nav-link {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-shopping-cart"></i>
@@ -878,6 +878,7 @@
                         </a>
                     </li>
                     @endif
+                    @endauth
                     @endcan
                     @can('inventory.view')
                     <li class="nav-item">
@@ -1089,6 +1090,7 @@
                     </li>
                     @endcan
 
+                    @auth
                     @if(auth()->user()->isOwner())
                     <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd; margin-top: 10px;">Manajemen Cabang</li>
                     <li class="nav-item">
@@ -1098,6 +1100,7 @@
                         </a>
                     </li>
                     @endif
+                    @endauth
                 </ul>
             </nav>
         </div>

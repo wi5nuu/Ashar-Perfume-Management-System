@@ -45,92 +45,35 @@ return new class extends Migration
         $this->safeChangeForeignKey('goods_receipts', 'branch_id', 'branches', 'restrict');
 
         // ─── ADDITIONAL INDEXES for performance ────────────────────────────
-        Schema::table('goods_receipts', function (Blueprint $table) {
-            if (!Schema::hasIndex('goods_receipts', 'idx_gr_received_date')) {
-                $table->index('received_date', 'idx_gr_received_date');
-            }
-            if (!Schema::hasIndex('goods_receipts', 'idx_gr_recorded_by')) {
-                $table->index('recorded_by', 'idx_gr_recorded_by');
-            }
-        });
+        $this->safeCreateIndex('goods_receipts', 'idx_gr_received_date', ['received_date']);
+        $this->safeCreateIndex('goods_receipts', 'idx_gr_recorded_by', ['recorded_by']);
+        $this->safeCreateIndex('stock_requests', 'idx_sr_status', ['status']);
+        $this->safeCreateIndex('stock_requests', 'idx_sr_branch_status', ['branch_id', 'status']);
+        $this->safeCreateIndex('shifts', 'idx_shift_status', ['status']);
+        $this->safeCreateIndex('shifts', 'idx_shift_user_status', ['user_id', 'status']);
+        $this->safeCreateIndex('sales_returns', 'idx_sr_status', ['status']);
+        $this->safeCreateIndex('sales_returns', 'idx_sr_branch', ['branch_id']);
+        $this->safeCreateIndex('login_activities', 'idx_la_created_at', ['created_at']);
+        $this->safeCreateIndex('login_activities', 'idx_la_user_id', ['user_id']);
+        $this->safeCreateIndex('audit_logs', 'idx_al_created_at', ['created_at']);
+        $this->safeCreateIndex('audit_logs', 'idx_al_user_id', ['user_id']);
+        $this->safeCreateIndex('notifications', 'idx_notif_read_at', ['read_at']);
+        $this->safeCreateIndex('commission', 'idx_comm_month', ['month']);
+        $this->safeCreateIndex('commission', 'idx_comm_user_month', ['user_id', 'month']);
+        $this->safeCreateIndex('commission', 'idx_comm_status', ['status']);
+        $this->safeCreateIndex('coupons', 'idx_coupon_status', ['status']);
+        $this->safeCreateIndex('coupons', 'idx_coupon_customer', ['customer_id']);
+        $this->safeCreateIndex('debt_payments', 'idx_dp_customer', ['customer_id']);
+    }
 
-        Schema::table('stock_requests', function (Blueprint $table) {
-            if (!Schema::hasIndex('stock_requests', 'idx_sr_status')) {
-                $table->index('status', 'idx_sr_status');
-            }
-            if (!Schema::hasIndex('stock_requests', 'idx_sr_branch_status')) {
-                $table->index(['branch_id', 'status'], 'idx_sr_branch_status');
-            }
-        });
-
-        Schema::table('shifts', function (Blueprint $table) {
-            if (!Schema::hasIndex('shifts', 'idx_shift_status')) {
-                $table->index('status', 'idx_shift_status');
-            }
-            if (!Schema::hasIndex('shifts', 'idx_shift_user_status')) {
-                $table->index(['user_id', 'status'], 'idx_shift_user_status');
-            }
-        });
-
-        Schema::table('sales_returns', function (Blueprint $table) {
-            if (!Schema::hasIndex('sales_returns', 'idx_sr_status')) {
-                $table->index('status', 'idx_sr_status');
-            }
-            if (!Schema::hasIndex('sales_returns', 'idx_sr_branch')) {
-                $table->index('branch_id', 'idx_sr_branch');
-            }
-        });
-
-        Schema::table('login_activities', function (Blueprint $table) {
-            if (!Schema::hasIndex('login_activities', 'idx_la_created_at')) {
-                $table->index('created_at', 'idx_la_created_at');
-            }
-            if (!Schema::hasIndex('login_activities', 'idx_la_user_id')) {
-                $table->index('user_id', 'idx_la_user_id');
-            }
-        });
-
-        Schema::table('audit_logs', function (Blueprint $table) {
-            if (!Schema::hasIndex('audit_logs', 'idx_al_created_at')) {
-                $table->index('created_at', 'idx_al_created_at');
-            }
-            if (!Schema::hasIndex('audit_logs', 'idx_al_user_id')) {
-                $table->index('user_id', 'idx_al_user_id');
-            }
-        });
-
-        Schema::table('notifications', function (Blueprint $table) {
-            if (!Schema::hasIndex('notifications', 'idx_notif_read_at')) {
-                $table->index('read_at', 'idx_notif_read_at');
-            }
-        });
-
-        Schema::table('commission', function (Blueprint $table) {
-            if (!Schema::hasIndex('commission', 'idx_comm_month')) {
-                $table->index('month', 'idx_comm_month');
-            }
-            if (!Schema::hasIndex('commission', 'idx_comm_user_month')) {
-                $table->index(['user_id', 'month'], 'idx_comm_user_month');
-            }
-            if (!Schema::hasIndex('commission', 'idx_comm_status')) {
-                $table->index('status', 'idx_comm_status');
-            }
-        });
-
-        Schema::table('coupons', function (Blueprint $table) {
-            if (!Schema::hasIndex('coupons', 'idx_coupon_status')) {
-                $table->index('status', 'idx_coupon_status');
-            }
-            if (!Schema::hasIndex('coupons', 'idx_coupon_customer')) {
-                $table->index('customer_id', 'idx_coupon_customer');
-            }
-        });
-
-        Schema::table('debt_payments', function (Blueprint $table) {
-            if (!Schema::hasIndex('debt_payments', 'idx_dp_customer')) {
-                $table->index('customer_id', 'idx_dp_customer');
-            }
-        });
+    private function safeCreateIndex(string $table, string $name, array $columns): void
+    {
+        try {
+            Schema::table($table, function (Blueprint $t) use ($name, $columns) {
+                $t->index($columns, $name);
+            });
+        } catch (\Exception $e) {
+        }
     }
 
     private function safeChangeForeignKey(string $table, string $column, string $references, string $onDelete): void

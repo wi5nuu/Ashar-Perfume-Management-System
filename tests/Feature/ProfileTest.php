@@ -24,7 +24,9 @@ class ProfileTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create([
+            'email' => 'test@example.com',
+        ]);
 
         $response = $this
             ->actingAs($user)
@@ -48,21 +50,21 @@ class ProfileTest extends TestCase
 
     public function test_password_can_be_updated_from_settings_page(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'owner']);
 
         $response = $this
             ->actingAs($user)
             ->from('/settings/profile')
             ->post('/settings/password', [
                 'current_password' => 'password',
-                'password' => 'new-password-123',
-                'password_confirmation' => 'new-password-123',
+                'password' => 'N3w-p@ssword-123',
+                'password_confirmation' => 'N3w-p@ssword-123',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
             ->assertRedirect('/settings/profile');
 
-        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('N3w-p@ssword-123', $user->fresh()->password));
     }
 }

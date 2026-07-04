@@ -57,6 +57,7 @@ class User extends Authenticatable
         'emergency_contact_relation',
         'referral_code',
         'referred_by_id',
+        'password',
     ];
 
     /**

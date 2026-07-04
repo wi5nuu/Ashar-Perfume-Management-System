@@ -44,12 +44,13 @@ class EnterpriseSecurityTest extends TestCase
     {
         $service = app(PosAntiTamperingService::class);
 
+        $this->expectException(\RuntimeException::class);
+
         $items = [
             ['product_id' => 99999, 'quantity' => 1, 'price' => -100],
         ];
 
-        $result = $service->validateCart($items);
-        $this->assertFalse($result['valid']);
+        $service->validateCart($items, 1);
     }
 
     public function test_data_integrity_score(): void
