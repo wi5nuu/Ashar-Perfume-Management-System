@@ -5,12 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>APMS | Authentication</title>
 
+    <!-- DNS Prefetch & Preconnect -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <!-- Favicon & PWA -->
-    <link rel="icon" type="image/png" href="{{ asset('favicon-512x512.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('favicon-512x512.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
     <!-- Google Font: Poppins -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
@@ -104,7 +114,7 @@
             background: #f8f9fa;
             border-radius: 6px;
             border: 1px solid #d0d0d0;
-            transition: all 0.2s ease;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .input-group-apms:focus-within {
@@ -147,7 +157,7 @@
             font-weight: 600;
             font-size: 0.85rem;
             box-shadow: 0 3px 8px rgba(255, 107, 53, 0.25);
-            transition: all 0.2s ease;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
             cursor: pointer;
             display: flex;
             justify-content: center;
@@ -216,7 +226,7 @@
             border-radius: 12px;
             font-weight: 500;
             font-size: 0.85rem;
-            transition: all 0.3s ease;
+            transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
             text-decoration: none;
             box-shadow: 0 2px 5px rgba(0,0,0,0.01);
         }

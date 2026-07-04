@@ -9,21 +9,37 @@
     @endauth
     <title>APMS - @yield('title')</title>
     
+    <!-- DNS Prefetch & Preconnect -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.datatables.net">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
     <!-- Favicon & PWA -->
-    <link rel="icon" type="image/png" href="{{ asset('favicon-512x512.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('favicon-512x512.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     
     <!-- Fonts -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Styles -->
+    <!-- Critical Styles (render-blocking) -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
+    
+    <!-- Non-critical Styles (loaded after paint) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"></noscript>
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.css"></noscript>
+    <noscript><link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css"></noscript>
     
     <style>
         :root {
@@ -96,7 +112,7 @@
             padding: 12px 20px;
             margin: 2px 0;
             border-radius: 8px;
-            transition: all 0.3s ease;
+            transition: color 0.3s ease, background-color 0.3s ease;
             white-space: nowrap;
         }
         .sidebar-apms .nav-link p {
@@ -148,7 +164,7 @@
             padding: 10px 24px;
             border-radius: 8px;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
         }
         
         .btn-primary-apms:hover {
@@ -445,7 +461,7 @@
             text-decoration: none;
             flex: 1;
             height: 100%;
-            transition: all 0.2s ease;
+            transition: color 0.2s ease;
         }
 
         .mobile-bottom-nav .nav-item i {
@@ -758,7 +774,7 @@
     <aside class="main-sidebar sidebar-light-primary elevation-4 sidebar-apms">
         <!-- Brand Logo -->
         <a href="{{ route('dashboard') }}" class="brand-link border-0 d-flex align-items-center py-3 px-3">
-            <img src="{{ asset('favicon-512x512.png') }}" alt="APMS Logo" class="brand-image" style="max-height: 40px; width: auto; opacity: 1;">
+            <img src="{{ asset('favicon-64x64.png') }}" alt="APMS Logo" class="brand-image" width="40" height="40" style="opacity: 1;">
             <span class="brand-text font-weight-bold ml-2" style="color: var(--primary-color); font-size: 1.4rem; letter-spacing: -0.5px;">APMS</span>
         </a>
 
@@ -1171,10 +1187,10 @@
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.js" defer></script>
 
 <script>
     // BUG-4: Global SweetAlert2 Toast Notification
@@ -1306,7 +1322,7 @@
     background: linear-gradient(135deg,#2c7be5,#6b5ce7);
     color: #fff; border: none; font-size: 24px;
     box-shadow: 0 4px 20px rgba(44,123,229,.45);
-    cursor: pointer; transition: all .25s;
+    cursor: pointer; transition: transform .25s, box-shadow .25s;
     display: flex; align-items: center; justify-content: center;
 }
 .chat-btn:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(44,123,229,.55); }
@@ -1341,7 +1357,7 @@
     background: rgba(44,123,229,.15); color: #8ab4f8;
     border-radius: 16px; padding: 3px 10px; margin: 1px;
     font-size: 11px; cursor: pointer; white-space: nowrap;
-    border: 1px solid rgba(44,123,229,.2); transition: all .15s;
+    border: 1px solid rgba(44,123,229,.2); transition: background-color .15s;
     font-weight: 600;
 }
 .chat-chip:hover { background: rgba(44,123,229,.3); }
@@ -1409,7 +1425,7 @@
 <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
         <div style="display:flex;align-items:center;gap:10px;">
-            <img src="{{ asset('favicon-512x512.png') }}" alt="Logo" style="height:28px;width:auto;border-radius:6px;">
+            <img src="{{ asset('favicon-48x48.png') }}" alt="Logo" width="28" height="28" style="border-radius:6px;">
             <div>
                 <h6>APMS Copilot</h6>
                 <small>Asisten Digital Bisnis</small>
