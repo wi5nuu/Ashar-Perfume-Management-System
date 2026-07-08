@@ -572,9 +572,9 @@ class AiDashboardController extends Controller
         $end = Carbon::now()->endOfMonth();
 
         $branchData = Branch::where('is_active', true)
-            ->withAggregate('transactions as revenue', 'sum(total_amount)', fn($q) => $q->whereBetween('created_at', [$start, $end]))
-            ->withAggregate('transactions as tx_count', 'count(*)', fn($q) => $q->whereBetween('created_at', [$start, $end]))
-            ->withAggregate('expenses as expenses_sum', 'sum(amount)', fn($q) => $q->whereBetween('created_at', [$start, $end]))
+            ->withAggregate(['transactions as revenue' => fn($q) => $q->whereBetween('created_at', [$start, $end])], 'total_amount', 'sum')
+            ->withAggregate(['transactions as tx_count' => fn($q) => $q->whereBetween('created_at', [$start, $end])], '*', 'count')
+            ->withAggregate(['expenses as expenses_sum' => fn($q) => $q->whereBetween('created_at', [$start, $end])], 'amount', 'sum')
             ->get()
             ->map(function ($b) {
                 $revenue = (float) ($b->revenue ?? 0);

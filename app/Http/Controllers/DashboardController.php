@@ -232,9 +232,9 @@ class DashboardController extends Controller
         if ($user->isOwner()) {
             $branchRevenueData = Branch::where('is_active', true)
                 ->withCount('users')
-                ->withAggregate('transactions as period_revenue', 'sum(total_amount)', fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))
-                ->withAggregate('transactions as today_revenue', 'sum(total_amount)', fn($q) => $q->whereDate('created_at', $today))
-                ->withAggregate('expenses as period_expenses', 'sum(amount)', fn($q) => $q->whereBetween('date', [$startDate, $endDate]))
+                ->withAggregate(['transactions as period_revenue' => fn($q) => $q->whereBetween('created_at', [$startDate, $endDate])], 'total_amount', 'sum')
+                ->withAggregate(['transactions as today_revenue' => fn($q) => $q->whereDate('created_at', $today)], 'total_amount', 'sum')
+                ->withAggregate(['expenses as period_expenses' => fn($q) => $q->whereBetween('date', [$startDate, $endDate])], 'amount', 'sum')
                 ->get()
                 ->map(function ($branch) {
                     $branch->period_revenue  = (float) ($branch->period_revenue ?? 0);

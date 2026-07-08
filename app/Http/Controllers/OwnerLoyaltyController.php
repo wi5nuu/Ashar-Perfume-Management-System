@@ -26,7 +26,9 @@ class OwnerLoyaltyController extends Controller
             ->orderByDesc('lifetime_spend')
             ->paginate(20);
 
-        return view('owner.loyalty.index', compact('customers'));
+        $topRank = \App\Services\WholesaleLoyaltyService::RANK_NAMES[array_key_last(\App\Services\WholesaleLoyaltyService::RANK_NAMES)];
+
+        return view('owner.loyalty.index', compact('customers', 'topRank'));
     }
 
     public function show(Customer $customer)
