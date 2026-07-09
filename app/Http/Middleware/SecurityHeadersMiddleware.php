@@ -41,12 +41,13 @@ class SecurityHeadersMiddleware
 
     private function getCspPolicy(): string
     {
+        $nonce = View::shared('cspNonce');
         return "default-src 'self'; "
-            . "script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdn.jsdelivr.net https://cdn.datatables.net https://cdnjs.cloudflare.com; "
+            . "script-src 'self' 'nonce-{$nonce}' 'strict-dynamic' https://code.jquery.com https://cdn.jsdelivr.net https://cdn.datatables.net https://cdnjs.cloudflare.com; "
             . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             . "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
             . "img-src 'self' data: blob:; "
-            . "connect-src 'self' https://*.pusher.com wss://*.pusher.com; "
+            . "connect-src 'self' https://*.pusher.com wss://*.pusher.com wss://" . config('reverb.host', 'localhost') . ":443; "
             . "frame-src 'none'; "
             . "object-src 'none'; "
             . "base-uri 'self'; "

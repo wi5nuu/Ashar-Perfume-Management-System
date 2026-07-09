@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class TransactionDetail extends Model
 {
+    protected $hidden = ['purchase_price'];
+
     protected $fillable = [
         'transaction_id',
         'product_id',
@@ -30,7 +32,7 @@ class TransactionDetail extends Model
 
     public function transaction()
     {
-        return $this->belongsTo(Transaction::class);
+        return $this->belongsTo(Transaction::class)->withTrashed();
     }
 
     public function product()

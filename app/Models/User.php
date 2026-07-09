@@ -50,7 +50,6 @@ class User extends Authenticatable
         'skills',
         'is_staying_in_mess',
         'is_active',
-        'can_login',
         'living_address',
         'emergency_contact_name',
         'emergency_contact_phone',
@@ -68,6 +67,25 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'nik',
+        'bank_account_number',
+        'bank_account_holder',
+        'npwp',
+        'basic_salary',
+        'last_login_ip',
+        'login_attempts',
+        'is_locked',
+        'locked_until',
+        'requires_password_change',
+        'password_changed_at',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'emergency_contact_relation',
+        'living_address',
+        'referral_code',
+        'referred_by_id',
     ];
 
     /**

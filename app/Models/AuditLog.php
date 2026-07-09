@@ -8,6 +8,13 @@ class AuditLog extends Model
 {
     public const UPDATED_AT = null;
 
+    protected $hidden = [
+        'old_data',
+        'new_data',
+        'ip_address',
+        'user_agent',
+    ];
+
     protected $fillable = [
         'user_id',
         'action',

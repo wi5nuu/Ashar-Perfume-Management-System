@@ -35,7 +35,7 @@
                             <div class="input-group">
                                 <input type="text" id="searchInput" class="form-control" placeholder="Cari produk atau scan barcode..." autofocus>
                                 <div class="input-group-append">
-                                    <button class="btn btn-primary" onclick="$('#searchInput').focus()" title="Scan Barcode">
+                                    <button class="btn btn-primary-apms" onclick="$('#searchInput').focus()" title="Scan Barcode">
                                         <i class="fas fa-barcode"></i>
                                     </button>
                                 </div>
@@ -136,7 +136,7 @@
                                     <td class="d-none d-sm-table-cell">
                                         @php $catColor = $product->category ? (preg_match('/^#[0-9a-fA-F]{6}$/', $product->category->color) ? $product->category->color : '#FF6B35') : '#FF6B35'; @endphp
                                         <span class="badge" style="background-color: {{ $catColor }}; color: white;">
-                                            {{ $product->category->name ?? '-' }}
+                                            {{ $product->category?->name ?? '-' }}
                                         </span>
                                     </td>
                                     <td class="d-none d-md-table-cell">{{ $product->size }} {{ $product->unit }}</td>
@@ -203,7 +203,7 @@
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <a href="{{ route('products.barcode', $product->id) }}" 
-                                               class="btn btn-primary" title="Barcode" target="_blank">
+                                               class="btn btn-primary-apms" title="Barcode" target="_blank">
                                                 <i class="fas fa-barcode"></i>
                                             </a>
                                             <button type="button" class="btn btn-danger" 
@@ -331,7 +331,7 @@
 let selectedProducts = [];
 
 function deleteProduct(id) {
-    $('#deleteForm').attr('action', `/products/${id}`);
+    $('#deleteForm').attr('action', '{{ url('/products') }}/' + id);
     $('#deleteModal').modal('show');
 }
 
@@ -356,7 +356,7 @@ function bulkAction(action) {
             if (confirm(`Hapus ${ids.length} produk?`)) {
                 // AJAX delete
                 $.ajax({
-                    url: '/products/bulk-delete',
+                    url: '{{ route('products.bulk-delete') }}',
                     method: 'POST',
                     data: { ids: ids, _token: '{{ csrf_token() }}' },
                     success: function() {
@@ -373,7 +373,7 @@ function bulkAction(action) {
             break;
         case 'export':
             Swal.fire({title:'Mengexport...', text:`Mengexport ${ids.length} produk`, allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
-            window.open(`/products/export/csv?ids=${ids.join(',')}`, '_blank');
+            window.open('{{ route('products.export.csv') }}?ids=' + ids.join(','), '_blank');
             setTimeout(() => Swal.close(), 2000);
             break;
     }

@@ -759,7 +759,7 @@
                     <div class="dropdown-divider"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <a href="{{ route('logout') }}" class="dropdown-item" 
+                        <a href="#" class="dropdown-item" 
                            onclick="event.preventDefault(); this.closest('form').submit();">
                             <i class="fas fa-sign-out-alt mr-2"></i> Logout
                         </a>
@@ -1468,10 +1468,10 @@ function toggleChat() {
     }
 }
 
-function addBotMsg(html) {
+function addBotMsg(text) {
     const div = document.createElement('div');
     div.className = 'chat-msg bot';
-    div.innerHTML = html;
+    div.textContent = text;
     document.getElementById('chatBody').appendChild(div);
     scrollChat();
 }

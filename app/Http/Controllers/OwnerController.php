@@ -7,11 +7,12 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Branch;
 use App\Models\WholesaleOrder;
+use App\Notifications\PasswordResetApproved;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class OwnerController extends Controller
 {
@@ -112,7 +113,7 @@ class OwnerController extends Controller
     {
         Gate::authorize('owner');
 
-        $customers = User::where('role', 'wholesale_customer')->get();
+        $customers = User::where('role', 'wholesale_customer')->get(['id', 'name', 'email', 'phone', 'referral_code', 'created_at']);
 
         $phones = $customers->pluck('phone')->filter();
         $emails = $customers->pluck('email')->filter();
@@ -166,6 +167,8 @@ class OwnerController extends Controller
         $user->password = Hash::make($newPassword);
         $user->save();
 
+        Log::info('Wholesale customer password reset', ['user_id' => $user->id, 'resolved_by' => auth()->id()]);
+
         return response()->json(['success' => true, 'password' => $newPassword]);
     }
 
@@ -177,7 +180,7 @@ class OwnerController extends Controller
 
         $validated = $request->validate([
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => 'nullable|string|min:6',
+            'password' => ['nullable', new \App\Rules\StrongPassword],
         ]);
 
         $user->email = $validated['email'];
@@ -189,6 +192,100 @@ class OwnerController extends Controller
         $user->save();
 
         return response()->json(['success' => true, 'message' => 'Akun berhasil diperbarui.']);
+    }
+
+    public function wholesalePasswordRequests()
+    {
+        Gate::authorize('owner');
+
+        $requests = PasswordResetRequest::whereHas('user', function ($q) {
+            $q->where('role', 'wholesale_customer');
+        })->with(['user', 'resolver'])->latest()->get();
+
+        if (request()->wantsJson()) {
+            $pending = $requests->where('status', 'pending')->values()->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'name' => $r->user->name ?? '-',
+                    'email' => $r->user->email ?? '-',
+                    'created_at' => $r->created_at->format('d/m/Y H:i'),
+                ];
+            });
+
+            $resolved = $requests->where('status', '!=', 'pending')->values()->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'name' => $r->user->name ?? '-',
+                    'email' => $r->user->email ?? '-',
+                    'resolved_by' => $r->resolver->name ?? '-',
+                    'resolved_at' => $r->resolved_at ? $r->resolved_at->format('d/m/Y H:i') : '-',
+                ];
+            });
+
+            return response()->json(['pending' => $pending, 'resolved' => $resolved]);
+        }
+
+        return view('owner.wholesale-password-requests', compact('requests'));
+    }
+
+    public function resolveWholesalePasswordRequest(Request $request, $id)
+    {
+        Gate::authorize('owner');
+
+        $resetRequest = PasswordResetRequest::whereHas('user', function ($q) {
+            $q->where('role', 'wholesale_customer');
+        })->findOrFail($id);
+
+        $user = $resetRequest->user;
+        $newPassword = \Illuminate\Support\Str::random(16);
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        $resetRequest->update([
+            'status' => 'approved',
+            'new_password' => $newPassword,
+            'resolved_by' => auth()->id(),
+            'resolved_at' => now(),
+        ]);
+
+        Log::info('Wholesale customer password reset via request', [
+            'user_id' => $user->id,
+            'request_id' => $resetRequest->id,
+            'resolved_by' => auth()->id(),
+        ]);
+
+        return response()->json(['success' => true, 'password' => $newPassword, 'email' => $user->email, 'name' => $user->name]);
+    }
+
+    public function wholesaleCustomerOrders($id)
+    {
+        Gate::authorize('owner');
+
+        $user = User::where('role', 'wholesale_customer')->findOrFail($id);
+
+        $orders = WholesaleOrder::where(function ($q) use ($user) {
+            $q->where('recipient_phone', $user->phone)
+              ->orWhereHas('customer', function ($cq) use ($user) {
+                  $cq->where('email', $user->email);
+              });
+        })->with(['details', 'handler'])->withTrashed()->latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'customer' => ['name' => $user->name, 'email' => $user->email, 'phone' => $user->phone],
+            'orders' => $orders->map(function ($o) {
+                return [
+                    'id' => $o->id,
+                    'invoice_number' => $o->invoice_number,
+                    'total_amount' => (float) $o->total_amount,
+                    'status' => $o->status,
+                    'created_at' => $o->created_at->format('d/m/Y H:i'),
+                    'items_count' => $o->details->count(),
+                    'recipient_name' => $o->recipient_name,
+                    'deleted_at' => $o->deleted_at ? $o->deleted_at->format('d/m/Y H:i') : null,
+                ];
+            }),
+        ]);
     }
 
     public function customerAccounts()

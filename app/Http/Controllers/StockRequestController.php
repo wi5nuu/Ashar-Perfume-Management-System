@@ -51,9 +51,10 @@ class StockRequestController extends Controller
         $products = Product::with('inventories')->orderBy('name')->get();
 
         if ($user->isAdminPusat() || $user->isOwner()) {
-            $branches = Branch::where('is_active', true)->where('id', '!=', function ($q) {
-                $q->select('id')->from('branches')->where('code', 'PST-01')->limit(1);
-            })->get();
+            $excludeId = Branch::where('code', 'PST-01')->value('id');
+            $branches = Branch::where('is_active', true)
+                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+                ->get();
         } else {
             $branches = Branch::where('id', $user->branch_id)->get();
         }
@@ -104,6 +105,10 @@ class StockRequestController extends Controller
 
     public function show(StockRequest $stockRequest)
     {
+        $user = auth()->user();
+        if (!$user->isOwner() && !$user->isAdminPusat() && $stockRequest->branch_id !== $user->branch_id) {
+            abort(403, 'Anda hanya dapat melihat permintaan stok di cabang Anda.');
+        }
         $stockRequest->load(['branch', 'requester', 'approver', 'items.product']);
         return view('stock-requests.show', compact('stockRequest'));
     }

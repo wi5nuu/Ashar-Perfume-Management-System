@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Expense extends Model
 {
     use SoftDeletes;
+    protected $hidden = ['proof_image', 'vendor'];
+
     protected $fillable = [
         'user_id',
         'branch_id',

@@ -7,6 +7,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Shift extends Model
 {
+    protected $hidden = [
+        'cash_breakdown',
+        'denominations',
+        'closing_photo_path',
+        'manager_notes',
+        'initial_cash',
+        'expected_cash',
+        'actual_cash',
+        'discrepancy',
+    ];
+
     protected $fillable = [
         'user_id',
         'branch_id',

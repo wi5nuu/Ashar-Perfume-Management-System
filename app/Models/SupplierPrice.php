@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SupplierPrice extends Model
 {
+    protected $hidden = ['unit_cost'];
+
     protected $fillable = [
         'supplier_id',
         'product_id',

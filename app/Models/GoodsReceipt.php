@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GoodsReceipt extends Model
 {
+    protected $hidden = ['unit_cost', 'total_cost', 'notes'];
+
     protected $fillable = [
         'receipt_number', 'product_id', 'quantity', 'supplier_name',
         'delivery_person', 'origin', 'received_date', 'unit_cost',

@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Services\SmartInsightService;
 use App\Traits\ResolvesPeriod;
 use Illuminate\Support\Facades\Gate;
@@ -89,21 +90,24 @@ class DashboardController extends Controller
             }
             return $q->count();
         });
-        $lowStockProducts = $lowStockProductsCount;
-
-        $lowStockAlerts = Cache::remember("dash_low_stock_alerts.{$branchKey}", 120, function () use ($user) {
-            $q = DB::table('inventories')
-                ->join('products', 'inventories.product_id', '=', 'products.id')
-                ->select('products.name', 'inventories.current_stock', 'inventories.minimum_stock')
-                ->where(function ($sub) {
-                    $sub->whereColumn('inventories.current_stock', '<=', 'inventories.minimum_stock')
-                      ->orWhere('inventories.current_stock', '<', 5);
-                });
-            if (!$user->isOwner() && $user->branch_id) {
-                $q->where('inventories.branch_id', $user->branch_id);
-            }
-            return $q->take(5)->get();
-        });
+        try {
+            $lowStockAlerts = Cache::remember("dash_low_stock_alerts.{$branchKey}", 120, function () use ($user) {
+                $q = DB::table('inventories')
+                    ->join('products', 'inventories.product_id', '=', 'products.id')
+                    ->select('products.name', 'inventories.current_stock', 'inventories.minimum_stock')
+                    ->where(function ($sub) {
+                        $sub->whereColumn('inventories.current_stock', '<=', 'inventories.minimum_stock')
+                          ->orWhere('inventories.current_stock', '<', 5);
+                    });
+                if (!$user->isOwner() && $user->branch_id) {
+                    $q->where('inventories.branch_id', $user->branch_id);
+                }
+                return $q->take(5)->get();
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch low stock alerts for dashboard', ['error' => $e->getMessage()]);
+            $lowStockAlerts = collect();
+        }
 
         $expiringAlerts = collect();
 
@@ -113,15 +117,16 @@ class DashboardController extends Controller
         });
 
         // ── 3b. Wholesale Summary ─────────────────────────────────────────
-        $wholesaleSummary = Cache::remember('dash_wholesale_summary', 120, function () {
-            return WholesaleOrder::select('status', DB::raw('count(*) as total'))
+        $wholesaleSummary = Cache::remember("dash_wholesale_summary.{$branchKey}", 120, function () use ($scopeBranch) {
+            return $scopeBranch(WholesaleOrder::query())->select('status', DB::raw('count(*) as total'))
+                ->where('status', '!=', 'cancelled')
                 ->groupBy('status')
                 ->pluck('total', 'status')
                 ->all();
         });
 
         // ── 3c. Active Staff ──────────────────────────────────────────────
-        $activeStaff = Attendance::whereDate('date', $today)
+        $activeStaff = $scopeBranch(Attendance::query())->whereDate('date', $today)
             ->where('status', 'present')
             ->whereNull('time_out')
             ->get();
@@ -189,8 +194,8 @@ class DashboardController extends Controller
         $smartInsights = [];
 
         if (auth()->user()->can('reports.view')) {
-            $salesData = Cache::remember("dash_monthly_sales.{$year}", 3600, function () use ($year) {
-                return $this->getMonthlySalesData($year);
+            $salesData = Cache::remember("dash_monthly_sales.{$branchKey}.{$year}", 3600, function () use ($year, $scopeBranch) {
+                return $this->getMonthlySalesData($year, $scopeBranch);
             });
 
             $paymentData = Cache::remember($ck('payment_data'), 300, function () use ($startDate, $endDate, $scopeBranch) {
@@ -221,7 +226,12 @@ class DashboardController extends Controller
             });
 
             // ── Smart Insights ────────────────────────────────────────────
-            $smartInsights = $this->insightService->generateInsights();
+            try {
+                $smartInsights = $this->insightService->generateInsights();
+            } catch (\Exception $e) {
+                Log::error('Smart insights failed', ['error' => $e->getMessage()]);
+                $smartInsights = [];
+            }
         }
 
         // ── 7. Active Shift ───────────────────────────────────────────────
@@ -249,7 +259,7 @@ class DashboardController extends Controller
 
         return view('dashboard.index', compact(
             'todaySales', 'todayTransactions', 'periodSales', 'periodLabel', 'period',
-            'totalProducts', 'lowStockProductsCount', 'lowStockProducts',
+            'totalProducts', 'lowStockProductsCount', 'lowStockAlerts',
             'totalCustomers', 'recentTransactions', 'topProducts', 'periodExpenses', 'periodProfit',
             'salesData', 'lowStockAlerts', 'expiringAlerts', 'periodCOGS', 'periodGrossProfit',
             'activeShift', 'wholesaleSalesToday', 'wholesaleSalesPeriod',
@@ -288,8 +298,11 @@ class DashboardController extends Controller
             $periodExpenses = $scope(Expense::query())->whereBetween('date', [$startDate, $endDate])->sum('amount');
 
             $periodCOGS = TransactionDetail::join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
-                ->whereBetween('transactions.created_at', [$startDate, $endDate])
-                ->select(DB::raw('SUM(transaction_details.purchase_price * transaction_details.quantity) as total_cogs'))
+                ->whereBetween('transactions.created_at', [$startDate, $endDate]);
+            if (!$user->isOwner() && $user->branch_id) {
+                $periodCOGS->where('transactions.branch_id', $user->branch_id);
+            }
+            $periodCOGS = $periodCOGS->select(DB::raw('SUM(transaction_details.purchase_price * transaction_details.quantity) as total_cogs'))
                 ->value('total_cogs') ?? 0;
 
             $netProfit = $periodSales - $periodCOGS - $periodExpenses;
@@ -448,17 +461,21 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function getMonthlySalesData(int $year): array
+    private function getMonthlySalesData(int $year, ?\Closure $scopeBranch = null): array
     {
-        $monthlySales = Transaction::select(
+        $query = Transaction::select(
                 DB::raw('MONTH(created_at) as month'),
                 DB::raw('SUM(total_amount) as sales')
             )
             ->whereYear('created_at', $year)
             ->groupBy('month')
-            ->orderBy('month')
-            ->get()
-            ->keyBy('month');
+            ->orderBy('month');
+
+        if ($scopeBranch) {
+            $scopeBranch($query);
+        }
+
+        $monthlySales = $query->get()->keyBy('month');
 
         $data = [];
         for ($m = 1; $m <= 12; $m++) {

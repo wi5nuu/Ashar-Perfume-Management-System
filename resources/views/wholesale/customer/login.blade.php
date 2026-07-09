@@ -54,17 +54,6 @@
         }
         .btn-primary { background: var(--p); color: #fff; }
         .btn-primary:hover { background: var(--pd); }
-        .btn-google {
-            background: #fff; color: #444; border: 1px solid #ddd;
-        }
-        .btn-google:hover { background: #f5f5f5; border-color: #ccc; }
-        .divider {
-            display: flex; align-items: center; text-align: center; margin: 16px 0;
-        }
-        .divider::before, .divider::after {
-            content: ''; flex: 1; border-bottom: 1px solid #e0e0e0;
-        }
-        .divider span { padding: 0 12px; color: #999; font-size: 0.75rem; font-weight: 600; }
         .terms {
             margin-top: 18px; padding-top: 14px; text-align: center;
             border-top: 1px solid #eee; font-size: 0.7rem; color: #999; line-height: 1.5;
@@ -100,14 +89,6 @@
                     </div>
                 @endif
 
-                {{-- Google Login --}}
-                <a href="{{ route('wholesale.customer.auth.google') }}" class="btn btn-google" style="text-decoration:none">
-                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
-                    Lanjutkan dengan Google
-                </a>
-
-                <div class="divider"><span>ATAU</span></div>
-
                 {{-- Email Login --}}
                 <form action="{{ route('wholesale.customer.login') }}" method="POST">
                     @csrf
@@ -123,6 +104,11 @@
                         <div class="input-wrap">
                             <i class="fas fa-lock"></i>
                             <input type="password" name="password" placeholder="Masukkan password" required>
+                        </div>
+                        <div style="text-align:right;margin-top:6px">
+                            <a href="{{ route('wholesale.customer.forgot-password') }}" style="color:var(--p);font-size:0.8rem;text-decoration:none;font-weight:600">
+                                <i class="fas fa-key mr-1"></i> Lupa Password?
+                            </a>
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary">

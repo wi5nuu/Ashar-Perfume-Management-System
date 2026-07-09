@@ -10,6 +10,8 @@ class WholesaleOrder extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $hidden = ['notes', 'cancellation_reason'];
+
     protected $fillable = [
         'invoice_number',
         'user_id',

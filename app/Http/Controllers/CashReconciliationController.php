@@ -37,10 +37,9 @@ class CashReconciliationController extends Controller
             ->selectRaw('SUM(paid_amount - change_amount) as net_cash')
             ->value('net_cash') ?? 0;
 
-        $startFmt = $shift->start_time?->format('Y-m-d H:i:s') ?? '1970-01-01 00:00:00';
-        $endFmt   = ($shift->end_time ?? now())->format('Y-m-d H:i:s');
         $cashExpenses = Expense::where('user_id', $shift->user_id)
-            ->whereBetween('date', [$startFmt, $endFmt])
+            ->where('created_at', '>=', $shift->start_time ?? '1970-01-01')
+            ->where('created_at', '<=', $shift->end_time ?? now())
             ->sum('amount') ?? 0;
 
         $expectedCash = $shift->initial_cash + $cashSales - $cashExpenses;

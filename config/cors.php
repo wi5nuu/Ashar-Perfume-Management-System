@@ -25,7 +25,7 @@ return [
 
     'allowed_headers' => ['Content-Type', 'X-CSRF-TOKEN', 'Authorization', 'Accept'],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['X-RateLimit-Remaining', 'X-Total-Count', 'Link'],
 
     'max_age' => 86400,
 

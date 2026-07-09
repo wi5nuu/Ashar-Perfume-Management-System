@@ -128,12 +128,12 @@
         <!-- Transaction Details -->
         <table class="info-table">
             <tr>
-                <td>Tgl : {{ $transaction->created_at->format('d/m/y H:i') }}</td>
+                <td>Tgl : {{ $transaction->created_at->format('d/m/Y H:i') }}</td>
                 <td class="text-right">No : {{ substr($transaction->invoice_number, -8) }}</td>
             </tr>
             <tr>
-                <td>Kasir : {{ $transaction->user->nickname ?? $transaction->user->name }}</td>
-                <td class="text-right">Plgn: {{ $transaction->customer->name ?? 'Umum' }}</td>
+                <td>Kasir : {{ $transaction->user?->nickname ?? $transaction->user?->name ?? '-' }}</td>
+                <td class="text-right">Plgn: {{ $transaction->customer?->name ?? 'Umum' }}</td>
             </tr>
         </table>
 

@@ -56,54 +56,56 @@
                     <h3 class="card-title">Detail Produk</h3>
                 </div>
                 <div class="card-body">
-                    <table class="table table-bordered">
-                        <tr>
-                            <th width="30%">ID Internal</th>
-                            <td>{{ $product->internal_id }}</td>
-                        </tr>
-                        <tr>
-                            <th>Barcode</th>
-                            <td>
-                                {{ $product->barcode }}
-                                <a href="{{ route('products.barcode', $product->id) }}" 
-                                   class="btn btn-sm btn-primary ml-2" target="_blank">
-                                    <i class="fas fa-barcode"></i> Cetak
-                                </a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Harga Beli</th>
-                            <td>Rp {{ number_format($product->purchase_price, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Harga Jual</th>
-                            <td>Rp {{ number_format($product->selling_price, 0, ',', '.') }}</td>
-                        </tr>
-                        @if($product->wholesale_price)
-                        <tr>
-                            <th>Harga Grosir</th>
-                            <td class="text-success">Rp {{ number_format($product->wholesale_price, 0, ',', '.') }}</td>
-                        </tr>
-                        @endif
-                        <tr>
-                            <th>Status</th>
-                            <td>
-                                @if($product->is_active)
-                                    <span class="badge badge-success">Aktif</span>
-                                @else
-                                    <span class="badge badge-danger">Nonaktif</span>
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Dibuat</th>
-                            <td>{{ $product->created_at->format('d/m/Y H:i') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Diupdate</th>
-                            <td>{{ $product->updated_at->format('d/m/Y H:i') }}</td>
-                        </tr>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th width="30%">ID Internal</th>
+                                <td>{{ $product->internal_id }}</td>
+                            </tr>
+                            <tr>
+                                <th>Barcode</th>
+                                <td>
+                                    {{ $product->barcode }}
+                                    <a href="{{ route('products.barcode', $product->id) }}" 
+                                       class="btn btn-sm btn-primary-apms ml-2" target="_blank">
+                                        <i class="fas fa-barcode"></i> Cetak
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Harga Beli</th>
+                                <td>Rp {{ number_format($product->purchase_price, 0, ',', '.') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Harga Jual</th>
+                                <td>Rp {{ number_format($product->selling_price, 0, ',', '.') }}</td>
+                            </tr>
+                            @if($product->wholesale_price)
+                            <tr>
+                                <th>Harga Grosir</th>
+                                <td class="text-success">Rp {{ number_format($product->wholesale_price, 0, ',', '.') }}</td>
+                            </tr>
+                            @endif
+                            <tr>
+                                <th>Status</th>
+                                <td>
+                                    @if($product->is_active)
+                                        <span class="badge badge-success">Aktif</span>
+                                    @else
+                                        <span class="badge badge-danger">Nonaktif</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Dibuat</th>
+                                <td>{{ $product->created_at->format('d/m/Y H:i') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Diupdate</th>
+                                <td>{{ $product->updated_at->format('d/m/Y H:i') }}</td>
+                            </tr>
+                        </table>
+                    </div>
                     
                     <h4 class="mt-4">Riwayat Inventory</h4>
                     <div class="table-responsive">

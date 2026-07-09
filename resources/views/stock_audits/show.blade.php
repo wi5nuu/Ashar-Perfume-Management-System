@@ -24,10 +24,12 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <h5>Informasi Audit</h5>
-                            <table class="table table-sm">
-                                <tr><td>Auditor</td><td>: {{ $stockAudit->user->name }}</td></tr>
-                                <tr><td>Catatan</td><td>: {{ $stockAudit->notes ?? '-' }}</td></tr>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tr><td>Auditor</td><td>: {{ $stockAudit->user?->name ?? '-' }}</td></tr>
+                                    <tr><td>Catatan</td><td>: {{ $stockAudit->notes ?? '-' }}</td></tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -48,8 +50,8 @@
                                     @foreach($stockAudit->items as $item)
                                     <tr>
                                         <td>
-                                            <strong>{{ $item->product->name }}</strong><br>
-                                            <small class="text-muted">{{ $item->product->size }} | {{ $item->product->brand }}</small>
+                                            <strong>{{ $item->product?->name ?? 'Produk dihapus' }}</strong><br>
+                                            <small class="text-muted">{{ $item->product?->size ?? '-' }} | {{ $item->product?->brand ?? '-' }}</small>
                                         </td>
                                         <td class="text-center font-weight-bold">{{ $item->system_stock }}</td>
                                         <td>

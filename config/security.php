@@ -43,7 +43,7 @@ return [
         'retention_daily' => 7,
         'retention_weekly' => 4,
         'retention_monthly' => 3,
-        'encryption_enabled' => true,
+        'encryption_enabled' => env('BACKUP_ENCRYPTION_ENABLED', false),
         'path' => storage_path('backups'),
     ],
 

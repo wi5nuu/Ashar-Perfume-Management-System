@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Inventory extends Model
 {
+    protected $hidden = ['cost_per_unit', 'batch_number'];
+
     protected $fillable = [
         'product_id',
         'branch_id',
@@ -34,6 +36,8 @@ class Inventory extends Model
         'minimum_stock' => 'integer',
         'bulk_stock_ml' => 'decimal:2',
         'cost_per_unit' => 'decimal:2',
+        'stock_in' => 'integer',
+        'stock_out' => 'integer',
     ];
 
     /**

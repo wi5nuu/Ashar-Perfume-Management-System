@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PurchaseOrderItem extends Model
 {
+    protected $hidden = ['unit_cost', 'subtotal'];
+
     protected $fillable = [
         'purchase_order_id',
         'product_id',

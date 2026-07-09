@@ -14,6 +14,15 @@ use Illuminate\Support\Facades\Gate;
 
 class ReportController extends Controller
 {
+    protected function scopeBranch($query)
+    {
+        $user = auth()->user();
+        if (!$user->isOwner() && $user->branch_id) {
+            $query->where('branch_id', $user->branch_id);
+        }
+        return $query;
+    }
+
     public function index()
     {
         Gate::authorize('view_reports');
@@ -126,7 +135,7 @@ class ReportController extends Controller
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth());
         $type = $request->get('type', 'daily');
         
-        $query = Transaction::whereBetween('created_at', [$startDate, $endDate]);
+        $query = $this->scopeBranch(Transaction::whereBetween('created_at', [$startDate, $endDate]));
         
         if ($type === 'daily') {
             $sales = $query->selectRaw('DATE(created_at) as date, 
@@ -144,13 +153,15 @@ class ReportController extends Controller
                 ->orderBy('year')
                 ->orderBy('month')
                 ->get();
+        } else {
+            $sales = collect();
         }
         
         $totalSales = $sales->sum('total_sales');
         $totalTransactions = $sales->sum('transaction_count');
 
         // Payment method distribution
-        $paymentData = Transaction::whereBetween('created_at', [$startDate, $endDate])
+        $paymentData = $this->scopeBranch(Transaction::whereBetween('created_at', [$startDate, $endDate]))
             ->selectRaw('payment_method, SUM(total_amount) as total')
             ->groupBy('payment_method')
             ->pluck('total', 'payment_method')
@@ -238,8 +249,8 @@ class ReportController extends Controller
             ->get();
         
         // Revenue by payment method
-        $revenueByMethod = Transaction::whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
+        $revenueByMethod = $this->scopeBranch(Transaction::whereMonth('created_at', $month)
+            ->whereYear('created_at', $year))
             ->selectRaw('payment_method, SUM(total_amount) as total')
             ->groupBy('payment_method')
             ->get();
@@ -290,7 +301,7 @@ class ReportController extends Controller
             $endDate = Carbon::parse($endDate)->endOfDay();
         }
 
-        $sales = Transaction::whereBetween('created_at', [$startDate, $endDate])
+        $sales = $this->scopeBranch(Transaction::whereBetween('created_at', [$startDate, $endDate]))
             ->with(['customer', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -304,18 +315,18 @@ class ReportController extends Controller
     public function customerAnalytics()
     {
         Gate::authorize('view_reports');
-        $topCustomers = Customer::withSum('transactions', 'total_amount')
+        $topCustomers = $this->scopeBranch(Customer::withSum('transactions', 'total_amount'))
             ->orderBy('transactions_sum_total_amount', 'desc')
             ->limit(10)
             ->get();
         
-        $customerGrowth = Customer::selectRaw('DATE(created_at) as date, COUNT(*) as count')
+        $customerGrowth = $this->scopeBranch(Customer::selectRaw('DATE(created_at) as date, COUNT(*) as count'))
             ->where('created_at', '>=', Carbon::now()->subDays(30))
             ->groupBy('date')
             ->orderBy('date')
             ->get();
         
-        $customerTypes = Customer::selectRaw('type, COUNT(*) as count')
+        $customerTypes = $this->scopeBranch(Customer::selectRaw('type, COUNT(*) as count'))
             ->groupBy('type')
             ->get();
         
@@ -362,11 +373,11 @@ class ReportController extends Controller
     public function exportCsvTransactions(Request $request)
     {
         Gate::authorize('view_reports');
-        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate   = $request->get('end_date', Carbon::now()->endOfMonth()->toDateString());
+        $startDate = $request->date('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate   = $request->date('end_date', Carbon::now()->endOfMonth()->toDateString());
 
-        $transactions = Transaction::with(['user', 'customer'])
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        $transactions = $this->scopeBranch(Transaction::with(['user', 'customer']))
+            ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
             ->orderByDesc('created_at')
             ->get();
 

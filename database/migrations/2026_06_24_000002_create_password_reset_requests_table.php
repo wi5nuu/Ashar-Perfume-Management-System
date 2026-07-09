@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('status')->default('pending'); // pending, approved, rejected
             $table->text('notes')->nullable();
-            $table->string('new_password')->nullable();
+            $table->text('new_password')->nullable();
             $table->foreignId('resolved_by')->nullable()->constrained('users');
             $table->timestamp('resolved_at')->nullable();
             $table->timestamps();

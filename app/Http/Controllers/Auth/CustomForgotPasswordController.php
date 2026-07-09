@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\PasswordResetRequest;
 use App\Models\User;
-use App\Notifications\PasswordResetApproved;
 use App\Notifications\PasswordResetRequested;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class CustomForgotPasswordController extends Controller
 {
@@ -31,10 +31,17 @@ class CustomForgotPasswordController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email|max:255',
+            'email' => 'required|email|max:255',
         ]);
 
         $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return view('auth.custom-forgot-password', [
+                'password' => null, 'statusType' => 'not_found',
+                'statusMessage' => null, 'remainingMinutes' => null,
+                'withinHours' => $this->isWithinOperationalHours(),
+            ]);
+        }
 
         $existing = PasswordResetRequest::where('user_id', $user->id)
             ->latest()
@@ -47,20 +54,18 @@ class CustomForgotPasswordController extends Controller
         $withinHours      = $this->isWithinOperationalHours();
 
         if ($existing && $existing->status === 'approved') {
-            $password   = $existing->new_password;
+            $password   = '********';
             $statusType = 'approved';
-            session()->flash('_once_pw', $password);
-            $password = null;
         } elseif ($existing && $existing->status === 'pending') {
             $elapsed = now()->diffInSeconds($existing->created_at);
 
             if ($elapsed >= self::AUTO_RESET_TIMEOUT) {
                 if ($withinHours) {
-                    $newPassword = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#'), 0, 12);
+                    $newPassword = Str::random(16);
 
                     $existing->update([
                         'status'       => 'approved',
-                        'new_password' => $newPassword,
+                        'new_password' => Hash::make($newPassword),
                         'resolved_at'  => now(),
                         'notes'        => $existing->notes . ' | Auto-reset setelah ' . round($elapsed / 60) . ' menit',
                     ]);
@@ -71,10 +76,8 @@ class CustomForgotPasswordController extends Controller
 
                     Log::info('Password auto-reset', ['user_id' => $user->id]);
 
-                    $password   = $newPassword;
+                    $password   = '********';
                     $statusType = 'auto_approved';
-                    session()->flash('_once_pw', $password);
-                    $password = null;
                 } else {
                     $statusType = 'outside_hours';
                 }

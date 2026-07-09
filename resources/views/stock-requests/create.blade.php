@@ -95,12 +95,18 @@ function removeItem(id) {
     renderItems();
 }
 
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
 function renderItems() {
     var tbody = document.getElementById('itemsBody');
     var msg = document.getElementById('noItemsMsg');
     tbody.innerHTML = '';
     items.forEach(function(i) {
-        tbody.innerHTML += '<tr><td>' + i.name + '<input type="hidden" name="items[' + i.product_id + '][product_id]" value="' + i.product_id + '"></td><td><input type="number" name="items[' + i.product_id + '][quantity]" value="' + i.quantity + '" class="form-control form-control-sm" min="1" onchange="updateQty(\'' + i.product_id + '\',this.value)"></td><td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(\'' + i.product_id + '\')"><i class="fas fa-trash"></i></button></td></tr>';
+        tbody.innerHTML += '<tr><td>' + escapeHtml(i.name) + '<input type="hidden" name="items[' + i.product_id + '][product_id]" value="' + i.product_id + '"></td><td><input type="number" name="items[' + i.product_id + '][quantity]" value="' + i.quantity + '" class="form-control form-control-sm" min="1" onchange="updateQty(\'' + i.product_id + '\',this.value)"></td><td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(\'' + i.product_id + '\')"><i class="fas fa-trash"></i></button></td></tr>';
     });
     msg.style.display = items.length ? 'none' : 'block';
     document.getElementById('submitBtn').disabled = items.length === 0;

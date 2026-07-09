@@ -253,7 +253,7 @@
                                     {{ $t->branch->name ?? '-' }} 
                                     &middot; {{ $t->user->name ?? '-' }}
                                     @if($t->customer)
-                                    &middot; {{ $t->customer->name }}
+                                    &middot; {{ $t->customer?->name ?? '-' }}
                                     @endif
                                 </div>
                             </div>

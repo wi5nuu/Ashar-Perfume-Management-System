@@ -5,13 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\WholesaleOrder;
 use App\Models\Customer;
+use App\Models\PasswordResetRequest;
 use App\Services\WholesaleLoyaltyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class WholesaleCustomerController extends Controller
 {
+    private function safeProfile(User $user): array
+    {
+        return $user->only(['id', 'name', 'email', 'phone', 'role', 'referral_code']);
+    }
+
     private function userOrdersQuery(User $user)
     {
         return WholesaleOrder::where(function ($q) use ($user) {
@@ -85,6 +92,7 @@ class WholesaleCustomerController extends Controller
         })->first();
         $rankInfo = $customer ? app(WholesaleLoyaltyService::class)->getRankInfo($customer) : [];
 
+        $user = $this->safeProfile($user);
         return view('wholesale.customer.dashboard', compact('user', 'orders', 'totalOrders', 'activeOrders', 'totalSpent', 'tier', 'rankInfo', 'customer'));
     }
 
@@ -98,6 +106,7 @@ class WholesaleCustomerController extends Controller
         $totalSpent = $this->userOrdersQuery($user)->whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount');
         $tier = $this->computeTier($totalSpent);
 
+        $user = $this->safeProfile($user);
         return view('wholesale.customer.orders', compact('user', 'orders', 'totalSpent', 'tier'));
     }
 
@@ -124,6 +133,7 @@ class WholesaleCustomerController extends Controller
             if ($totalSpent < $t['min']) { $nextTier = $t; break; }
         }
 
+        $user = $this->safeProfile($user);
         return view('wholesale.customer.history', compact('user', 'orders', 'totalSpent', 'totalOrders', 'tier', 'nextTier'));
     }
 
@@ -150,6 +160,7 @@ class WholesaleCustomerController extends Controller
 
         $totalReferrals = $user->referrals()->count();
 
+        $user = $this->safeProfile($user);
         return view('wholesale.customer.leaderboard', compact(
             'user', 'topReferrers', 'myReferralsCount', 'myPosition',
             'totalReferrals'
@@ -172,6 +183,7 @@ class WholesaleCustomerController extends Controller
         $totalSpent = (clone $totalsQuery)->whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount');
         $totalOrders = (clone $totalsQuery)->count();
 
+        $user = $this->safeProfile($user);
         return view('wholesale.customer.loyalty', compact('user', 'rankInfo', 'redemptions', 'totalSpent', 'totalOrders'));
     }
 
@@ -207,6 +219,7 @@ class WholesaleCustomerController extends Controller
             return redirect()->route('wholesale.customer.login');
         }
         $order = $this->userOrdersQuery($user)->with(['details', 'handler', 'customer'])->findOrFail($id);
+        $user = $this->safeProfile($user);
         return view('wholesale.customer.show', compact('user', 'order'));
     }
 
@@ -223,6 +236,7 @@ class WholesaleCustomerController extends Controller
         $totalSpent = (clone $qq)->whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount');
         $tier = $this->computeTier($totalSpent);
         $orders = (clone $qq)->with(['details', 'handler'])->latest()->paginate(10);
+        $user = $this->safeProfile($user);
 
         return view('wholesale.customer.dashboard', compact('user', 'orders', 'totalOrders', 'activeOrders', 'totalSpent', 'tier'))
             ->with('trackedOrder', $order);
@@ -233,6 +247,48 @@ class WholesaleCustomerController extends Controller
         $user = Auth::user();
         if ($user) $user->unreadNotifications->markAsRead();
         return back()->with('success', 'Semua notifikasi telah ditandai dibaca.');
+    }
+
+    public function showForgotPasswordForm()
+    {
+        if (Auth::check() && Auth::user()->role === 'wholesale_customer') {
+            return redirect()->route('wholesale.customer.dashboard');
+        }
+        return view('wholesale.customer.forgot-password');
+    }
+
+    public function sendForgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('role', 'wholesale_customer')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$user) {
+            return back()->withErrors(['email' => 'Email tidak ditemukan.'])->onlyInput('email');
+        }
+
+        $existing = PasswordResetRequest::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existing) {
+            return back()->with('error', 'Permintaan reset password sudah dikirim. Silakan tunggu diproses Owner.');
+        }
+
+        PasswordResetRequest::create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'notes' => 'Permintaan reset password dari portal pelanggan grosir.',
+        ]);
+
+        Log::info('Wholesale customer forgot password request', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
+
+        return back()->with('success', 'Permintaan reset password telah dikirim ke Owner. Anda akan mendapatkan password baru setelah diproses.');
     }
 
     public function logout(Request $request)

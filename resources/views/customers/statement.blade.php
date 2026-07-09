@@ -97,7 +97,7 @@
                     </tbody>
                     @if(!$transactions->isEmpty())
                     <tfoot>
-                        <tr class="font-weight-bold h5">
+                        <tr class="font-weight-bold" style="font-size:1.1rem">
                             <td colspan="5" class="text-right">SISA HUTANG:</td>
                             <td class="text-right {{ $balance > 0 ? 'text-danger' : 'text-success' }}">
                                 Rp {{ number_format($balance, 0, ',', '.') }}

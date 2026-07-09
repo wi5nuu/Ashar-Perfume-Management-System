@@ -76,7 +76,7 @@
                     </div>
 
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary-apms">
                             <i class="fas fa-save"></i> Simpan Perubahan
                         </button>
                         <a href="{{ route('customers.index') }}" class="btn btn-default">

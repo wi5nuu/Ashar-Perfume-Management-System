@@ -23,54 +23,58 @@
                 <div class="card-body">
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <table class="table table-sm">
-                                <tr>
-                                    <th style="width: 40%">Kode Pelanggan</th>
-                                    <td>{{ $customer->customer_code }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Nama</th>
-                                    <td>{{ $customer->name }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Telepon</th>
-                                    <td>{{ $customer->phone ?? '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Email</th>
-                                    <td>{{ $customer->email ?? '-' }}</td>
-                                </tr>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th style="width: 40%">Kode Pelanggan</th>
+                                        <td>{{ $customer->customer_code }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Nama</th>
+                                        <td>{{ $customer->name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Telepon</th>
+                                        <td>{{ $customer->phone ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email</th>
+                                        <td>{{ $customer->email ?? '-' }}</td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <table class="table table-sm">
-                                <tr>
-                                    <th style="width: 40%">Tipe Pelanggan</th>
-                                    <td>
-                                        @if($customer->type == 'wholesale')
-                                            <span class="badge badge-info">Wholesale</span>
-                                        @elseif($customer->type == 'vip')
-                                            <span class="badge badge-success">VIP</span>
-                                        @else
-                                            <span class="badge badge-secondary">Retail</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Status</th>
-                                    <td>
-                                        @if($customer->is_active)
-                                            <span class="badge badge-success">Aktif</span>
-                                        @else
-                                            <span class="badge badge-danger">Nonaktif</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Terdaftar</th>
-                                    <td>{{ $customer->created_at->format('d/m/Y H:i') }}</td>
-                                </tr>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th style="width: 40%">Tipe Pelanggan</th>
+                                        <td>
+                                            @if($customer->type == 'wholesale')
+                                                <span class="badge badge-info">Wholesale</span>
+                                            @elseif($customer->type == 'vip')
+                                                <span class="badge badge-success">VIP</span>
+                                            @else
+                                                <span class="badge badge-secondary">Retail</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status</th>
+                                        <td>
+                                            @if($customer->is_active)
+                                                <span class="badge badge-success">Aktif</span>
+                                            @else
+                                                <span class="badge badge-danger">Nonaktif</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Terdaftar</th>
+                                        <td>{{ $customer->created_at->format('d/m/Y H:i') }}</td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
 

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Commission extends Model
 {
+    protected $hidden = ['commission_rate', 'commission_amount'];
+
     protected $fillable = [
         'user_id',
         'transaction_id',

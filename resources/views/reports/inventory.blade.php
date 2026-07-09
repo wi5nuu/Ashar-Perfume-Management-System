@@ -66,7 +66,7 @@
                                 @forelse($expiringSoon as $item)
                                 <tr>
                                     <td>{{ $item->name }}</td>
-                                    <td>{{ $item->expiration_date ? \Carbon\Carbon::parse($item->expiration_date)->format('d M Y') : '-' }}</td>
+                                    <td>{{ $item->expiration_date ? \Carbon\Carbon::parse($item->expiration_date)->format('d/m/Y') : '-' }}</td>
                                     <td>{{ $item->current_stock }}</td>
                                 </tr>
                                 @empty

@@ -171,7 +171,7 @@
                                                             title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-primary" 
+                                                    <button type="button" class="btn btn-primary-apms" 
                                                             onclick="adjustStock(@json($inventory->id))" 
                                                             title="Adjust">
                                                         <i class="fas fa-exchange-alt"></i>
@@ -207,7 +207,7 @@
                                     <tbody>
                                         @foreach($lowStock as $item)
                                         <tr>
-                                            <td>{{ $item->product->name }}</td>
+                                            <td>{{ $item->product?->name ?? '-' }}</td>
                                             <td>
                                                 <span class="badge badge-warning">{{ $item->current_stock }}</span>
                                             </td>
@@ -226,7 +226,7 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <button class="btn btn-primary btn-sm" 
+                                                <button class="btn btn-primary-apms btn-sm" 
                                                         onclick="quickReorder(@json($item->product_id))">
                                                     <i class="fas fa-shopping-cart"></i> Pesan Ulang
                                                 </button>
@@ -256,13 +256,13 @@
                                 <div class="col-md-4 mb-3">
                                     <div class="card card-outline card-danger">
                                         <div class="card-body">
-                                            <h5 class="card-title">{{ $item->product->name }}</h5>
+                                            <h5 class="card-title">{{ $item->product?->name ?? '-' }}</h5>
                                             <p class="card-text">
                                                 <i class="fas fa-box text-danger"></i> Stok: <strong>0</strong><br>
-                                                <i class="fas fa-tag text-muted"></i> Kategori: {{ $item->product->category->name ?? '-' }}<br>
+                                                <i class="fas fa-tag text-muted"></i> Kategori: {{ $item->product?->category?->name ?? '-' }}<br>
                                                 <i class="fas fa-money-bill-wave text-success"></i> Harga: Rp {{ number_format($item->product->selling_price, 0, ',', '.') }}
                                             </p>
-                                            <button class="btn btn-primary btn-block" 
+                                            <button class="btn btn-primary-apms btn-block" 
                                                     onclick="quickReorder(@json($item->product_id))">
                                                 <i class="fas fa-redo"></i> Restock
                                             </button>
@@ -308,7 +308,7 @@
                                             $stockValue = $item->current_stock * $item->cost_per_unit;
                                         @endphp
                                         <tr>
-                                            <td>{{ $item->product->name }}</td>
+                                            <td>{{ $item->product?->name ?? '-' }}</td>
                                             <td>{{ $item->batch_number ?? '-' }}</td>
                                             <td>{{ $item->current_stock }}</td>
                                             <td>{{ $expDate->format('d/m/Y') }}</td>

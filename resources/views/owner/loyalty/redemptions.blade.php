@@ -90,7 +90,7 @@
                                 </div>
                             </div>
                             <div class="modal-footer py-2">
-                                <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
+                                <button type="submit" class="btn btn-primary-apms btn-sm">Simpan</button>
                             </div>
                         </div>
                     </form>

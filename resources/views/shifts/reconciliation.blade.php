@@ -120,7 +120,7 @@
                                     @endforeach
                                 </tbody>
                                 <tfoot>
-                                    <tr class="font-weight-bold h5">
+                                    <tr class="font-weight-bold" style="font-size:1.1rem">
                                         <td class="text-right" colspan="2">TOTAL UANG KERTAS:</td>
                                         <td class="text-right text-primary" id="totalDenom">Rp 0</td>
                                     </tr>

@@ -8,6 +8,8 @@ class PasswordHistory extends Model
 {
     public const UPDATED_AT = null;
 
+    protected $hidden = ['password'];
+
     protected $fillable = ['user_id', 'password'];
 
     protected function casts(): array

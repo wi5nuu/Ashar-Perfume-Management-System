@@ -19,7 +19,7 @@
                         <tbody>
                             <tr>
                                 <th style="width: 40%">Nama Kasir</th>
-                                <td>{{ $shift->user->name }}</td>
+                                <td>{{ $shift->user?->name ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <th>Status Berjalan</th>

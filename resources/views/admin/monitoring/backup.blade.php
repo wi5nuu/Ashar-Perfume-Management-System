@@ -7,7 +7,7 @@
         <h5 class="font-weight-bold mb-0"><i class="fas fa-database mr-2 text-primary"></i>Backup Database</h5>
         <form action="{{ route('admin.monitoring.backup.create') }}" method="POST" class="d-inline">
             @csrf
-            <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm mr-1\'></span>Memproses...'; this.form.submit();">
+            <button type="submit" class="btn btn-primary-apms" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm mr-1\'></span>Memproses...'; this.form.submit();">
                 <i class="fas fa-plus mr-1"></i> Backup Sekarang
             </button>
         </form>

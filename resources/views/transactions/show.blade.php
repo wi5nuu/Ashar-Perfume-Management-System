@@ -11,7 +11,7 @@
                     <h3 class="card-title">Detail Transaksi</h3>
                     <div class="card-tools">
                         <a href="{{ route('transactions.print', $transaction->id) }}" 
-                           class="btn btn-primary" target="_blank">
+                           class="btn btn-primary-apms" target="_blank">
                             <i class="fas fa-print"></i> Cetak Invoice
                         </a>
                         <a href="{{ route('transactions.index') }}" class="btn btn-default">
@@ -48,7 +48,7 @@
                                 </tr>
                                 <tr>
                                     <th>Kasir</th>
-                                    <td>{{ $transaction->user->name }}</td>
+                                    <td>{{ $transaction->user?->name ?? '-' }}</td>
                                 </tr>
                             </table>
                         </div>

@@ -17,8 +17,8 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                     <div>
                         <h4 class="mb-1 text-white font-weight-bold">{{ $greeting }}, {{ $user->name }}!</h4>
                         <p class="mb-0 text-white-50">
-                            <i class="fas fa-store mr-1"></i> {{ $user->branch->name ?? 'Pusat' }}
-                            &middot; {{ now()->format('d F Y') }}
+                            <i class="fas fa-store mr-1"></i> {{ $user->branch?->name ?? 'Pusat' }}
+                            &middot; {{ now()->format('d/m/Y') }}
                         </p>
                     </div>
                     <div class="d-flex align-items-center mt-2 mt-sm-0">
@@ -47,7 +47,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
     {{-- Stats Row --}}
     @can('transactions.view')
     <div class="row">
-        @php $bg = $user->isOwner() ? 'bg-gradient-' : 'bg-'; @endphp
+        @php $isOwner = $user->isOwner(); $bg = $isOwner ? 'bg-gradient-' : 'bg-'; @endphp
         <div class="col-lg-3 col-6">
             <div class="small-box {{ $bg }}warning">
                 <div class="inner">
@@ -115,10 +115,10 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                         <i class="fas fa-balance-scale mr-1"></i> Period Comparison
                     </h5>
                     <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                        <label class="btn btn-xs btn-outline-primary active" id="btn-mom">
+                        <label class="btn btn-sm btn-outline-primary active" id="btn-mom">
                             <input type="radio" name="comp_mode" value="mom" checked> MoM
                         </label>
-                        <label class="btn btn-xs btn-outline-primary" id="btn-yoy">
+                        <label class="btn btn-sm btn-outline-primary" id="btn-yoy">
                             <input type="radio" name="comp_mode" value="yoy"> YoY
                         </label>
                     </div>
@@ -205,7 +205,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                                 <td>
                                     <span class="badge badge-light">{{ strtoupper($transaction->payment_method) }}</span>
                                 </td>
-                                <td>{{ $transaction->user->name }}</td>
+                                <td>{{ $transaction->user?->name ?? '-' }}</td>
                                 <td>
                                     @if($transaction->paid_amount >= $transaction->total_amount)
                                         <span class="badge badge-success">Lunas</span>
@@ -252,7 +252,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                             </div>
                             <div class="product-info">
                                 <a href="javascript:void(0)" class="product-title">
-                                    {{ $alert->product->name }}
+                                    {{ $alert->product?->name ?? 'Produk dihapus' }}
                                     @if($alert->expiration_date)
                                     <span class="badge badge-danger float-right">
                                         {{ \Carbon\Carbon::parse($alert->expiration_date)->diffForHumans() }}
@@ -346,7 +346,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                         <a href="{{ route('transactions.show', $t->id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 px-3">
                             <div>
                                 <strong class="text-primary">{{ $t->invoice_number }}</strong>
-                                <small class="d-block text-muted">{{ $t->customer->name ?? 'Umum' }} &middot; {{ $t->created_at->format('H:i') }}</small>
+                                <small class="d-block text-muted">{{ $t->customer?->name ?? 'Umum' }} &middot; {{ $t->created_at?->format('H:i') ?? '-' }}</small>
                             </div>
                             <div class="text-right">
                                 <span class="font-weight-bold">Rp {{ number_format($t->total_amount, 0, ',', '.') }}</span>

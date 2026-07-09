@@ -59,7 +59,7 @@ class BackupService
         return '';
     }
 
-    public function create(): array
+    public function create(bool $noEncrypt = false): array
     {
         $db = config('database.connections.mysql');
         $filename = 'apms-backup-' . now()->format('Y-m-d-H-i-s') . '.sql';
@@ -96,7 +96,7 @@ class BackupService
         $originalSize = filesize($filepath);
         $encryptedPath = $filepath . '.enc';
 
-        if (config('security.backup.encryption_enabled', true)) {
+        if (!$noEncrypt && config('security.backup.encryption_enabled', false)) {
             $key = config('app.key');
             $iv = random_bytes(16);
             $data = file_get_contents($filepath);

@@ -76,15 +76,15 @@
                             <div class="d-flex justify-content-between p-2 bg-light rounded shadow-inner" style="gap: 5px;">
                                 <div class="flex-fill text-center">
                                     <input type="radio" name="status" id="s_hadir" value="present" class="d-none" checked onclick="toggleReason(false)">
-                                    <label for="s_hadir" class="btn btn-block btn-xs status-label py-2 mb-0" data-status="present">HADIR</label>
+                                    <label for="s_hadir" class="btn btn-block btn-sm status-label py-2 mb-0" data-status="present">HADIR</label>
                                 </div>
                                 <div class="flex-fill text-center">
                                     <input type="radio" name="status" id="s_sakit" value="sick" class="d-none" onclick="toggleReason(true)">
-                                    <label for="s_sakit" class="btn btn-block btn-xs status-label py-2 mb-0" data-status="sick">SAKIT</label>
+                                    <label for="s_sakit" class="btn btn-block btn-sm status-label py-2 mb-0" data-status="sick">SAKIT</label>
                                 </div>
                                 <div class="flex-fill text-center">
                                     <input type="radio" name="status" id="s_izin" value="permit" class="d-none" onclick="toggleReason(true)">
-                                    <label for="s_izin" class="btn btn-block btn-xs status-label py-2 mb-0" data-status="permit">IZIN</label>
+                                    <label for="s_izin" class="btn btn-block btn-sm status-label py-2 mb-0" data-status="permit">IZIN</label>
                                 </div>
                             </div>
                         </div>
@@ -128,7 +128,7 @@
                                 @forelse($attendances as $attendance)
                                 <tr>
                                     <td class="pl-3">
-                                        <div class="font-weight-bold text-dark" style="font-size: 0.85rem;">{{ $attendance->date ? $attendance->date->format('d M Y') : '-' }}</div>
+                                        <div class="font-weight-bold text-dark" style="font-size: 0.85rem;">{{ $attendance->date ? $attendance->date->format('d/m/Y') : '-' }}</div>
                                         <div class="smaller text-muted d-flex align-items-center">
                                             @if($attendance->status == 'present')
                                                 <i class="fas fa-clock mr-1 text-success"></i> {{ $attendance->time_in ? \Carbon\Carbon::parse($attendance->time_in)->format('H:i') : '-' }}
@@ -177,7 +177,7 @@
                                         @if($attendance->status == 'present' && !$attendance->time_out && $attendance->date->isToday())
                                             <form action="{{ route('attendances.checkout', $attendance->id) }}" method="POST">
                                                 @csrf
-                                                <button type="submit" class="btn btn-xs btn-outline-danger px-2 border-2 font-weight-bold">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger px-2 border-2 font-weight-bold">
                                                     OUT <i class="fas fa-sign-out-alt ml-1"></i>
                                                 </button>
                                             </form>

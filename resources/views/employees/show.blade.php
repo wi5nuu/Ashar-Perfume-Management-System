@@ -15,34 +15,36 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <table class="table table-bordered">
-                        <tr>
-                            <th style="width:200px;">Nama</th>
-                            <td>{{ $employee->name }}</td>
-                        </tr>
-                        <tr>
-                            <th>Email</th>
-                            <td>{{ $employee->email }}</td>
-                        </tr>
-                        <tr>
-                            <th>Telepon</th>
-                            <td>{{ $employee->phone ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <th>Posisi</th>
-                            <td><span class="badge badge-info">{{ ucfirst($employee->role) }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>Cabang</th>
-                            <td>{{ $employee->branch->name ?? 'Pusat' }}</td>
-                        </tr>
-                        @if($employee->employee_id)
-                        <tr>
-                            <th>ID Karyawan</th>
-                            <td>{{ $employee->employee_id }}</td>
-                        </tr>
-                        @endif
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width:200px;">Nama</th>
+                                <td>{{ $employee->name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Email</th>
+                                <td>{{ $employee->email }}</td>
+                            </tr>
+                            <tr>
+                                <th>Telepon</th>
+                                <td>{{ $employee->phone ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Posisi</th>
+                                <td><span class="badge badge-info">{{ ucfirst($employee->role) }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>Cabang</th>
+                                <td>{{ $employee->branch->name ?? 'Pusat' }}</td>
+                            </tr>
+                            @if($employee->employee_id)
+                            <tr>
+                                <th>ID Karyawan</th>
+                                <td>{{ $employee->employee_id }}</td>
+                            </tr>
+                            @endif
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

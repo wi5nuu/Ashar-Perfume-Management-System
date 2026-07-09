@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Customer extends Model
 {
+    protected $hidden = [
+        'portal_token',
+        'nik',
+        'phone',
+        'email',
+    ];
+
     protected $fillable = [
         'customer_code',
         'nik',
@@ -22,6 +29,11 @@ class Customer extends Model
         'aroma_preferences',
         'portal_token',
         'branch_id',
+        'loyalty_rank',
+        'total_credits_earned',
+        'total_credits_spent',
+        'gold_points',
+        'lifetime_spend',
     ];
 
     protected $casts = [
@@ -31,6 +43,10 @@ class Customer extends Model
         'nik' => 'encrypted',
         'points' => 'integer',
         'aroma_preferences' => 'array',
+        'total_credits_earned' => 'integer',
+        'total_credits_spent' => 'integer',
+        'gold_points' => 'integer',
+        'lifetime_spend' => 'decimal:2',
     ];
 
     protected static function boot()

@@ -79,7 +79,7 @@
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr class="h5">
+                                <tr style="font-size:1.1rem">
                                     <td colspan="3" class="text-right font-weight-bold">Total Refund:</td>
                                     <td class="text-right text-danger font-weight-bold">Rp {{ number_format($return->total_refund, 0, ',', '.') }}</td>
                                 </tr>

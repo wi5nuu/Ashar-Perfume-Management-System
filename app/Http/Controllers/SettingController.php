@@ -153,6 +153,23 @@ class SettingController extends Controller
     }
 
     /**
+     * Delete user account.
+     */
+    public function destroyProfile(Request $request)
+    {
+        $user = auth()->user();
+        $request->validate(['password' => 'required|current_password']);
+        if ($user->isOwner()) {
+            return back()->with('error', 'Akun Owner tidak bisa dihapus.');
+        }
+        auth()->logout();
+        $user->delete();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/');
+    }
+
+    /**
      * Update user password.
      */
     public function updatePassword(Request $request)

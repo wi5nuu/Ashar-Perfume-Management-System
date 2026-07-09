@@ -15,50 +15,52 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <table class="table table-bordered">
-                        <tr>
-                            <th style="width:180px;">Kode</th>
-                            <td><strong>{{ $coupon->code }}</strong></td>
-                        </tr>
-                        <tr>
-                            <th>Tipe</th>
-                            <td><span class="badge badge-info">{{ $coupon->type }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>Nilai</th>
-                            <td>
-                                @if($coupon->is_percentage)
-                                    {{ $coupon->value }}%
-                                @else
-                                    Rp {{ number_format($coupon->value, 0, ',', '.') }}
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Berlaku Hingga</th>
-                            <td>{{ $coupon->expiration_date ? $coupon->expiration_date->format('d/m/Y') : '-' }}</td>
-                        </tr>
-                        <tr>
-                            <th>Penggunaan</th>
-                            <td>{{ $coupon->used_count }} / {{ $coupon->max_usage }}</td>
-                        </tr>
-                        <tr>
-                            <th>Status</th>
-                            <td>
-                                @if($coupon->is_active)
-                                    <span class="badge badge-success">Aktif</span>
-                                @else
-                                    <span class="badge badge-danger">Nonaktif</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @if($coupon->customer)
-                        <tr>
-                            <th>Pelanggan</th>
-                            <td>{{ $coupon->customer->name }}</td>
-                        </tr>
-                        @endif
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width:180px;">Kode</th>
+                                <td><strong>{{ $coupon->code }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Tipe</th>
+                                <td><span class="badge badge-info">{{ $coupon->type }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>Nilai</th>
+                                <td>
+                                    @if($coupon->is_percentage)
+                                        {{ $coupon->value }}%
+                                    @else
+                                        Rp {{ number_format($coupon->value, 0, ',', '.') }}
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Berlaku Hingga</th>
+                                <td>{{ $coupon->expiration_date ? $coupon->expiration_date->format('d/m/Y') : '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Penggunaan</th>
+                                <td>{{ $coupon->used_count }} / {{ $coupon->max_usage }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td>
+                                    @if($coupon->is_active)
+                                        <span class="badge badge-success">Aktif</span>
+                                    @else
+                                        <span class="badge badge-danger">Nonaktif</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @if($coupon->customer)
+                            <tr>
+                                <th>Pelanggan</th>
+                                <td>{{ $coupon->customer?->name ?? '-' }}</td>
+                            </tr>
+                            @endif
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

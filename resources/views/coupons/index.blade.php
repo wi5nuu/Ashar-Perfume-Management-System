@@ -9,7 +9,7 @@
             <div class="card">
                 <div class="card-header d-flex align-items-center">
                     <h3 class="card-title mb-0">Daftar Kupon</h3>
-                    <a href="{{ route('coupons.create') }}" class="btn btn-primary ml-auto">
+                    <a href="{{ route('coupons.create') }}" class="btn btn-primary-apms ml-auto">
                         <i class="fas fa-plus"></i> Kupon Baru
                     </a>
                 </div>

@@ -9,9 +9,29 @@ class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule)
     {
-        // Daily backup at 2 AM
-        $schedule->command('backup:run')->dailyAt('02:00');
+        // ── DATABASE BACKUP (SQL) ──────────────────────────────────────
+        // Daily backup at 00:00 (midnight) — retain 7 hari
+        $schedule->command('backup:database --no-encrypt')
+            ->dailyAt('00:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/backup-daily.log'));
+
+        // Weekly backup every Monday at 01:00 — retain 4 minggu
+        $schedule->command('backup:database --no-encrypt')
+            ->weeklyOn(1, '01:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/backup-weekly.log'));
+
+        // Monthly backup every 1st at 02:00 — retain 3 bulan
+        $schedule->command('backup:database --no-encrypt')
+            ->monthlyOn(1, '02:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/backup-monthly.log'));
+
+        // Full system backup (files + DB) setiap hari Minggu jam 03:00
+        $schedule->command('backup:run')->weeklyOn(0, '03:00');
         
+        // ── JOBS ───────────────────────────────────────────────────────
         // Check for low stock alerts every hour
         $schedule->call(function () {
             \App\Jobs\CheckLowStockJob::dispatch();

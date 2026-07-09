@@ -47,10 +47,10 @@
                                     <td class="text-nowrap">
                                         <div class="font-weight-bold">{{ $expense->date ? \Carbon\Carbon::parse($expense->date)->format('d/m/Y') : '-' }}</div>
                                         <div class="d-sm-none text-xs-mobile text-muted">
-                                            {{ $expense->category->name }}
-                                        </div>
+{{ $expense->category?->name ?? '-' }}
+
                                     </td>
-                                    <td class="d-none d-sm-table-cell"><span class="badge badge-info">{{ $expense->category->name }}</span></td>
+                                    <td class="d-none d-sm-table-cell"><span class="badge badge-info">{{ $expense->category?->name ?? '-' }}</span></td>
                                     <td>
                                         <div class="truncate-text font-weight-bold">{{ $expense->description }}</div>
                                         <div class="d-lg-none text-xs-mobile text-muted">
@@ -61,7 +61,7 @@
                                     <td class="text-right font-weight-bold text-nowrap">Rp {{ number_format($expense->amount, 0, ',', '.') }}</td>
                                     <td class="d-none d-lg-table-cell">
                                         @if($expense->proof_image)
-                                            <a href="{{ asset('storage/' . $expense->proof_image) }}" target="_blank" class="btn btn-xs btn-default">
+                                            <a href="{{ asset('storage/' . $expense->proof_image) }}" target="_blank" class="btn btn-sm btn-default">
                                                 <i class="fas fa-image"></i> Lihat
                                             </a>
                                         @else

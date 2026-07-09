@@ -134,11 +134,19 @@ class SalesReturnController extends Controller
             return back()->with('error', 'Hanya retur pending yang bisa diapprove.');
         }
 
-        $return->update([
-            'status'      => 'approved',
-            'approved_at' => now(),
-            'approved_by' => auth()->id(),
-        ]);
+        try {
+            $return->update([
+                'status'      => 'approved',
+                'approved_at' => now(),
+                'approved_by' => auth()->id(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Sales return approval failed', [
+                'return_id' => $return->id,
+                'error'     => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Gagal menyetujui retur. Silakan coba lagi.');
+        }
 
         return back()->with('success', 'Retur telah diapprove.');
     }

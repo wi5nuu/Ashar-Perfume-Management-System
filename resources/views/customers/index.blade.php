@@ -130,7 +130,7 @@
                                             <a href="{{ route('customers.edit', $customer->id) }}" class="btn btn-warning">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button class="btn btn-primary" onclick="viewTransactions(@json($customer->id))">
+                                            <button class="btn btn-primary-apms" onclick="viewTransactions(@json($customer->id))">
                                                 <i class="fas fa-history"></i>
                                             </button>
                                             <button class="btn btn-danger" onclick="deleteCustomer(@json($customer->id))">

@@ -128,7 +128,7 @@
                                             </a>
                                         </div>
                                         <div class="col-md-3">
-                                            <a href="#" class="btn btn-primary btn-block mb-2" 
+                                            <a href="#" class="btn btn-primary-apms btn-block mb-2" 
                                                onclick="generateEmployeeReport()">
                                                 <i class="fas fa-user-tie"></i> Performa Karyawan
                                             </a>
@@ -164,7 +164,7 @@
                                     <td>{{ $report->name }}</td>
                                     <td>{{ $report->created_at->format('d/m/Y') }}</td>
                                     <td>
-                                        <a href="{{ $report->file_url }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ $report->file_url }}" class="btn btn-sm btn-primary-apms">
                                             <i class="fas fa-download"></i>
                                         </a>
                                     </td>

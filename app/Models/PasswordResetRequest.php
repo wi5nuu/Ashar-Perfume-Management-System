@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PasswordResetRequest extends Model
 {
+    protected $hidden = ['new_password'];
+
     protected $fillable = [
         'user_id', 'status', 'notes', 'new_password', 'resolved_by', 'resolved_at',
     ];

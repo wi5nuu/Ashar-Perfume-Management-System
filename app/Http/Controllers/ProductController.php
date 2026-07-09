@@ -265,6 +265,17 @@ class ProductController extends Controller
         }
     }
 
+    public function bulkDelete(Request $request)
+    {
+        Gate::authorize('manage_products');
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return response()->json(['error' => 'No products selected'], 400);
+        }
+        Product::whereIn('id', $ids)->delete();
+        return response()->json(['success' => true]);
+    }
+
     /**
      * Print barcode produk.
      */

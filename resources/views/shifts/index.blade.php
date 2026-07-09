@@ -80,7 +80,7 @@
                                 @foreach($shifts as $shift)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $shift->user->name }}</td>
+                                    <td>{{ $shift->user?->name ?? '-' }}</td>
                                     <td>
                                         <small>
                                             Mulai: {{ $shift->start_time ? $shift->start_time->format('d/m/Y H:i') : '-' }}<br>
@@ -132,7 +132,7 @@
                                                 <span class="badge badge-danger"><i class="fas fa-times mr-1"></i> Ditolak</span>
                                             @endif
                                             <div class="mt-1">
-                                                <a href="{{ route('shifts.show', $shift->id) }}" class="btn btn-xs btn-outline-info">Lihat Detail</a>
+                                                <a href="{{ route('shifts.show', $shift->id) }}" class="btn btn-sm btn-outline-info">Lihat Detail</a>
                                             </div>
                                         @endif
                                     </td>

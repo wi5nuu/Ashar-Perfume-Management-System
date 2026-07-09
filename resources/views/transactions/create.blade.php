@@ -15,7 +15,7 @@
                 <div class="card-body">
                     <div class="category-scroll d-flex flex-nowrap overflow-auto pb-2">
                         @foreach($categories as $category)
-                        @php $catColor = preg_match('/^#[0-9a-fA-F]{6}$/', $category->color) ? $category->color : '#FF6B35'; @endphp
+                        @php $catColor = $category->color && preg_match('/^#[0-9a-fA-F]{6}$/', $category->color) ? $category->color : '#FF6B35'; @endphp
                         <div class="flex-shrink-0 mr-2">
                             <button class="btn btn-category btn-sm py-2 px-3" 
                                     data-category="{{ $category->id }}"
@@ -58,7 +58,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link font-weight-bold" id="tab-refill" data-toggle="tab" href="#productsRefill" role="tab" style="color:#17a2b8;">
+                            <a class="nav-link font-weight-bold" id="tab-refill" data-toggle="tab" href="#productsRefill" role="tab" style="color:#6c757d;">
                                 <i class="fas fa-fill-drip mr-1"></i> Isi Ulang
                             </a>
                         </li>
@@ -135,22 +135,22 @@
                                      data-price-per-ml="{{ $product->refill_price_per_ml ?? 0 }}"
                                      data-bulk-stock="{{ $bulkStock }}"
                                      data-barcode="{{ $product->barcode }}">
-                                    <div class="card product-card h-100 border-info">
+                                    <div class="card product-card h-100 border-secondary">
                                         <div class="card-body p-2">
                                             <div class="d-flex align-items-center">
                                                 <div class="mr-2">
                                                     @if($product->image)
                                                     <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" style="width:50px;height:50px;object-fit:cover;" class="rounded">
                                                     @else
-                                                    <div class="bg-info-light d-flex align-items-center justify-content-center rounded" style="width:50px;height:50px;">
-                                                        <i class="fas fa-fill-drip fa-lg text-info"></i>
+                                                    <div class="bg-light d-flex align-items-center justify-content-center rounded" style="width:50px;height:50px;">
+                                                        <i class="fas fa-fill-drip fa-lg text-secondary"></i>
                                                     </div>
                                                     @endif
                                                 </div>
                                                 <div class="flex-grow-1 min-width-0">
-                                                    <h6 class="mb-0 font-weight-bold text-info">{{ $product->name }}</h6>
+                                                    <h6 class="mb-0 font-weight-bold text-secondary">{{ $product->name }}</h6>
                                                     <small class="text-muted d-block">{{ $product->size }}</small>
-                                                    <strong class="text-info">
+                                                    <strong class="text-secondary">
                                                         Rp {{ number_format($product->refill_price_per_ml ?? 0, 0, ',', '.') }}/ml
                                                     </strong>
                                                     <div class="mt-1">
@@ -159,7 +159,7 @@
                                                         @elseif($bulkStock < 500)
                                                             <span class="badge badge-warning">Sisa {{ number_format($bulkStock) }} ml</span>
                                                         @else
-                                                            <span class="badge badge-info">{{ number_format($bulkStock) }} ml</span>
+                                                            <span class="badge badge-secondary">{{ number_format($bulkStock) }} ml</span>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -167,11 +167,11 @@
                                             <div class="mt-2 d-flex align-items-center">
                                                 <div class="input-group input-group-sm mr-2" style="max-width:130px;">
                                                     <div class="input-group-prepend">
-                                                        <span class="input-group-text bg-info text-white">ml</span>
+                                                        <span class="input-group-text bg-secondary text-white">ml</span>
                                                     </div>
                                                     <input type="number" class="form-control refill-volume-input" value="50" min="10" max="{{ $bulkStock }}">
                                                 </div>
-                                                <button class="btn btn-info btn-sm flex-shrink-0" onclick="addRefillToCart({{ $product->id }}, this)">
+                                                <button class="btn btn-secondary btn-sm flex-shrink-0" onclick="addRefillToCart({{ $product->id }}, this)">
                                                     <i class="fas fa-cart-plus"></i>
                                                 </button>
                                             </div>
@@ -201,6 +201,7 @@
                 </div>
                 <div class="card-body p-2">
                     <form id="newCustomerForm">
+                        @csrf
                         <input type="hidden" name="is_active" value="1">
                         <div class="row">
                             <div class="col-md-12">
@@ -1219,7 +1220,7 @@ function processPayment() {
                                     </button>
                                 </div>
                             </div>
-                            <button class="btn btn-primary btn-block mb-2" onclick="printReceipt('${response.transaction_id}')">
+                            <button class="btn btn-primary-apms btn-block mb-2" onclick="printReceipt('${response.transaction_id}')">
                                 <i class="fas fa-print"></i> Cetak Struk Fisik
                             </button>
                         </div>

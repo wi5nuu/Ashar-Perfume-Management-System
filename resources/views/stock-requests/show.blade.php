@@ -148,7 +148,7 @@
                                 <div class="form-group">
                                     <textarea name="receipt_notes" class="form-control form-control-sm" placeholder="Catatan pengiriman..." rows="2"></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-block" onclick="disableBtn(this,'Menyiapkan...')"><i class="fas fa-boxes mr-1"></i>Siapkan & Kirim</button>
+                                <button type="submit" class="btn btn-primary-apms btn-block" onclick="disableBtn(this,'Menyiapkan...')"><i class="fas fa-boxes mr-1"></i>Siapkan & Kirim</button>
                             </form>
                             @endif
                         @endcan

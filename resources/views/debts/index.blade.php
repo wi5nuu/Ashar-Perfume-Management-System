@@ -35,7 +35,7 @@
                                             {{ $trx->customer->name ?? 'Umum' }}
                                         </div>
                                         <div class="d-lg-none text-xs-mobile text-muted">
-                                            {{ $trx->created_at->format('d/m/y') }}
+                                            {{ $trx->created_at->format('d/m/Y') }}
                                         </div>
                                     </td>
                                     <td class="d-none d-lg-table-cell text-nowrap">{{ $trx->created_at->format('d/m/Y') }}</td>

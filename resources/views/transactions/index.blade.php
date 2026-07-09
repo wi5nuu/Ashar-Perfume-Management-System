@@ -61,8 +61,8 @@
                                             {{ $transaction->invoice_number }}
                                         </a>
                                     </td>
-                                    <td class="d-none d-md-table-cell">{{ $transaction->created_at->format('d/m/Y H:i') }}</td>
-                                    <td>{{ $transaction->customer->name ?? 'Umum' }}</td>
+                                    <td class="d-none d-md-table-cell">{{ $transaction->created_at?->format('d/m/Y H:i') ?? '-' }}</td>
+                                    <td>{{ $transaction->customer?->name ?? 'Umum' }}</td>
                                     <td class="d-none d-md-table-cell">
                                         @if($transaction->customer_type == 'wholesale')
                                             <span class="badge badge-info">Grosir</span>
@@ -74,7 +74,7 @@
                                     <td class="d-none d-sm-table-cell">
                                         <span class="badge badge-light">{{ strtoupper($transaction->payment_method) }}</span>
                                     </td>
-                                    <td class="d-none d-lg-table-cell">{{ $transaction->user->name }}</td>
+                                    <td class="d-none d-lg-table-cell">{{ $transaction->user?->name ?? '-' }}</td>
                                     <td>
                                         <div class="btn-group">
                                             <a href="{{ route('transactions.show', $transaction->id) }}" 
@@ -82,7 +82,7 @@
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="{{ route('transactions.print', $transaction->id) }}" 
-                                               class="btn btn-primary btn-sm" target="_blank">
+                                               class="btn btn-primary-apms btn-sm" target="_blank">
                                                 <i class="fas fa-print"></i>
                                             </a>
                                             @can('manage_transactions')

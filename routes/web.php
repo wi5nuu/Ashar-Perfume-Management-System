@@ -30,6 +30,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
     Route::get('/settings/profile', [SettingController::class, 'profile'])->name('settings.profile');
     Route::post('/settings/profile', [SettingController::class, 'updateProfile'])->middleware('throttle:10,1')->name('settings.profile.update');
     Route::post('/settings/password', [SettingController::class, 'updatePassword'])->middleware('throttle:5,1')->name('settings.password.update');
+    Route::delete('/settings/profile', [SettingController::class, 'destroyProfile'])->middleware('throttle:3,1')->name('settings.profile.destroy');
 
     // Password Reset Requests (cabang → owner)
     Route::post('/settings/password/reset-request', [SettingController::class, 'requestPasswordReset'])->middleware('throttle:3,10')->name('settings.password.reset-request');
@@ -44,6 +45,9 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
     Route::get('/wholesale-customers', [\App\Http\Controllers\OwnerController::class, 'wholesaleCustomers'])->name('owner.wholesale-customers');
     Route::post('/owner/wholesale-customers/{id}/reset-password', [\App\Http\Controllers\OwnerController::class, 'resetWholesalePassword'])->name('owner.wholesale-reset-password');
     Route::post('/owner/wholesale-customers/{id}/update', [\App\Http\Controllers\OwnerController::class, 'updateWholesaleAccount'])->name('owner.wholesale-update');
+    Route::get('/owner/wholesale-password-requests', [\App\Http\Controllers\OwnerController::class, 'wholesalePasswordRequests'])->name('owner.wholesale-password-requests');
+    Route::post('/owner/wholesale-password-requests/{id}/resolve', [\App\Http\Controllers\OwnerController::class, 'resolveWholesalePasswordRequest'])->name('owner.wholesale-password-resolve');
+    Route::get('/owner/wholesale-customers/{id}/orders', [\App\Http\Controllers\OwnerController::class, 'wholesaleCustomerOrders'])->name('owner.wholesale-customer-orders');
     Route::get('/owner/customer-accounts', [\App\Http\Controllers\OwnerController::class, 'customerAccounts'])->name('owner.customer-accounts');
 
     // 💰 POS & SHIFT: Cashier, Admin, Manager, Owner, Supervisor (attendance)
@@ -73,6 +77,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::get('/products/export/pdf', [ProductController::class, 'exportPDF'])->name('products.export.pdf');
         Route::get('/products/export/csv', [ProductController::class, 'exportCSV'])->name('products.export.csv');
         Route::resource('products', ProductController::class);
+        Route::post('/products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk-delete');
         Route::get('/products/{product}/barcode', [ProductController::class, 'printBarcode'])->name('products.barcode');
         Route::get('/products/{product}/barcode-image', [ProductController::class, 'renderBarcode'])->name('products.barcode-image');
 
@@ -278,9 +283,8 @@ Route::get('/view-invoice/{invoice_number}', [TransactionController::class, 'pub
 Route::prefix('wholesale-customer')->name('wholesale.customer.')->group(function () {
     Route::get('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'login'])->middleware('throttle:5,1');
-    Route::get('/auth/google', [\App\Http\Controllers\WholesaleGoogleAuthController::class, 'redirect'])->name('auth.google');
-    Route::get('/auth/google/callback', [\App\Http\Controllers\WholesaleGoogleAuthController::class, 'callback'])->middleware('throttle:10,1');
-
+    Route::get('/forgot-password', [\App\Http\Controllers\WholesaleCustomerController::class, 'showForgotPasswordForm'])->name('forgot-password');
+    Route::post('/forgot-password', [\App\Http\Controllers\WholesaleCustomerController::class, 'sendForgotPassword'])->middleware('throttle:3,10')->name('forgot-password.submit');
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\WholesaleCustomerController::class, 'dashboard'])->name('dashboard');
         Route::get('/orders', [\App\Http\Controllers\WholesaleCustomerController::class, 'orders'])->name('orders');

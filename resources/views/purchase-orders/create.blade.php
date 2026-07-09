@@ -140,7 +140,7 @@ $(function() {
             </td>
             <td class="subtotal-cell">Rp 0</td>
             <td>
-                <button type="button" class="btn btn-xs btn-danger remove-row"><i class="fas fa-trash"></i></button>
+                <button type="button" class="btn btn-sm btn-danger remove-row"><i class="fas fa-trash"></i></button>
             </td>
         </tr>`;
         $('#itemsBody').append(html);

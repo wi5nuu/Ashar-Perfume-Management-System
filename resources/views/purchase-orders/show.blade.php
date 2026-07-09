@@ -126,7 +126,7 @@
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr class="h5">
+                                <tr style="font-size:1.1rem">
                                     <td colspan="4" class="text-right font-weight-bold">Total:</td>
                                     <td class="text-right text-primary font-weight-bold">Rp {{ number_format($purchaseOrder->total_amount, 0, ',', '.') }}</td>
                                 </tr>

@@ -56,7 +56,7 @@
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Update</button>
+                            <button type="submit" class="btn btn-primary-apms">Update</button>
                             <a href="{{ route('coupons.index') }}" class="btn btn-secondary">Batal</a>
                         </div>
                     </form>

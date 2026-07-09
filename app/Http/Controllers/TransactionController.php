@@ -92,7 +92,7 @@ class TransactionController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($request) {
+            $transaction = DB::transaction(function () use ($request) {
                 $validated = $request->validated();
                 $user = Auth::user();
                 $subtotal = 0;
@@ -174,32 +174,34 @@ class TransactionController extends Controller
                         ->increment('points', (int) floor($total / 10000));
                 }
 
-                // Broadcast debt notification if partial payment
-                if ($transaction->payment_status === 'partial') {
-                    $transaction->load(['customer', 'user']);
-                    broadcast(new DebtSubmitted($transaction))->toOthers();
-                }
-
-                // Broadcast dashboard update
-                $this->dispatchDashboardUpdate();
-
-                Log::info('Transaction created', [
-                    'id'        => $transaction->id,
-                    'invoice'   => $transaction->invoice_number,
-                    'total'     => $transaction->total_amount,
-                    'user_id'   => $user->id,
-                    'branch_id' => $branchId,
-                ]);
-
-                return response()->json([
-                    'message'        => 'Transaction successful.',
-                    'id'             => $transaction->id,
-                    'transaction_id' => $transaction->id,
-                    'invoice_number' => $transaction->invoice_number,
-                    'change'         => $transaction->change_amount,
-                    'total'          => $transaction->total_amount,
-                ]);
+                return $transaction;
             });
+
+            // Broadcast debt notification if partial payment
+            if ($transaction->payment_status === 'partial') {
+                $transaction->load(['customer', 'user']);
+                broadcast(new DebtSubmitted($transaction))->toOthers();
+            }
+
+            // Broadcast dashboard update
+            $this->dispatchDashboardUpdate();
+
+            Log::info('Transaction created', [
+                'id'        => $transaction->id,
+                'invoice'   => $transaction->invoice_number,
+                'total'     => $transaction->total_amount,
+                'user_id'   => auth()->id(),
+                'branch_id' => auth()->user()->branch_id,
+            ]);
+
+            return response()->json([
+                'message'        => 'Transaction successful.',
+                'id'             => $transaction->id,
+                'transaction_id' => $transaction->id,
+                'invoice_number' => $transaction->invoice_number,
+                'change'         => $transaction->change_amount,
+                'total'          => $transaction->total_amount,
+            ]);
         } catch (\Exception $e) {
             Log::error('Transaction creation failed', [
                 'user_id' => auth()->id(),
@@ -490,7 +492,7 @@ class TransactionController extends Controller
             $product->makeVisible('purchase_price');
         }
 
-        return response()->json($product);
+        return response()->json($product->only(['id', 'name', 'barcode', 'selling_price', 'wholesale_price', 'image', 'is_refill', 'refill_price_per_ml', 'purchase_price', 'brand', 'size', 'unit', 'minimum_stock', 'inventories']));
     }
 
     /**
@@ -515,7 +517,7 @@ class TransactionController extends Controller
             $customer->makeHidden(['points', 'portal_token']);
         }
 
-        return response()->json($customer);
+        return response()->json($customer->only(['id', 'customer_code', 'name', 'phone', 'type', 'points', 'branch_id', 'loyalty_rank', 'total_credits_earned', 'total_credits_spent', 'gold_points', 'lifetime_spend']));
     }
 
     /**

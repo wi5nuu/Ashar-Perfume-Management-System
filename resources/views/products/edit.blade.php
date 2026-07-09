@@ -296,7 +296,7 @@
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary-apms">
                             <i class="fas fa-save"></i> Simpan Perubahan
                         </button>
                         <a href="{{ route('products.index') }}" class="btn btn-default">
@@ -350,7 +350,11 @@ function previewImage(event) {
         const reader = new FileReader();
         
         reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" class="img-fluid">`;
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'img-fluid';
+            preview.appendChild(img);
         }
         
         reader.readAsDataURL(input.files[0]);

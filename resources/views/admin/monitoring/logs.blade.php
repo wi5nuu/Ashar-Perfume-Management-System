@@ -48,7 +48,7 @@
                     @endforeach
                 </select>
                 <input type="text" name="search" class="form-control mr-2 mb-2" placeholder="Cari pesan..." value="{{ $search ?? '' }}" style="min-width: 200px;">
-                <button type="submit" class="btn btn-primary mb-2"><i class="fas fa-search mr-1"></i>Filter</button>
+                <button type="submit" class="btn btn-primary-apms mb-2"><i class="fas fa-search mr-1"></i>Filter</button>
                 @if($level || $search)
                     <a href="{{ route('admin.monitoring.logs') }}" class="btn btn-secondary mb-2 ml-1"><i class="fas fa-times mr-1"></i>Reset</a>
                 @endif

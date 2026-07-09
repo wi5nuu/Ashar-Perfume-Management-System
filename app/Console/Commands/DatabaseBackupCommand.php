@@ -37,7 +37,7 @@ class DatabaseBackupCommand extends Command
     {
         $this->info('Membuat backup database...');
 
-        $result = $backup->create();
+        $result = $backup->create($this->option('no-encrypt'));
 
         if ($result['success']) {
             $size = round($result['size'] / 1024 / 1024, 2);

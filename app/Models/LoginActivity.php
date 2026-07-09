@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class LoginActivity extends Model
 {
+    protected $hidden = ['ip_address', 'user_agent'];
+
     protected $fillable = [
         'user_id',
         'ip_address',

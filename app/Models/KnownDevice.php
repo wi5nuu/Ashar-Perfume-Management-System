@@ -9,6 +9,8 @@ class KnownDevice extends Model
     public $timestamps = true;
     public const UPDATED_AT = null;
 
+    protected $hidden = ['ip_address', 'user_agent', 'fingerprint'];
+
     protected $fillable = [
         'user_id',
         'ip_address',

@@ -90,7 +90,7 @@
                             </td>
                             <td>{{ $po->user->name ?? '-' }}</td>
                             <td>
-                                <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-xs btn-outline-primary">
+                                <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-eye"></i>
                                 </a>
                             </td>

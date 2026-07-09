@@ -38,7 +38,7 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-plus mr-1"></i> Tambahkan</button>
+                <button type="submit" class="btn btn-primary-apms"><i class="fas fa-plus mr-1"></i> Tambahkan</button>
             </form>
         </div>
     </div>

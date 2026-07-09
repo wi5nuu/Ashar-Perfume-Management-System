@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class PayrollSetting extends Model
 {
+    protected $hidden = ['allowance', 'deduction', 'overtime_rate'];
+
     protected $fillable = ['user_id', 'allowance', 'deduction', 'overtime_rate'];
 
     protected $casts = [

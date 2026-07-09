@@ -19,7 +19,7 @@
         <div class="card card-apms shadow-sm border-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <span class="font-weight-bold">Daftar Izin</span>
-                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save mr-1"></i> Simpan Izin</button>
+                <button type="submit" class="btn btn-primary-apms btn-sm"><i class="fas fa-save mr-1"></i> Simpan Izin</button>
             </div>
             <div class="card-body">
                 @foreach($permissions as $group => $perms)

@@ -25,8 +25,7 @@ class PasswordResetApproved extends Notification
         return [
             'type'          => 'password_reset_approved',
             'reset_request_id' => $this->resetRequest->id,
-            'message'       => 'Password Anda telah direset. Password baru: ' . $this->newPassword,
-            'new_password'  => $this->newPassword,
+            'message'       => 'Password Anda telah direset. Silakan hubungi admin untuk mendapatkan password baru.',
         ];
     }
 }

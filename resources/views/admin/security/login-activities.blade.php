@@ -27,7 +27,7 @@
                     <input type="checkbox" class="form-check-input" name="suspicious" value="1" id="suspicious" {{ request('suspicious') ? 'checked' : '' }}>
                     <label class="form-check-label" for="suspicious">Mencurigakan</label>
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm mb-2"><i class="fas fa-filter mr-1"></i> Filter</button>
+                <button type="submit" class="btn btn-primary-apms btn-sm mb-2"><i class="fas fa-filter mr-1"></i> Filter</button>
             </form>
         </div>
         <div class="card-body p-0">

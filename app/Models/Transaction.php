@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Transaction extends Model
 {
     use SoftDeletes;
+    protected $hidden = ['payment_proof_image'];
+
     protected $fillable = [
         'invoice_number',
         'customer_id',

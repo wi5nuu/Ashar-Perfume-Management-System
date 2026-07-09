@@ -29,7 +29,7 @@
                         @forelse($requests as $r)
                         <tr>
                             <td class="font-weight-bold">{{ $r->request_number }}</td>
-                            <td>{{ $r->branch->name ?? '-' }}</td>
+                            <td>{{ $r->branch?->name ?? '-' }}</td>
                             <td>{{ $r->requester->name ?? '-' }}</td>
                             <td class="text-center">{{ $r->items->count() }}</td>
                             <td>@include('stock-requests._status', ['stockRequest' => $r])</td>

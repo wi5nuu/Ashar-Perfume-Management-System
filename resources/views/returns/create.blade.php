@@ -85,7 +85,7 @@
                             @endforeach
                         </tbody>
                         <tfoot>
-                            <tr class="font-weight-bold h5">
+                            <tr class="font-weight-bold" style="font-size:1.1rem">
                                 <td colspan="5" class="text-right">TOTAL REFUND:</td>
                                 <td class="text-right text-danger" id="grandTotal">Rp 0</td>
                             </tr>

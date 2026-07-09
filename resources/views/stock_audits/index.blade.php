@@ -32,7 +32,7 @@
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $audit->audit_date->format('d/m/Y H:i') }}</td>
-                                    <td>{{ $audit->user->name }}</td>
+                                    <td>{{ $audit->user?->name ?? '-' }}</td>
                                     <td>{{ $audit->items->count() }} Item</td>
                                     <td>
                                         @if($audit->status == 'draft')

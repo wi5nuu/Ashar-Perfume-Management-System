@@ -137,7 +137,7 @@
                         <tbody>
                             @forelse($perUser as $pu)
                             <tr>
-                                <td>{{ $pu->user->name ?? '-' }}</td>
+                                <td>{{ $pu->user?->name ?? '-' }}</td>
                                 <td class="text-right font-weight-bold">Rp {{ number_format($pu->total, 0, ',', '.') }}</td>
                             </tr>
                             @empty

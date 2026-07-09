@@ -76,7 +76,7 @@
                                 @forelse($sales as $item)
                                 <tr>
                                     @if($type === 'daily')
-                                    <td>{{ \Carbon\Carbon::parse($item->date)->format('d M Y') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($item->date)->format('d/m/Y') }}</td>
                                     @else
                                     <td>{{ \Carbon\Carbon::create()->month($item->month)->format('F') }}</td>
                                     <td>{{ $item->year }}</td>

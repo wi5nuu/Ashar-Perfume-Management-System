@@ -62,7 +62,7 @@
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Simpan</button>
+                            <button type="submit" class="btn btn-primary-apms">Simpan</button>
                             <a href="{{ route('coupons.index') }}" class="btn btn-secondary">Batal</a>
                         </div>
                     </form>

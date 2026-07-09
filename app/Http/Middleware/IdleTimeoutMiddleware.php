@@ -12,7 +12,7 @@ class IdleTimeoutMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (Auth::check()) {
-            $timeout = config('security.session.idle_timeout_minutes', 30);
+            $timeout = config('session.lifetime', 30);
             $lastActivity = session('last_activity');
             $now = now()->timestamp;
 

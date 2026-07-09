@@ -78,7 +78,7 @@ return [
          * direct class use like:
          * $dompdf = new DOMPDF();  $dompdf->load_html($htmldata); $dompdf->render(); $pdfdata = $dompdf->output();
          */
-        'chroot' => realpath(base_path()),
+        'chroot' => env('DOMPDF_CHROOT', realpath(storage_path())),
 
         /**
          * Protocol whitelist
@@ -245,7 +245,7 @@ return [
          *
          * @var bool
          */
-        'enable_javascript' => true,
+        'enable_javascript' => false,
 
         /**
          * Enable remote file access
@@ -267,7 +267,7 @@ return [
          *
          * @var bool
          */
-        'enable_remote' => true,
+        'enable_remote' => env('DOMPDF_ENABLE_REMOTE', false),
 
         /**
          * List of allowed remote hosts
@@ -281,7 +281,7 @@ return [
          *
          * @var array|null
          */
-        'allowed_remote_hosts' => null,
+        'allowed_remote_hosts' => explode(',', env('DOMPDF_ALLOWED_REMOTE_HOSTS', '')),
 
         /**
          * A ratio applied to the fonts height to be more like browsers' line height

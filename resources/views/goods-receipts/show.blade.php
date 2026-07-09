@@ -42,7 +42,7 @@
                         </tr>
                         <tr>
                             <th>Tanggal Masuk</th>
-                            <td>{{ $goodsReceipt->received_date ? $goodsReceipt->received_date->format('d F Y') : '-' }}</td>
+                            <td>{{ $goodsReceipt->received_date ? $goodsReceipt->received_date->format('d/m/Y') : '-' }}</td>
                         </tr>
                         <tr>
                             <th>Biaya per Unit</th>

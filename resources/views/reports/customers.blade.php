@@ -68,7 +68,7 @@
                             <tbody>
                                 @forelse($customerGrowth as $growth)
                                 <tr>
-                                    <td>{{ \Carbon\Carbon::parse($growth->date)->format('d M Y') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($growth->date)->format('d/m/Y') }}</td>
                                     <td><span class="badge badge-success">+{{ $growth->count }}</span></td>
                                 </tr>
                                 @empty

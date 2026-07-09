@@ -27,7 +27,7 @@
                         </div>
                         <div class="d-flex justify-content-between mb-0">
                             <span class="text-muted small">Terdaftar:</span>
-                            <span class="text-dark small font-weight-bold">{{ $user->created_at->format('d M Y') }}</span>
+                            <span class="text-dark small font-weight-bold">{{ $user->created_at->format('d/m/Y') }}</span>
                         </div>
                     </div>
                 </div>

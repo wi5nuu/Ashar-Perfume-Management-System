@@ -35,7 +35,7 @@
                                 };
                             @endphp
                             <tr>
-                                <td style="white-space:nowrap;">{{ $log->created_at->format('d M Y H:i') }}</td>
+                                <td style="white-space:nowrap;">{{ $log->created_at->format('d/m/Y H:i') }}</td>
                                 <td><strong>{{ $log->customer->name ?? '-' }}</strong></td>
                                 <td class="font-weight-bold {{ $log->credits >= 0 ? 'text-success' : 'text-danger' }}">
                                     {{ $log->credits >= 0 ? '+' : '' }}{{ number_format($log->credits, 0, ',', '.') }}

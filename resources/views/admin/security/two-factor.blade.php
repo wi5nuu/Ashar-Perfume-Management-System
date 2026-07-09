@@ -52,7 +52,10 @@
                     <div id="manualSetup" class="d-none">
                         <div class="alert alert-info">
                             <strong>Secret Key:</strong>
-                            <code id="secretKey" class="d-block mt-2 p-2 bg-light rounded text-center" style="font-size:1.2rem;letter-spacing:2px;">{{ $secret }}</code>
+                            <code id="secretKey" class="d-block mt-2 p-2 bg-light rounded text-center" style="font-size:1.2rem;letter-spacing:2px;">******{{ substr($secret, -4) }}</code>
+                            <small class="d-block mt-1">
+                                <button type="button" class="btn btn-sm btn-outline-info mt-1" onclick="revealSecret()">Tampilkan Kode Rahasia</button>
+                            </small>
                             <small class="d-block mt-1">Masukkan kode ini manual di aplikasi authenticator Anda.</small>
                         </div>
                     </div>
@@ -67,7 +70,7 @@
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block py-2">
+                        <button type="submit" class="btn btn-primary-apms btn-block py-2">
                             <i class="fas fa-check mr-1"></i> Verifikasi & Aktifkan
                         </button>
                     </form>
@@ -99,6 +102,15 @@
 
     function showManualSetup() {
         document.getElementById('manualSetup').classList.toggle('d-none');
+    }
+
+    function revealSecret() {
+        var el = document.getElementById('secretKey');
+        el.textContent = secret;
+        el.style.userSelect = 'all';
+        setTimeout(function() {
+            el.textContent = '******' + secret.slice(-4);
+        }, 30000);
     }
 </script>
 @endpush

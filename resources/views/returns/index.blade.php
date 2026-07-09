@@ -67,7 +67,7 @@
                             </td>
                             <td>{{ $r->user->name ?? '-' }}</td>
                             <td>
-                                <a href="{{ route('returns.show', $r) }}" class="btn btn-xs btn-outline-primary"><i class="fas fa-eye"></i></a>
+                                <a href="{{ route('returns.show', $r) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
                             </td>
                         </tr>
                         @empty

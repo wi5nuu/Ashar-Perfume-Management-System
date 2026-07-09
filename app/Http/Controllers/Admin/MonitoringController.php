@@ -29,7 +29,7 @@ class MonitoringController extends Controller
     public function backupCreate()
     {
         try {
-            $result = $this->backup->create();
+            $result = $this->backup->create(true);
             if ($result['success']) {
                 return redirect()->route('admin.monitoring.backup')
                     ->with('success', "Backup berhasil: {$result['filename']}");

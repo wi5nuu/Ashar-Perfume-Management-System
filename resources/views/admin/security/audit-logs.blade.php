@@ -31,7 +31,7 @@
                 <div class="form-group mr-2 mb-2">
                     <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm mb-2"><i class="fas fa-filter mr-1"></i> Filter</button>
+                <button type="submit" class="btn btn-primary-apms btn-sm mb-2"><i class="fas fa-filter mr-1"></i> Filter</button>
             </form>
         </div>
         <div class="card-body p-0">

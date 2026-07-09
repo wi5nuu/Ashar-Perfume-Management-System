@@ -53,10 +53,10 @@ class ProductController extends Controller
             if ($branchId) $q->where('branch_id', $branchId);
         }, 'category']);
 
-        if (Gate::allows('manage_products')) {
-            $product->makeVisible('purchase_price');
-        }
-
-        return response()->json($product);
+        return response()->json($product->only([
+            'id', 'name', 'barcode', 'selling_price', 'wholesale_price',
+            'image', 'is_refill', 'refill_price_per_ml', 'brand', 'size',
+            'unit', 'description', 'is_active', 'category', 'inventories',
+        ]));
     }
 }

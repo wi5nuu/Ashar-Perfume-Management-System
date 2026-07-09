@@ -145,7 +145,7 @@
                         <div class="item"><div class="label">Biaya Kirim</div><div class="value">Rp {{ number_format($order->shipping_cost, 0, ',', '.') }}</div></div>
                         <div class="item"><div class="label">Estimasi Packing</div><div class="value">{{ $order->packing_days ?? 1 }} Hari</div></div>
                         @if($order->customer)
-                        <div class="item"><div class="label">Pelanggan</div><div class="value">{{ $order->customer->name }}</div></div>
+                        <div class="item"><div class="label">Pelanggan</div><div class="value">{{ $order->customer?->name ?? '-' }}</div></div>
                         @endif
                         <div class="item"><div class="label">P. Jawab</div><div class="value">{{ $order->handler->name ?? $order->delivery_handler ?? '-' }}</div></div>
                         @if($order->tracking_number)
@@ -155,7 +155,7 @@
                         <div class="item full"><div class="label">Catatan</div><div class="value" style="font-size:0.82rem">{{ $order->notes }}</div></div>
                         @endif
                         <div class="item"><div class="label">Dibuat Oleh</div><div class="value">{{ $order->user->name ?? 'System' }}</div></div>
-                        <div class="item"><div class="label">Tanggal</div><div class="value">{{ $order->created_at->format('d M Y H:i') }}</div></div>
+                        <div class="item"><div class="label">Tanggal</div><div class="value">{{ $order->created_at->format('d/m/Y H:i') }}</div></div>
                     </div>
                     @if($order->barcode || $order->tracking_number)
                     <div class="mt-2 pt-2 d-flex justify-content-center align-items-center" style="gap:1rem;border-top:1px solid #f0f0f0">
@@ -199,7 +199,7 @@
                 <div class="card-body px-3 py-2">
                     @if($order->status == 'pending')
                         <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:0.8rem;border-radius:6px"><i class="fas fa-clock mr-1"></i> Menunggu review admin untuk dikonfirmasi.</div>
-                        <button type="button" class="btn btn-primary btn-action-flow w-100 mb-2" data-toggle="modal" data-target="#confirmModal">
+                        <button type="button" class="btn btn-primary-apms btn-action-flow w-100 mb-2" data-toggle="modal" data-target="#confirmModal">
                             <i class="fas fa-check-double mr-2"></i> KONFIRMASI PESANAN
                         </button>
                         @can('wholesale.manage')
@@ -279,7 +279,7 @@
                         <div class="text-center py-3">
                             <i class="fas fa-check-circle" style="font-size:3rem;color:#28a745"></i>
                             <h5 class="font-weight-bold mt-2">Pesanan Selesai</h5>
-                            <p class="text-muted mb-0" style="font-size:0.82rem">Selesai: {{ $order->completed_at ? $order->completed_at->format('d M Y H:i') : '-' }}</p>
+                            <p class="text-muted mb-0" style="font-size:0.82rem">Selesai: {{ $order->completed_at ? $order->completed_at->format('d/m/Y H:i') : '-' }}</p>
                         </div>
 
                     @elseif($order->status == 'cancelled')
@@ -340,7 +340,7 @@
             </div>
             <div class="modal-footer border-0 justify-content-center pt-0">
                 <button type="button" class="btn btn-outline-secondary px-3" data-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary px-4"><i class="fas fa-check mr-1"></i> Ya, Konfirmasi</button>
+                <button type="submit" class="btn btn-primary-apms px-4"><i class="fas fa-check mr-1"></i> Ya, Konfirmasi</button>
             </div>
         </form>
     </div>

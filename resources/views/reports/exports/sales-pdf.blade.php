@@ -105,7 +105,7 @@
 
     <div class="report-title">Laporan Penjualan</div>
     <div class="report-period">
-        Periode: {{ $startDate->format('d M Y') }} - {{ $endDate->format('d M Y') }} 
+        Periode: {{ $startDate->format('d/m/Y') }} - {{ $endDate->format('d/m/Y') }} 
         ({{ ucfirst(str_replace('_', ' ', $period)) }})
     </div>
 

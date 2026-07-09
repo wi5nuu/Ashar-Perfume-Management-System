@@ -20,7 +20,9 @@ class CustomerController extends Controller
         $customers = $query->paginate(10);
         $activeCustomers = (clone $query)->where('is_active', true)->count();
         $wholesaleCustomers = (clone $query)->where('type', 'wholesale')->count();
-        $averageSpent = 0;
+        $averageSpent = (clone $query)->where('is_active', true)
+            ->join('transactions', 'customers.id', '=', 'transactions.customer_id')
+            ->avg('transactions.total_amount') ?? 0;
         return view('customers.index', compact('customers', 'activeCustomers', 'wholesaleCustomers', 'averageSpent'));
     }
 
@@ -42,7 +44,7 @@ class CustomerController extends Controller
         $customer = Customer::create($validated);
 
         if (request()->expectsJson()) {
-            return response()->json($customer);
+            return response()->json($customer->only(['id', 'customer_code', 'name', 'phone', 'type', 'points', 'branch_id']));
         }
 
         return redirect()->route('customers.index')->with('success', 'Pelanggan berhasil ditambahkan');
@@ -51,10 +53,15 @@ class CustomerController extends Controller
     public function show(Customer $customer)
     {
         Gate::authorize('manage_customers');
-        $customer->load('transactions');
+        $user = auth()->user();
+        if (!$user->isOwner() && !$user->isAdminPusat() && $customer->branch_id !== $user->branch_id) {
+            abort(403, 'Pelanggan ini bukan dari cabang Anda.');
+        }
+        $customer->load(['transactions' => fn($q) => $q->latest()->limit(50)]);
         if (request()->expectsJson()) {
+            $safeCustomer = $customer->only(['id', 'customer_code', 'name', 'phone', 'email', 'type', 'points', 'birth_date', 'gender', 'is_active', 'branch_id', 'created_at']);
             return response()->json([
-                'customer' => $customer,
+                'customer' => $safeCustomer,
                 'html' => view('customers.show_details', compact('customer'))->render()
             ]);
         }
@@ -64,7 +71,7 @@ class CustomerController extends Controller
     public function edit(Customer $customer)
     {
         Gate::authorize('manage_customers');
-        $customer->load('transactions');
+        $customer->load(['transactions' => fn($q) => $q->latest()->limit(50)]);
         return view('customers.edit', compact('customer'));
     }
 

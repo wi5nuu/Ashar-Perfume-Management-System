@@ -8,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
         <h4 class="font-weight-bold"><i class="fas fa-star text-warning mr-2"></i> Loyalty Pelanggan Grosir</h4>
         <div>
-            <a href="{{ route('owner.loyalty.redemptions') }}" class="btn btn-sm btn-primary"><i class="fas fa-gift mr-1"></i> Promo Kredit</a>
+            <a href="{{ route('owner.loyalty.redemptions') }}" class="btn btn-sm btn-primary-apms"><i class="fas fa-gift mr-1"></i> Promo Kredit</a>
             <a href="{{ route('owner.loyalty.history') }}" class="btn btn-sm btn-info"><i class="fas fa-history mr-1"></i> Histori Kredit</a>
         </div>
     </div>

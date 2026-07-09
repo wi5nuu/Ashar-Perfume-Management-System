@@ -83,6 +83,10 @@ class StockAuditController extends Controller
     public function show(StockAudit $stockAudit)
     {
         Gate::authorize('manage_inventory');
+        $user = auth()->user();
+        if (!$user->isOwner() && $stockAudit->branch_id !== $user->branch_id) {
+            abort(403, 'Stock audit ini bukan milik cabang Anda.');
+        }
         $stockAudit->load(['items.product', 'user']);
         return view('stock_audits.show', compact('stockAudit'));
     }

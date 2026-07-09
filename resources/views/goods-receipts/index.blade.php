@@ -11,7 +11,7 @@
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h3 class="card-title">Penerimaan Barang</h3>
                     @can('goods_receipts.create')
-                    <a href="{{ route('goods-receipts.create') }}" class="btn btn-primary btn-sm">
+                    <a href="{{ route('goods-receipts.create') }}" class="btn btn-primary-apms btn-sm">
                         <i class="fas fa-plus"></i> Catat Penerimaan
                     </a>
                     @endcan
