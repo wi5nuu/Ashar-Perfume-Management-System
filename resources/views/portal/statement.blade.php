@@ -19,8 +19,8 @@
                         <th>Invoice</th>
                         <th>Total</th>
                         <th>Dibayar</th>
-                        <th>Hutang</th>
-                        <th>Metode</th>
+                        <th class="d-none d-sm-table-cell">Hutang</th>
+                        <th class="d-none d-sm-table-cell">Metode</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,26 +38,24 @@
                         <td class="font-weight-bold">{{ $txn->invoice_number }}</td>
                         <td>Rp {{ number_format($txn->total_amount, 0, ',', '.') }}</td>
                         <td class="text-success">Rp {{ number_format($paid, 0, ',', '.') }}</td>
-                        <td>
+                        <td class="d-none d-sm-table-cell">
                             @if($remaining > 0)
                                 <span class="text-danger font-weight-bold">Rp {{ number_format($remaining, 0, ',', '.') }}</span>
                             @else
                                 <span class="text-success"><i class="fas fa-check-circle"></i> Lunas</span>
                             @endif
                         </td>
-                        <td><span class="badge badge-light">{{ strtoupper($txn->payment_method ?? '-') }}</span></td>
+                        <td class="d-none d-sm-table-cell"><span class="badge badge-light">{{ strtoupper($txn->payment_method ?? '-') }}</span></td>
                     </tr>
                     @if($txn->debtPayments->count() > 0)
                         @foreach($txn->debtPayments as $dp)
                         <tr class="bg-light">
-                            <td colspan="2">
+                            <td colspan="6">
                                 <small class="text-muted ml-4">
                                     <i class="fas fa-arrow-right mr-1"></i>
                                     Cicilan — {{ $dp->created_at->format('d/m/Y') }}
+                                    <span class="text-success ml-3">Rp {{ number_format($dp->amount, 0, ',', '.') }}</span>
                                 </small>
-                            </td>
-                            <td colspan="4">
-                                <small class="text-success">Rp {{ number_format($dp->amount, 0, ',', '.') }}</small>
                             </td>
                         </tr>
                         @endforeach
@@ -72,8 +70,8 @@
                 <tfoot>
                     <tr class="font-weight-bold bg-light">
                         <td colspan="4" class="text-right">Total Sisa Hutang:</td>
-                        <td class="text-danger">Rp {{ number_format($runningBalance, 0, ',', '.') }}</td>
-                        <td></td>
+                        <td class="text-danger d-none d-sm-table-cell">Rp {{ number_format($runningBalance, 0, ',', '.') }}</td>
+                        <td class="d-none d-sm-table-cell"></td>
                     </tr>
                 </tfoot>
                 @endif

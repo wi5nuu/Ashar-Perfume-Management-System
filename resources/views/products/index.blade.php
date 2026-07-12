@@ -7,15 +7,23 @@
     <div class="row">
         <div class="col-12">
             <div class="card card-apms">
-                <div class="card-header d-flex align-items-center">
+                <div class="card-header d-flex align-items-center flex-wrap gap-2">
                     <h3 class="card-title mb-0">Daftar Produk</h3>
-                    <div class="ml-auto">
-                        <a href="{{ route('products.create') }}" class="btn btn-primary-apms">
-                            <i class="fas fa-plus"></i> Tambah Produk
+                    <div class="ml-auto d-flex align-items-center">
+                        <div class="btn-group btn-group-sm mr-2 d-none d-sm-inline-flex" id="viewToggle">
+                            <button class="btn btn-outline-secondary active" id="tableViewBtn" onclick="switchProductView('table')" title="Tampilan Tabel">
+                                <i class="fas fa-table"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" id="cardViewBtn" onclick="switchProductView('card')" title="Tampilan Kartu">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                        </div>
+                        <a href="{{ route('products.create') }}" class="btn btn-primary-apms btn-sm">
+                            <i class="fas fa-plus"></i> Tambah
                         </a>
                         <div class="btn-group ml-2">
-                            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">
-                                <i class="fas fa-download"></i> Export
+                            <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown">
+                                <i class="fas fa-download"></i>
                             </button>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item" href="{{ route('products.export.pdf') }}" target="_blank" onclick="loadingExport(this)">
@@ -77,8 +85,22 @@
                         </div>
                     </div>
                     
+                    <!-- View Toggle (mobile) -->
+                    <div class="d-sm-none mb-2">
+                        <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                            <label class="btn btn-outline-primary active" id="mobileTableViewBtn">
+                                <input type="radio" name="productView" value="table" checked onchange="switchProductView('table')">
+                                <i class="fas fa-list"></i> Tabel
+                            </label>
+                            <label class="btn btn-outline-primary" id="mobileCardViewBtn">
+                                <input type="radio" name="productView" value="card" onchange="switchProductView('card')">
+                                <i class="fas fa-th-large"></i> Kartu
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Products Table -->
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="productTableView">
                         <table class="table table-hover" id="productsTable">
                             <thead>
                                 <tr>
@@ -121,7 +143,7 @@
                                             @if($product->image)
                                             <img src="{{ asset('storage/' . $product->image) }}" 
                                                  alt="{{ $product->name }}" 
-                                                 class="img-circle img-size-32 mr-2">
+                                                 class="img-circle img-size-32 mr-2" loading="lazy">
                                             @else
                                             <div class="img-circle img-size-32 bg-light d-flex align-items-center justify-content-center mr-2">
                                                 <i class="fas fa-wine-bottle text-muted"></i>
@@ -216,6 +238,79 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Product Card Grid View (mobile friendly) -->
+                    <div class="row" id="productCardView" style="display: none;">
+                        @foreach($products as $product)
+                        @php
+                            $inventory = $product->inventories->first();
+                            $currentStock = $inventory ? $inventory->current_stock : 0;
+                            $bulkStock = $inventory ? $inventory->bulk_stock_ml : 0;
+                            $catColor = $product->category ? (preg_match('/^#[0-9a-fA-F]{6}$/', $product->category->color) ? $product->category->color : '#FF6B35') : '#FF6B35';
+                        @endphp
+                        <div class="col-6 col-md-4 col-lg-3 mb-2 product-card-item" 
+                             data-name="{{ strtolower($product->name) }}"
+                             data-category="{{ $product->category?->name ?? '' }}"
+                             data-type="{{ $product->is_refill ? 'refill' : 'regular' }}"
+                             data-stock="{{ $product->is_refill ? $bulkStock : $currentStock }}">
+                            <div class="card card-apms h-100">
+                                <div class="card-body p-2">
+                                    <div class="text-center mb-2">
+                                        @if($product->image)
+                                        <img src="{{ asset('storage/' . $product->image) }}" 
+                                             alt="{{ $product->name }}" 
+                                             class="rounded" style="width:60px;height:60px;object-fit:cover;" loading="lazy">
+                                        @else
+                                        <div class="bg-light rounded d-inline-flex align-items-center justify-content-center" style="width:60px;height:60px;">
+                                            <i class="fas fa-wine-bottle fa-2x text-muted"></i>
+                                        </div>
+                                        @endif
+                                    </div>
+                                    <h6 class="mb-1 text-center" style="font-size:0.78rem;min-height:2.2rem;">{{ $product->name }}</h6>
+                                    <div class="text-center mb-1">
+                                        <span class="badge" style="background-color:{{ $catColor }};color:white;font-size:0.6rem;">
+                                            {{ $product->category?->name ?? '-' }}
+                                        </span>
+                                        @if($product->is_refill)
+                                        <span class="badge badge-info" style="font-size:0.6rem;">Isi Ulang</span>
+                                        @endif
+                                    </div>
+                                    <div class="text-center font-weight-bold text-success" style="font-size:0.8rem;">
+                                        Rp {{ number_format($product->selling_price, 0, ',', '.') }}
+                                    </div>
+                                    <div class="text-center mt-1">
+                                        @if($product->is_refill)
+                                            @if($bulkStock <= 0)
+                                                <span class="badge badge-danger">Habis</span>
+                                            @else
+                                                <span class="badge badge-info">{{ number_format($bulkStock) }} ml</span>
+                                            @endif
+                                        @else
+                                            @if($currentStock == 0)
+                                                <span class="badge badge-danger">Habis</span>
+                                            @elseif($currentStock < 10)
+                                                <span class="badge badge-warning">{{ $currentStock }}</span>
+                                            @else
+                                                <span class="badge badge-success">{{ $currentStock }}</span>
+                                            @endif
+                                        @endif
+                                    </div>
+                                    <div class="btn-group btn-group-sm w-100 mt-2">
+                                        <a href="{{ route('products.show', $product->id) }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('products.edit', $product->id) }}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteProduct(@json($product->id))">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
                     
                     <!-- Pagination -->
@@ -322,6 +417,17 @@
         max-width: 80px;
         overflow: hidden;
     }
+    .product-card-item .card-body {
+        padding: 8px !important;
+    }
+    .product-card-item h6 {
+        font-size: 0.72rem !important;
+        min-height: 2rem !important;
+    }
+    .product-card-item .btn-group .btn {
+        padding: 4px 6px;
+        font-size: 0.65rem;
+    }
 }
 </style>
 @endpush
@@ -329,6 +435,34 @@
 @push('scripts')
 <script>
 let selectedProducts = [];
+let currentView = window.innerWidth < 768 ? 'card' : 'table';
+
+function switchProductView(view) {
+    currentView = view;
+    if (view === 'card') {
+        $('#productTableView').hide();
+        $('#productCardView').show();
+        $('#tableViewBtn').removeClass('active');
+        $('#cardViewBtn').addClass('active');
+        $('#mobileTableViewBtn').removeClass('active');
+        $('#mobileCardViewBtn').addClass('active');
+    } else {
+        $('#productTableView').show();
+        $('#productCardView').hide();
+        $('#cardViewBtn').removeClass('active');
+        $('#tableViewBtn').addClass('active');
+        $('#mobileCardViewBtn').removeClass('active');
+        $('#mobileTableViewBtn').addClass('active');
+    }
+}
+
+$(window).on('resize', function() {
+    if (window.innerWidth < 768 && currentView === 'table') {
+        switchProductView('card');
+    } else if (window.innerWidth >= 768 && currentView === 'card') {
+        switchProductView('table');
+    }
+});
 
 function deleteProduct(id) {
     $('#deleteForm').attr('action', '{{ url('/products') }}/' + id);
@@ -389,7 +523,57 @@ function resetFilters() {
     $('#productsTable tbody tr').show();
 }
 
+function filterProducts() {
+    const searchVal = $('#searchInput').val().toLowerCase();
+    const catVal = $('#categoryFilter').val().toLowerCase();
+    const typeVal = $('input[name="typeFilter"]:checked').val();
+    const stockVal = $('#stockFilter').val();
+
+    // Filter table rows
+    $('#productsTable tbody tr').each(function() {
+        const row = $(this);
+        const text = row.text().toLowerCase();
+        const category = row.find('td:eq(3)').text().toLowerCase().trim();
+        const type = row.find('td:eq(5)').text().toLowerCase().trim();
+        const badge = row.find('td:eq(7)').find('.badge');
+
+        let show = true;
+        if (searchVal && text.indexOf(searchVal) === -1) show = false;
+        if (catVal && category.indexOf(catVal) === -1) show = false;
+        if (typeVal === 'refill' && type.indexOf('isi ulang') === -1) show = false;
+        if (typeVal === 'regular' && type.indexOf('reguler') === -1) show = false;
+        if (stockVal === 'available') show = show && (badge.hasClass('badge-success') || badge.hasClass('badge-info'));
+        if (stockVal === 'low') show = show && badge.hasClass('badge-warning');
+        if (stockVal === 'out') show = show && badge.hasClass('badge-danger');
+        row.toggle(show);
+    });
+
+    // Filter card items using same logic with data attributes
+    $('.product-card-item').each(function() {
+        const card = $(this);
+        const name = card.data('name');
+        const category = card.data('category').toLowerCase();
+        const type = card.data('type');
+        const stock = parseInt(card.data('stock'));
+
+        let show = true;
+        if (searchVal && name.indexOf(searchVal) === -1) show = false;
+        if (catVal && category.indexOf(catVal) === -1) show = false;
+        if (typeVal === 'refill' && type !== 'refill') show = false;
+        if (typeVal === 'regular' && type !== 'regular') show = false;
+        if (stockVal === 'available') show = show && stock > 0;
+        if (stockVal === 'low') show = show && stock > 0 && stock < 10;
+        if (stockVal === 'out') show = show && stock <= 0;
+        card.toggle(show);
+    });
+}
+
 $(function() {
+    // Set default view based on screen size
+    if (window.innerWidth < 768) {
+        switchProductView('card');
+    }
+
     // Select All
     $('#selectAll').change(function() {
         const isChecked = $(this).prop('checked');
@@ -403,57 +587,16 @@ $(function() {
     });
     
     // Search filter
-    $('#searchInput').on('keyup', function() {
-        const value = $(this).val().toLowerCase();
-        $('#productsTable tbody tr').filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-        });
-    });
+    $('#searchInput').on('keyup', filterProducts);
     
     // Category filter
-    $('#categoryFilter').change(function() {
-        const value = $(this).val().toLowerCase();
-        $('#productsTable tbody tr').each(function() {
-            const category = $(this).find('td:eq(3)').text().toLowerCase().trim();
-            $(this).toggle(!value || category.indexOf(value) > -1);
-        });
-    });
+    $('#categoryFilter').change(filterProducts);
     
     // Type filter buttons (Produk / Isi Ulang)
-    $('input[name="typeFilter"]').change(function() {
-        const value = $(this).val();
-        $('#productsTable tbody tr').each(function() {
-            const type = $(this).find('td:eq(5)').text().toLowerCase().trim();
-            if (!value) { $(this).show(); return; }
-            if (value === 'refill') {
-                $(this).toggle(type.indexOf('isi ulang') > -1);
-            } else {
-                $(this).toggle(type.indexOf('reguler') > -1);
-            }
-        });
-    });
+    $('input[name="typeFilter"]').change(filterProducts);
     
     // Stock filter
-    $('#stockFilter').change(function() {
-        const value = $(this).val();
-        $('#productsTable tbody tr').each(function() {
-            const cell = $(this).find('td:eq(7)');
-            const badge = cell.find('.badge');
-            let shouldShow = false;
-            
-            if (!value) {
-                shouldShow = true;
-            } else if (value === 'available') {
-                shouldShow = badge.hasClass('badge-success') || badge.hasClass('badge-info');
-            } else if (value === 'low') {
-                shouldShow = badge.hasClass('badge-warning');
-            } else if (value === 'out') {
-                shouldShow = badge.hasClass('badge-danger');
-            }
-            
-            $(this).toggle(shouldShow);
-        });
-    });
+    $('#stockFilter').change(filterProducts);
 });
 
 function updateSelectedCount() {

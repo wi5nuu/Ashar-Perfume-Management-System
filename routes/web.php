@@ -23,32 +23,21 @@ use App\Http\Controllers\StockRequestController;
 use App\Http\Controllers\OwnerController;
 
 Route::middleware(['auth', 'throttle:100,1'])->group(function () {
-    // 🏠 COMMON: Every authenticated user can see Dashboard & Profile
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    // 👑 COMMON: Staff-only routes (excludes wholesale_customer)
+    Route::middleware(['verified', 'role:owner,admin,admin_pusat,manager,cashier,supervisor,warehouse'])->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
-    Route::get('/settings/profile', [SettingController::class, 'profile'])->name('settings.profile');
-    Route::post('/settings/profile', [SettingController::class, 'updateProfile'])->middleware('throttle:10,1')->name('settings.profile.update');
-    Route::post('/settings/password', [SettingController::class, 'updatePassword'])->middleware('throttle:5,1')->name('settings.password.update');
-    Route::delete('/settings/profile', [SettingController::class, 'destroyProfile'])->middleware('throttle:3,1')->name('settings.profile.destroy');
+        Route::get('/settings/profile', [SettingController::class, 'profile'])->name('settings.profile');
+        Route::post('/settings/profile', [SettingController::class, 'updateProfile'])->middleware('throttle:10,1')->name('settings.profile.update');
+        Route::post('/settings/password', [SettingController::class, 'updatePassword'])->middleware('throttle:5,1')->name('settings.password.update');
+        Route::delete('/settings/profile', [SettingController::class, 'destroyProfile'])->middleware('throttle:3,1')->name('settings.profile.destroy');
 
-    // Password Reset Requests (cabang → owner)
-    Route::post('/settings/password/reset-request', [SettingController::class, 'requestPasswordReset'])->middleware('throttle:3,10')->name('settings.password.reset-request');
-    Route::get('/settings/password/reset-requests', [SettingController::class, 'resetRequests'])->name('settings.password.reset-requests');
-    Route::post('/settings/password/reset-requests/{resetRequest}/approve', [SettingController::class, 'approveReset'])->middleware('throttle:10,1')->name('settings.password.reset-approve');
-    Route::post('/settings/password/reset-requests/{resetRequest}/reject', [SettingController::class, 'rejectReset'])->middleware('throttle:10,1')->name('settings.password.reset-reject');
-
-    // 👑 OWNER MONITORING
-    Route::get('/owner/monitoring', [OwnerController::class, 'monitoring'])->name('owner.monitoring');
-    Route::post('/owner/notifications/{id}/read', [OwnerController::class, 'markNotificationRead'])->name('owner.notifications.read');
-    Route::post('/owner/notifications/read-all', [OwnerController::class, 'markAllNotificationsRead'])->name('owner.notifications.read-all');
-    Route::get('/wholesale-customers', [\App\Http\Controllers\OwnerController::class, 'wholesaleCustomers'])->name('owner.wholesale-customers');
-    Route::post('/owner/wholesale-customers/{id}/reset-password', [\App\Http\Controllers\OwnerController::class, 'resetWholesalePassword'])->name('owner.wholesale-reset-password');
-    Route::post('/owner/wholesale-customers/{id}/update', [\App\Http\Controllers\OwnerController::class, 'updateWholesaleAccount'])->name('owner.wholesale-update');
-    Route::get('/owner/wholesale-password-requests', [\App\Http\Controllers\OwnerController::class, 'wholesalePasswordRequests'])->name('owner.wholesale-password-requests');
-    Route::post('/owner/wholesale-password-requests/{id}/resolve', [\App\Http\Controllers\OwnerController::class, 'resolveWholesalePasswordRequest'])->name('owner.wholesale-password-resolve');
-    Route::get('/owner/wholesale-customers/{id}/orders', [\App\Http\Controllers\OwnerController::class, 'wholesaleCustomerOrders'])->name('owner.wholesale-customer-orders');
-    Route::get('/owner/customer-accounts', [\App\Http\Controllers\OwnerController::class, 'customerAccounts'])->name('owner.customer-accounts');
+        Route::post('/settings/password/reset-request', [SettingController::class, 'requestPasswordReset'])->middleware('throttle:3,10')->name('settings.password.reset-request');
+        Route::get('/settings/password/reset-requests', [SettingController::class, 'resetRequests'])->name('settings.password.reset-requests');
+        Route::post('/settings/password/reset-requests/{resetRequest}/approve', [SettingController::class, 'approveReset'])->middleware('throttle:10,1')->name('settings.password.reset-approve');
+        Route::post('/settings/password/reset-requests/{resetRequest}/reject', [SettingController::class, 'rejectReset'])->middleware('throttle:10,1')->name('settings.password.reset-reject');
+    });
 
     // 💰 POS & SHIFT: Cashier, Admin, Manager, Owner, Supervisor (attendance)
     Route::middleware(['verified', 'role:owner,admin,admin_pusat,manager,cashier,supervisor'])->group(function () {
@@ -235,8 +224,20 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::patch('stock-requests/{stockRequest}/cancel', [StockRequestController::class, 'cancel'])->name('stock-requests.cancel');
     });
 
-    // 👑 OWNER ONLY: Branch Management
+    // 👑 OWNER ONLY: Monitoring, Branch Management, Wholesale Customer Management
     Route::middleware(['verified', 'role:owner'])->group(function () {
+        // Owner Monitoring
+        Route::get('/owner/monitoring', [OwnerController::class, 'monitoring'])->name('owner.monitoring');
+        Route::post('/owner/notifications/{id}/read', [OwnerController::class, 'markNotificationRead'])->name('owner.notifications.read');
+        Route::post('/owner/notifications/read-all', [OwnerController::class, 'markAllNotificationsRead'])->name('owner.notifications.read-all');
+        Route::get('/wholesale-customers', [\App\Http\Controllers\OwnerController::class, 'wholesaleCustomers'])->name('owner.wholesale-customers');
+        Route::post('/owner/wholesale-customers/{id}/reset-password', [\App\Http\Controllers\OwnerController::class, 'resetWholesalePassword'])->name('owner.wholesale-reset-password');
+        Route::post('/owner/wholesale-customers/{id}/update', [\App\Http\Controllers\OwnerController::class, 'updateWholesaleAccount'])->name('owner.wholesale-update');
+        Route::get('/owner/wholesale-password-requests', [\App\Http\Controllers\OwnerController::class, 'wholesalePasswordRequests'])->name('owner.wholesale-password-requests');
+        Route::post('/owner/wholesale-password-requests/{id}/resolve', [\App\Http\Controllers\OwnerController::class, 'resolveWholesalePasswordRequest'])->name('owner.wholesale-password-resolve');
+        Route::get('/owner/wholesale-customers/{id}/orders', [\App\Http\Controllers\OwnerController::class, 'wholesaleCustomerOrders'])->name('owner.wholesale-customer-orders');
+        Route::get('/owner/customer-accounts', [\App\Http\Controllers\OwnerController::class, 'customerAccounts'])->name('owner.customer-accounts');
+
         Route::resource('branches', BranchController::class);
         Route::get('/owner/special', [\App\Http\Controllers\OwnerController::class, 'specialPage'])->name('owner.special');
         Route::get('/owner/ai-dashboard', [\App\Http\Controllers\AiDashboardController::class, 'index'])->name('owner.ai-dashboard');

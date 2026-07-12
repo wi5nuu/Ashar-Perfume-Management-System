@@ -164,9 +164,11 @@
                         @endif
                         @if($order->tracking_number)
                         <div class="text-center">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data={{ urlencode(url('/wholesale-customer/track?invoice_number=' . $order->invoice_number)) }}" alt="QR" style="max-width:70px;border-radius:6px">
+                            <div id="wholesaleShowQr" style="display:inline-block"></div>
                             <div class="small text-muted mt-1">Scan lacak</div>
                         </div>
+                        @php $qrUrl = url('/wholesale-customer/track?invoice_number=' . $order->invoice_number); @endphp
+                        <script>new QRCode(document.getElementById('wholesaleShowQr'),{text:'{{ $qrUrl }}',width:70,height:70});</script>
                         @endif
                     </div>
                     @endif

@@ -133,5 +133,14 @@
         <a href="#" onclick="event.preventDefault();document.getElementById('lf').submit()"><i class="fas fa-sign-out-alt"></i> Keluar</a>
     </div>
     <form id="lf" action="{{ route('wholesale.customer.logout') }}" method="POST" style="display:none">@csrf</form>
+    <style>
+        .btt { position:fixed; bottom:80px; right:16px; z-index:200; width:44px; height:44px; border-radius:50%; background:var(--p); color:#fff; border:none; box-shadow:0 3px 12px rgba(0,0,0,0.25); display:none; align-items:center; justify-content:center; font-size:1.1rem; cursor:pointer; }
+    </style>
+    <button class="btt" id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
+    <script>
+        window.addEventListener('scroll', function() {
+            document.getElementById('btt').style.display = window.scrollY > 400 ? 'flex' : 'none';
+        });
+    </script>
 </body>
 </html>

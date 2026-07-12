@@ -531,8 +531,9 @@
                     @if($order->barcode)
                     <div style="font-size:30px;font-family:monospace;letter-spacing:2px;margin-bottom:6px;color:var(--muted)">{{ $order->barcode }}</div>
                     @endif
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ urlencode($trackUrl) }}"
-                         alt="QR Track" style="border-radius:4px">
+                    <div id="invoiceQr" style="display:inline-block"></div>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+                    <script>new QRCode(document.getElementById('invoiceQr'),{text:'{{ $trackUrl }}',width:120,height:120});</script>
                     <div class="qr-label">Scan untuk lacak pesanan</div>
                     <div class="invoice-ref">{{ $order->invoice_number }}</div>
                 </div>

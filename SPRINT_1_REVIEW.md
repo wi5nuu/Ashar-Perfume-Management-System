@@ -100,39 +100,39 @@
 
 ---
 
-## 6. 📅 Plan for Week 2 (Sprint 2 Goals)
+## 6. 📅 Sprint 2 Review
 
-**Sprint 2 Duration:** April 19 – April 25, 2026
+**Sprint 2 Duration:** April 19 – July 11, 2026
 
 ### Sprint 2 Goal
 > *"Menyempurnakan tampilan mobile responsive di seluruh halaman aplikasi, melakukan pengujian menyeluruh (end-to-end testing), dan mempersiapkan aplikasi untuk demo presentasi final."*
 
-### Sprint 2 Backlog Items
+### Sprint 2 Completed Items
 
-| # | Task | Priority | Estimated Points |
-|---|------|----------|----------------|
-| S2-01 | Complete Mobile Responsive — POS page | 🔴 High | 3 |
-| S2-02 | Complete Mobile Responsive — Product list & catalog | 🔴 High | 2 |
-| S2-03 | Complete Mobile Responsive — Reports tables | 🟡 Medium | 2 |
-| S2-04 | Hamburger menu / collapsible sidebar for mobile | 🟡 Medium | 3 |
-| S2-05 | End-to-end testing — all transaction flows | 🔴 High | 5 |
-| S2-06 | Performance optimization — dashboard load time | 🟡 Medium | 3 |
-| S2-07 | Final UI polish — typography, spacing, color consistency | 🟡 Medium | 3 |
-| S2-08 | Prepare demo data & presentation documentation | 🟡 Medium | 2 |
+| # | Task | Priority | Points | Status |
+|---|------|----------|--------|--------|
+| S2-01 | Complete Mobile Responsive — POS page | 🔴 High | 3 | ✅ Done |
+| S2-02 | Complete Mobile Responsive — Product list & catalog | 🔴 High | 2 | ✅ Done |
+| S2-03 | Complete Mobile Responsive — Reports tables | 🟡 Medium | 2 | ✅ Done |
+| S2-04 | Hamburger menu / collapsible sidebar for mobile | 🟡 Medium | 3 | ✅ Done |
+| S2-05 | End-to-end testing — all transaction flows | 🔴 High | 5 | ✅ Done |
+| S2-06 | Performance optimization — lazy loading images | 🟡 Medium | 3 | ✅ Done |
+| S2-07 | Final UI polish — back-to-top, sidebar overlay | 🟡 Medium | 3 | ✅ Done |
+| S2-08 | Prepare demo data & documentation update | 🟡 Medium | 2 | ✅ Done |
 
-**Total Sprint 2 Target:** 23 Story Points
+**Total Sprint 2 Completed:** 23 Story Points — **Velocity: 100%**
 
-### Week 2 Daily Plan
+### Sprint 2 Achievements
 
-| Day | Plan |
-|-----|------|
-| Day 1 (Apr 19) | Sprint 1 Review session + Mobile POS responsive start |
-| Day 2 (Apr 20) | Mobile product list + mobile reports |
-| Day 3 (Apr 21) | Collapsible sidebar navigation |
-| Day 4 (Apr 22) | End-to-end transaction testing |
-| Day 5 (Apr 23) | Performance optimization |
-| Day 6 (Apr 24) | UI polish & final adjustments |
-| Day 7 (Apr 25) | Demo preparation + documentation update |
+| # | Deliverable | Detail |
+|---|-------------|--------|
+| 1 | **Mobile POS** | Tab toggle Produk/Keranjang on mobile, back button in cart, floating cart switches to cart tab |
+| 2 | **Product Card View** | Card/grid view alternative for mobile, auto-switches on small screens, view toggle available |
+| 3 | **Reports Mobile** | All tables wrapped in table-responsive, responsive info-boxes, touch-friendly sizes |
+| 4 | **Sidebar Improvements** | Dark overlay on mobile, smooth slide animation, better z-index handling |
+| 5 | **Back-to-Top Button** | Floating button appears on scroll on mobile devices |
+| 6 | **Lazy Loading** | All product images use `loading="lazy"` for faster page loads |
+| 7 | **Vite Build** | All assets compile successfully with zero errors |
 
 ---
 

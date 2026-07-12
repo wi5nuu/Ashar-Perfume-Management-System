@@ -14,11 +14,6 @@ use Illuminate\Support\Facades\Log;
 
 class WholesaleCustomerController extends Controller
 {
-    private function safeProfile(User $user): array
-    {
-        return $user->only(['id', 'name', 'email', 'phone', 'role', 'referral_code']);
-    }
-
     private function userOrdersQuery(User $user)
     {
         return WholesaleOrder::where(function ($q) use ($user) {
@@ -92,7 +87,6 @@ class WholesaleCustomerController extends Controller
         })->first();
         $rankInfo = $customer ? app(WholesaleLoyaltyService::class)->getRankInfo($customer) : [];
 
-        $user = $this->safeProfile($user);
         return view('wholesale.customer.dashboard', compact('user', 'orders', 'totalOrders', 'activeOrders', 'totalSpent', 'tier', 'rankInfo', 'customer'));
     }
 
@@ -106,7 +100,6 @@ class WholesaleCustomerController extends Controller
         $totalSpent = $this->userOrdersQuery($user)->whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount');
         $tier = $this->computeTier($totalSpent);
 
-        $user = $this->safeProfile($user);
         return view('wholesale.customer.orders', compact('user', 'orders', 'totalSpent', 'tier'));
     }
 
@@ -133,7 +126,6 @@ class WholesaleCustomerController extends Controller
             if ($totalSpent < $t['min']) { $nextTier = $t; break; }
         }
 
-        $user = $this->safeProfile($user);
         return view('wholesale.customer.history', compact('user', 'orders', 'totalSpent', 'totalOrders', 'tier', 'nextTier'));
     }
 
@@ -159,11 +151,11 @@ class WholesaleCustomerController extends Controller
         $myPosition = $referrerRanks->where('referrals_count', '>', $myReferralsCount)->count() + 1;
 
         $totalReferrals = $user->referrals()->count();
+        $recentOrders = $this->userOrdersQuery($user)->latest()->take(10)->get();
 
-        $user = $this->safeProfile($user);
         return view('wholesale.customer.leaderboard', compact(
             'user', 'topReferrers', 'myReferralsCount', 'myPosition',
-            'totalReferrals'
+            'totalReferrals', 'recentOrders'
         ));
     }
 
@@ -183,7 +175,6 @@ class WholesaleCustomerController extends Controller
         $totalSpent = (clone $totalsQuery)->whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount');
         $totalOrders = (clone $totalsQuery)->count();
 
-        $user = $this->safeProfile($user);
         return view('wholesale.customer.loyalty', compact('user', 'rankInfo', 'redemptions', 'totalSpent', 'totalOrders'));
     }
 
@@ -219,7 +210,6 @@ class WholesaleCustomerController extends Controller
             return redirect()->route('wholesale.customer.login');
         }
         $order = $this->userOrdersQuery($user)->with(['details', 'handler', 'customer'])->findOrFail($id);
-        $user = $this->safeProfile($user);
         return view('wholesale.customer.show', compact('user', 'order'));
     }
 
@@ -236,9 +226,12 @@ class WholesaleCustomerController extends Controller
         $totalSpent = (clone $qq)->whereIn('status', ['completed', 'delivered', 'shipped'])->sum('total_amount');
         $tier = $this->computeTier($totalSpent);
         $orders = (clone $qq)->with(['details', 'handler'])->latest()->paginate(10);
-        $user = $this->safeProfile($user);
+        $customer = Customer::where('type', 'wholesale')->where(function($q) use ($user) {
+            $q->where('phone', $user->phone)->orWhere('email', $user->email);
+        })->first();
+        $rankInfo = $customer ? app(WholesaleLoyaltyService::class)->getRankInfo($customer) : [];
 
-        return view('wholesale.customer.dashboard', compact('user', 'orders', 'totalOrders', 'activeOrders', 'totalSpent', 'tier'))
+        return view('wholesale.customer.dashboard', compact('user', 'orders', 'totalOrders', 'activeOrders', 'totalSpent', 'tier', 'rankInfo', 'customer'))
             ->with('trackedOrder', $order);
     }
 

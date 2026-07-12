@@ -341,6 +341,7 @@
                 border-radius: 6px;
                 max-width: 100%;
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             /* Buttons */
@@ -427,11 +428,6 @@
             .card-body {
                 padding: 12px !important;
             }
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         /* Mobile Bottom Nav Styles */
@@ -541,6 +537,68 @@
         /* Smooth scrolling for the whole page */
         html {
             scroll-behavior: smooth;
+        }
+
+        /* --------------------------------------------------
+           SIDEBAR OVERLAY IMPROVEMENTS
+        -------------------------------------------------- */
+        .sidebar-open .main-sidebar {
+            z-index: 1050 !important;
+        }
+
+        @media (max-width: 767.98px) {
+            .sidebar-open .content-wrapper,
+            .sidebar-open .main-footer,
+            .sidebar-open .main-header {
+                margin-left: 0 !important;
+            }
+
+            .sidebar-open .main-sidebar {
+                transform: translateX(0) !important;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            }
+
+            .main-sidebar {
+                transition: transform 0.3s ease;
+                z-index: 1050;
+            }
+
+            .sidebar-open .control-sidebar-bg {
+                background: rgba(0,0,0,0.4) !important;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 1040;
+            }
+        }
+
+        /* --------------------------------------------------
+           BACK TO TOP - Mobile
+        -------------------------------------------------- */
+        .back-to-top {
+            position: fixed;
+            bottom: 70px;
+            right: 15px;
+            z-index: 1020;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            opacity: 0.8;
+        }
+        .back-to-top:hover {
+            opacity: 1;
         }
     </style>
 </head>
@@ -1172,6 +1230,11 @@
     </div>
 </div>
 
+<!-- Back to Top Button (Mobile) -->
+<button class="back-to-top d-md-none" onclick="window.scrollTo({top:0,behavior:'smooth'})" id="backToTopBtn">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
 <!-- Scripts -->
 {{-- Vite handles app.js now --}}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -1193,6 +1256,16 @@
 <script src="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.js" defer></script>
 
 <script>
+    // Back to Top button visibility
+    $(window).on('scroll', function() {
+        const btn = $('#backToTopBtn');
+        if ($(this).scrollTop() > 300) {
+            btn.fadeIn(200);
+        } else {
+            btn.fadeOut(200);
+        }
+    });
+
     // BUG-4: Global SweetAlert2 Toast Notification
     const Toast = Swal.mixin({
         toast: true,
@@ -1537,5 +1610,6 @@ function quickAsk(msg) {
     sendChat();
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 </html>

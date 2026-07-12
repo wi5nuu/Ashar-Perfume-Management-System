@@ -12,10 +12,26 @@ class RedirectWholesaleCustomer
     public function handle(Request $request, Closure $next): Response
     {
         if (Auth::check() && Auth::user()->role === 'wholesale_customer') {
-            if (!str_starts_with($request->path(), 'wholesale-customer')) {
+            $path = $request->path();
+
+            // Only allow paths under /wholesale-customer/ (with trailing slash)
+            // EXACT match /wholesale-customer alone is also allowed
+            // This prevents matching /wholesale-customers (admin route)
+            $isWholesalePath = str_starts_with($path, 'wholesale-customer/')
+                            || $path === 'wholesale-customer';
+
+            if (!$isWholesalePath) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Halaman tidak ditemukan.'
+                    ], 404);
+                }
+
                 return redirect()->route('wholesale.customer.dashboard');
             }
         }
+
         return $next($request);
     }
 }

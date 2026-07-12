@@ -1,6 +1,6 @@
 # 📦 Product Backlog — APMS (Ashar Grosir Perfume Management System)
 
-> **Last Updated:** April 19, 2026  
+> **Last Updated:** July 11, 2026  
 > **Product Owner:** Ashar  
 > **Total Backlog Items:** 12  
 > **Priority Scale:** 🔴 High | 🟡 Medium | 🟢 Low  
@@ -21,7 +21,7 @@
 | PB-08 | Customer Loyalty & Debt Management | 🟡 Medium | ✅ Done | 5 |
 | PB-09 | Expense Tracking & Coupon System | 🟡 Medium | ✅ Done | 5 |
 | PB-10 | AI Assistant (Offline Sales Advisor) | 🟡 Medium | ✅ Done | 13 |
-| PB-11 | Mobile Responsive UI (All Devices) | 🟡 Medium | 🔄 In Progress | 5 |
+| PB-11 | Mobile Responsive UI (All Devices) | 🟡 Medium | ✅ Done | 5 |
 | PB-12 | System Settings & Store Configuration | 🟢 Low | ✅ Done | 3 |
 
 ---
@@ -282,10 +282,12 @@ Ensure all pages are fully responsive across mobile, tablet, and desktop screen 
 **Features:**
 - [x] Login page — mobile centered ✅
 - [x] Dashboard layout — responsive grid ✅
-- [ ] POS transaction page — mobile optimized
-- [ ] Product list — card/grid view on mobile
-- [ ] Reports — scrollable tables on small screens
-- [ ] Sidebar navigation — collapsible hamburger menu
+- [x] POS transaction page — mobile optimized ✅
+- [x] Product list — card/grid view on mobile ✅
+- [x] Reports — scrollable tables on small screens ✅
+- [x] Sidebar navigation — collapsible hamburger menu ✅
+- [x] Back-to-top button on mobile ✅
+- [x] Lazy loading images for performance ✅
 
 **Acceptance Criteria:**
 - No horizontal scrolling on 375px screen width
@@ -321,7 +323,7 @@ Build a settings module for store configuration, appearance, and operational def
 | Sprint | Points Planned | Points Completed | Velocity |
 |--------|---------------|-----------------|---------|
 | Sprint 1 (Week 1) | 100 | 92 | 92% |
-| Sprint 2 (Week 2) | 8 | — | — |
+| Sprint 2 (Week 2) | 23 | 23 | 100% |
 
 ---
 

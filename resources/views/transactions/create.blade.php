@@ -4,6 +4,20 @@
 
 @section('content')
 <div class="container-fluid">
+    <!-- Mobile Tab Toggle -->
+    <div class="d-md-none mb-2">
+        <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+            <label class="btn btn-primary-apms active" id="mobileTabProducts">
+                <input type="radio" name="mobilePosTab" value="products" checked>
+                <i class="fas fa-box mr-1"></i> Produk
+            </label>
+            <label class="btn btn-outline-primary" id="mobileTabCart">
+                <input type="radio" name="mobilePosTab" value="cart">
+                <i class="fas fa-shopping-cart mr-1"></i> Keranjang <span class="badge badge-light ml-1" id="mobileTabCartCount">0</span>
+            </label>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Left Column: Product Selection -->
         <div class="col-md-8 col-12" id="leftColumn" style="transition: all 0.3s ease;">
@@ -89,7 +103,7 @@
                                             @if($product->image)
                                             <img src="{{ asset('storage/' . $product->image) }}" 
                                                  alt="{{ $product->name }}"
-                                                 class="img-fluid mb-1 product-img">
+                                                 class="img-fluid mb-1 product-img" loading="lazy">
                                             @else
                                             <div class="bg-light d-flex align-items-center justify-content-center mb-1 product-img-placeholder">
                                                 <i class="fas fa-wine-bottle fa-2x text-muted"></i>
@@ -140,7 +154,7 @@
                                             <div class="d-flex align-items-center">
                                                 <div class="mr-2">
                                                     @if($product->image)
-                                                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" style="width:50px;height:50px;object-fit:cover;" class="rounded">
+                                                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" style="width:50px;height:50px;object-fit:cover;" class="rounded" loading="lazy">
                                                     @else
                                                     <div class="bg-light d-flex align-items-center justify-content-center rounded" style="width:50px;height:50px;">
                                                         <i class="fas fa-fill-drip fa-lg text-secondary"></i>
@@ -328,7 +342,12 @@
             <!-- Cart -->
             <div class="card card-apms mb-3" id="cartSection">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">Keranjang Belanja</h3>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary d-md-none mr-2" onclick="switchMobileTab('products')" title="Kembali ke Produk">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <h3 class="card-title mb-0 d-inline">Keranjang Belanja</h3>
+                    </div>
                     <span class="badge badge-primary" id="cartCount">0 item</span>
                 </div>
                 <div class="card-body p-0">
@@ -510,11 +529,11 @@
     </div>
 </div>
 
-<!-- Mobile Floating Cart Button -->
+        <!-- Mobile Floating Cart Button -->
 <div class="d-md-none position-fixed" style="bottom: 75px; right: 15px; z-index: 1050;">
     <button class="btn btn-primary-apms rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
             style="width: 56px; height: 56px;"
-            onclick="$('html, body').animate({scrollTop: $('#cartSection').offset().top - 80}, 500)">
+            onclick="switchMobileTab('cart')">
         <i class="fas fa-shopping-cart fa-lg"></i>
         <span class="badge badge-danger position-absolute" id="mobileCartCount" 
               style="top: -2px; right: -2px; border-radius: 50%; min-width: 22px; padding: 3px 6px; font-size: 11px;">0</span>
@@ -635,6 +654,16 @@
     .category-scroll .btn {
         font-size: 0.75rem;
         padding: 8px 12px !important;
+    }
+    /* Mobile POS tab toggle */
+    #leftColumn, #rightColumn {
+        display: block;
+    }
+    .pos-tab-cart-active #leftColumn {
+        display: none;
+    }
+    .pos-tab-products-active #rightColumn {
+        display: none;
     }
 }
 .right-panel {
@@ -915,6 +944,7 @@ function updateCartDisplay() {
     
     $('#cartCount').text(`${cart.length} item${cart.length > 1 ? 's' : ''}`);
     $('#mobileCartCount').text(cart.length);
+    $('#mobileTabCartCount').text(cart.length);
     $('#subtotal').text('Rp ' + subtotal.toLocaleString('id-ID'));
     calculateTotals();
 }
@@ -1464,6 +1494,22 @@ function onScanSuccess(decodedText) {
     $('#productSearch').val(decodedText);
     scanBarcode(decodedText);
 }
+
+function switchMobileTab(tab) {
+    if (window.innerWidth >= 768) return;
+    if (tab === 'cart') {
+        $('#mobileTabCart').button('toggle');
+        $('body').removeClass('pos-tab-products-active').addClass('pos-tab-cart-active');
+    } else {
+        $('#mobileTabProducts').button('toggle');
+        $('body').removeClass('pos-tab-cart-active').addClass('pos-tab-products-active');
+    }
+}
+
+$(document).on('change', 'input[name="mobilePosTab"]', function() {
+    const val = $(this).val();
+    switchMobileTab(val);
+});
 
 function scanBarcode(barcode) {
     const product = $('.product-item').filter(function() {

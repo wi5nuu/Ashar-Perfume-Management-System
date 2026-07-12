@@ -157,7 +157,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage_products', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
         Gate::define('manage_inventory', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
         Gate::define('manage_transactions', fn($user) => in_array($user->role, ['admin_pusat', 'admin', 'cashier', 'manager', 'owner']));
-        Gate::define('manage_customers', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'cashier', 'owner']));
+        Gate::define('manage_customers', fn($user) => in_array($user->role, ['admin', 'admin_pusat', 'manager', 'cashier', 'owner']));
         Gate::define('manage_coupons', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
         Gate::define('manage_expenses', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
         Gate::define('view_reports', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));

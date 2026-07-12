@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard - {{ $user->name }} - AL'ASHAR</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root { --p: #FF6B35; --pd: #e55a2b; }
@@ -263,9 +264,10 @@
         @include('wholesale.customer.timeline', ['order' => $trackedOrder])
         @php $tu = url('/wholesale-customer/track?invoice_number='.urlencode($trackedOrder->invoice_number)); @endphp
         <div class="track-qr">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data={{ urlencode($tu) }}" alt="QR">
-            <div>Scan untuk lacak</div>
+            <div id="trackQr" style="display:inline-block"></div>
+            <div style="font-size:0.72rem;color:#888;margin-top:4px;font-weight:600">Scan untuk lacak</div>
         </div>
+        <script>new QRCode(document.getElementById('trackQr'),{text:'{{ $tu }}',width:80,height:80});</script>
     </div>
     @endif
 
@@ -358,9 +360,15 @@
         </a>
     </div>
 
+    <style>
+        .btt { position:fixed; bottom:80px; right:16px; z-index:200; width:44px; height:44px; border-radius:50%; background:var(--p); color:#fff; border:none; box-shadow:0 3px 12px rgba(0,0,0,0.25); display:none; align-items:center; justify-content:center; font-size:1.1rem; cursor:pointer; transition:opacity 0.2s; }
+        .btt:hover { opacity:0.85; }
+    </style>
+    <button class="btt" id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
     <script>
-        // auto-refresh setiap 30 detik
-        setTimeout(function(){ location.reload(); }, 30000);
+        window.addEventListener('scroll', function() {
+            document.getElementById('btt').style.display = window.scrollY > 400 ? 'flex' : 'none';
+        });
     </script>
 </body>
 </html>
