@@ -23,6 +23,10 @@ class WholesaleController extends Controller
     public function index(Request $request)
     {
         Gate::authorize('wholesale.view');
+        
+        // TODO (Siti - Backlog Agustus): Bug Data Leak Wholesale Order
+        // Tambahkan scope filter cabang agar admin cabang tidak melihat pesanan dari cabang lain.
+        // Contoh: if (!auth()->user()->isOwner() && !auth()->user()->isAdminPusat()) { $query->where('branch_id', auth()->user()->branch_id); }
         $query = WholesaleOrder::with(['user', 'customer', 'handler']);
 
         if ($request->filled('status')) {
@@ -290,6 +294,15 @@ class WholesaleController extends Controller
         return redirect()->route('wholesale.index')->with('success', 'Pesanan berhasil dihapus.');
     }
 
+    /**
+     * Mengkonfirmasi pesanan grosir (Status: Pending -> Reviewed)
+     * 
+     * PENTING (Business Logic): 
+     * Saat ini pemotongan stok gudang baru dilakukan pada tahap ini secara atomic (lockForUpdate).
+     * 
+     * TODO (Siti - Backlog Agustus): Pindahkan validasi ketersediaan stok (bukan pemotongannya) 
+     * ke method store() dan update() agar user mendapat feedback lebih awal jika stok kosong.
+     */
     public function confirm(WholesaleOrder $order)
     {
         Gate::authorize('wholesale.manage');

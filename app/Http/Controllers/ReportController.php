@@ -229,6 +229,9 @@ class ReportController extends Controller
         // Gross Profit
         $grossProfit = $totalRevenue - $cogs;
 
+        // TODO (Siti - Backlog Agustus): Bug Data Leak Laporan Laba Rugi
+        // Saat ini query expenses mengambil total dari semua cabang.
+        // Solusi: Gunakan $this->scopeBranch(Expense::whereMonth(...)) agar data akurat.
         // Operating Expenses
         $expenses = Expense::whereMonth('date', $month)
             ->whereYear('date', $year)

@@ -107,6 +107,10 @@ class InventoryController extends Controller
         $validated = $request->validated();
         $user      = Auth::user();
 
+        // TODO (Siti - Backlog Agustus): Bug Logika Owner Adjust Stock
+        // Jika user adalah Owner, query di bawah tidak mem-filter branch_id dari request.
+        // Akibatnya penyesuaian stok akan diambil secara acak dari database jika produk ada di >1 cabang.
+        // Solusi: Ambil $validated['branch_id'] jika owner, dan masukkan ke query.
         try {
             return DB::transaction(function () use ($validated, $user) {
                 // Lock the inventory row for concurrent access safety
