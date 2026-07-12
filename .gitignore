@@ -92,3 +92,7 @@ backup-*.sql
 dump.rdb
 /tmp_cols.php
 *.ps1
+
+# --- SENSITIVE EMPLOYEE & AI DOCS ---
+/docs/teams/employees/siti-nurfadhilah-az-zahra-syam/
+/docs/prompt-lengkap-nerva.md
