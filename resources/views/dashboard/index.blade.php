@@ -115,7 +115,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                 <a href="{{ route('customers.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-4 col-md-6 col-6">
             <div class="small-box bg-gradient-pink">
                 <div class="inner">
                     <h3>{{ $lowStockProductsCount ?? 0 }}</h3>
