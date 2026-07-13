@@ -135,27 +135,17 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                 <a href="{{ route('reports.sales') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-gradient-indigo">
-                <div class="inner">
-                    <h3>{{ $totalProducts ?? 0 }}</h3>
-                    <p>Total Produk</p>
-                </div>
-                <div class="icon"><i class="fas fa-boxes"></i></div>
-                <a href="{{ route('products.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
-        </div>
     </div>
     @endcan
 
     @can('reports.view')
     {{-- Full Dashboard for roles with reports --}}
-    <div class="row mb-2">
+    <div class="row mb-3">
         <div class="col-lg-8">
-            <div class="card card-apms h-100">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+            <div class="card card-apms">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-2 px-3">
                     <h5 class="card-title font-weight-bold mb-0">
-                        <i class="fas fa-balance-scale mr-1"></i> Period Comparison
+                        <i class="fas fa-balance-scale mr-1"></i> Perbandingan Periode
                     </h5>
                     <div class="btn-group btn-group-toggle" data-toggle="buttons">
                         <label class="btn btn-sm btn-outline-primary active" id="btn-mom">
