@@ -67,8 +67,8 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                 <a href="{{ route('wholesale.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box {{ $bg }}primary">
+        <div class="col-lg-4 col-md-6 col-6">
+            <div class="small-box bg-gradient-primary">
                 <div class="inner">
                     <h3>{{ $todayTransactions ?? 0 }}</h3>
                     <p>Total Transaksi</p>
