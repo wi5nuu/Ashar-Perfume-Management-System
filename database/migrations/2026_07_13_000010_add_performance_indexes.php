@@ -8,47 +8,40 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $t) {
-            $t->index(['branch_id','created_at']);
-            $t->index(['status','created_at']);
-        });
-        Schema::table('transaction_details', function (Blueprint $t) {
-            $t->index(['product_id','transaction_id']);
-        });
-        Schema::table('inventories', function (Blueprint $t) {
-            $t->index(['product_id','branch_id']);
-        });
-        Schema::table('products', function (Blueprint $t) {
-            $t->index(['category_id','is_active']);
-        });
-        Schema::table('inventory_movements', function (Blueprint $t) {
-            $t->index(['product_id','branch_id','created_at']);
-        });
-        Schema::table('wholesale_orders', function (Blueprint $t) {
-            $t->index(['branch_id','status','created_at']);
-        });
+        // Only add indexes that don't already exist
+        $this->addIndexSafe('transactions', ['branch_id', 'created_at']);
+        $this->addIndexSafe('transactions', ['payment_status', 'created_at']);
+        $this->addIndexSafe('transaction_details', ['product_id', 'transaction_id']);
+        $this->addIndexSafe('inventories', ['product_id', 'branch_id']);
+        $this->addIndexSafe('products', ['category_id', 'is_active']);
+        $this->addIndexSafe('inventory_movements', ['product_id', 'branch_id', 'created_at']);
+        $this->addIndexSafe('wholesale_orders', ['branch_id', 'status', 'created_at']);
     }
 
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $t) {
-            $t->dropIndex(['branch_id','created_at']);
-            $t->dropIndex(['status','created_at']);
-        });
-        Schema::table('transaction_details', function (Blueprint $t) {
-            $t->dropIndex(['product_id','transaction_id']);
-        });
-        Schema::table('inventories', function (Blueprint $t) {
-            $t->dropIndex(['product_id','branch_id']);
-        });
-        Schema::table('products', function (Blueprint $t) {
-            $t->dropIndex(['category_id','is_active']);
-        });
-        Schema::table('inventory_movements', function (Blueprint $t) {
-            $t->dropIndex(['product_id','branch_id','created_at']);
-        });
-        Schema::table('wholesale_orders', function (Blueprint $t) {
-            $t->dropIndex(['branch_id','status','created_at']);
-        });
+        // No-op: existing indexes from other migrations should not be dropped here
+    }
+
+    private function addIndexSafe(string $table, array $columns): void
+    {
+        if (!Schema::hasTable($table)) {
+            return;
+        }
+        // Check each column exists
+        foreach ($columns as $col) {
+            if (!Schema::hasColumn($table, $col)) {
+                return;
+            }
+        }
+        $indexName = $table . '_' . implode('_', $columns) . '_index';
+        // Check if index already exists
+        try {
+            Schema::table($table, function (Blueprint $t) use ($columns, $indexName) {
+                $t->index($columns, $indexName);
+            });
+        } catch (\Exception $e) {
+            // Silently skip if duplicate
+        }
     }
 };
