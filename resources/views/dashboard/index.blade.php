@@ -44,12 +44,11 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
         </div>
     </div>
 
-    {{-- Stats Row --}}
+    {{-- Stats Row: 6 Cards — 3 per row on desktop, 2 per row on tablet --}}
     @can('transactions.view')
     <div class="row">
-        @php $isOwner = $user->isOwner(); $bg = $isOwner ? 'bg-gradient-' : 'bg-'; @endphp
-        <div class="col-lg-3 col-6">
-            <div class="small-box {{ $bg }}warning">
+        <div class="col-lg-4 col-md-6 col-6">
+            <div class="small-box bg-gradient-warning">
                 <div class="inner">
                     <h3>Rp {{ number_format($todaySales, 0, ',', '.') }}</h3>
                     <p>Penjualan Eceran Hari Ini</p>
