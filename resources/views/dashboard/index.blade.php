@@ -189,7 +189,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
             <div class="card card-apms">
                 <div class="card-header border-0">
                     <div class="d-flex justify-content-between">
-                        <h3 class="card-title">Grafik Penjualan Tahunan {{ date('Y') }}</h3>
+                        <h3 class="card-title">Grafik Penjualan {{ date('Y') }}</h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-primary-apms btn-sm" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
