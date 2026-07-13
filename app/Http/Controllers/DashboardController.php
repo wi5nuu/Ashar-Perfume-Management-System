@@ -458,7 +458,7 @@ class DashboardController extends Controller
                     'delta'    => $delta($current['profit'], $previous['profit']),
                 ],
                 'avg_basket' => [
-                    'label'    => 'Avg Basket Size',
+                    'label'    => 'Rata-rata Belanja',
                     'current'  => $fmt($current['avg_basket']),
                     'previous' => $fmt($previous['avg_basket']),
                     'delta'    => $delta($current['avg_basket'], $previous['avg_basket']),
