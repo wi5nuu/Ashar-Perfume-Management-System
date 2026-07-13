@@ -257,11 +257,11 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
         <div class="col-lg-4">
             @can('inventory.view')
             <div class="card card-apms">
-                <div class="card-header border-0">
-                    <h3 class="card-title">Peringatan Stok</h3>
+                <div class="card-header border-0 py-2 px-3">
+                    <h3 class="card-title mb-0">Peringatan Stok</h3>
                 </div>
                 <div class="card-body p-0">
-                    <ul class="products-list product-list-in-card pl-2 pr-2">
+                    <ul class="products-list product-list-in-card px-3">
                         @foreach($lowStockAlerts as $alert)
                         <li class="item">
                             <div class="product-img">
