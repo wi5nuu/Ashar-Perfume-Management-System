@@ -299,3 +299,21 @@ Route::prefix('wholesale-customer')->name('wholesale.customer.')->group(function
         Route::post('/logout', [\App\Http\Controllers\WholesaleCustomerController::class, 'logout'])->name('logout');
     });
 });
+// Customer Deposits
+Route::resource('customer-deposits', App\Http\Controllers\CustomerDepositController::class);
+Route::post('customer-deposits/{account}/transaction', [App\Http\Controllers\CustomerDepositController::class, 'transaction'])->name('customer-deposits.transaction');
+
+// Expense Approvals
+Route::get('expense-approvals', [App\Http\Controllers\ExpenseApprovalController::class, 'index'])->name('expense-approvals.index');
+Route::post('expense-approvals/{approval}/approve', [App\Http\Controllers\ExpenseApprovalController::class, 'approve'])->name('expense-approvals.approve');
+Route::post('expense-approvals/{approval}/reject', [App\Http\Controllers\ExpenseApprovalController::class, 'reject'])->name('expense-approvals.reject');
+
+// Reports
+Route::get('reports/daily-sales', App\Http\Controllers\DailySalesController::class)->name('reports.daily-sales');
+Route::get('reports/stock-valuation', [App\Http\Controllers\StockValuationController::class, 'index'])->name('reports.stock-valuation');
+
+// Admin
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('activity-logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('activity-logs/{log}', [App\Http\Controllers\Admin\ActivityLogController::class, 'show'])->name('activity-logs.show');
+});
