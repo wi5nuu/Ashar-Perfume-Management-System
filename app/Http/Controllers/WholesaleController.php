@@ -24,10 +24,11 @@ class WholesaleController extends Controller
     {
         Gate::authorize('wholesale.view');
         
-        // TODO (Siti - Backlog Agustus): Bug Data Leak Wholesale Order
-        // Tambahkan scope filter cabang agar admin cabang tidak melihat pesanan dari cabang lain.
-        // Contoh: if (!auth()->user()->isOwner() && !auth()->user()->isAdminPusat()) { $query->where('branch_id', auth()->user()->branch_id); }
         $query = WholesaleOrder::with(['user', 'customer', 'handler']);
+
+        if (!auth()->user()->isOwner() && !auth()->user()->isAdminPusat()) {
+            $query->where('branch_id', auth()->user()->branch_id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -99,6 +100,24 @@ class WholesaleController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Validasi stok sebelum membuat pesanan
+            $branchId = Auth::user()->branch_id;
+            foreach ($request->items as $item) {
+                if (!$item['product_id']) continue;
+
+                $inventory = \App\Models\Inventory::where('product_id', $item['product_id'])
+                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$inventory || $inventory->current_stock < $item['quantity']) {
+                    throw new \Exception(
+                        "Stok tidak cukup untuk '{$item['product_name']}'. " .
+                        "Dibutuhkan: {$item['quantity']}, Tersedia: " . ($inventory->current_stock ?? 0)
+                    );
+                }
+            }
 
             $order = WholesaleOrder::create([
                 'invoice_number' => 'GROSIR-' . Carbon::now()->format('Ymd') . '-' . strtoupper(substr(str_replace('-', '', (string) Str::uuid()), 0, 8)),
@@ -237,6 +256,24 @@ class WholesaleController extends Controller
         try {
             DB::beginTransaction();
 
+            // Validasi stok sebelum memperbarui pesanan
+            $branchId = $order->branch_id ?? Auth::user()->branch_id;
+            foreach ($request->items as $item) {
+                if (!$item['product_id']) continue;
+
+                $inventory = \App\Models\Inventory::where('product_id', $item['product_id'])
+                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$inventory || $inventory->current_stock < $item['quantity']) {
+                    throw new \Exception(
+                        "Stok tidak cukup untuk '{$item['product_name']}'. " .
+                        "Dibutuhkan: {$item['quantity']}, Tersedia: " . ($inventory->current_stock ?? 0)
+                    );
+                }
+            }
+
             $order->update([
                 'customer_id' => $request->customer_id,
                 'package_target_amount' => $request->package_target_amount,
@@ -294,15 +331,6 @@ class WholesaleController extends Controller
         return redirect()->route('wholesale.index')->with('success', 'Pesanan berhasil dihapus.');
     }
 
-    /**
-     * Mengkonfirmasi pesanan grosir (Status: Pending -> Reviewed)
-     * 
-     * PENTING (Business Logic): 
-     * Saat ini pemotongan stok gudang baru dilakukan pada tahap ini secara atomic (lockForUpdate).
-     * 
-     * TODO (Siti - Backlog Agustus): Pindahkan validasi ketersediaan stok (bukan pemotongannya) 
-     * ke method store() dan update() agar user mendapat feedback lebih awal jika stok kosong.
-     */
     public function confirm(WholesaleOrder $order)
     {
         Gate::authorize('wholesale.manage');

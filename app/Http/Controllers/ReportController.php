@@ -30,9 +30,10 @@ class ReportController extends Controller
         $endDate = Carbon::now()->endOfMonth();
         
         // Combined Revenue: RetailTransactions + WholesaleOrders
-        $retailRevenue = Transaction::whereMonth('created_at', now()->month)->sum('total_amount') ?? 0;
+        $retailRevenue = $this->scopeBranch(Transaction::whereMonth('created_at', now()->month))->sum('total_amount') ?? 0;
         $wholesaleRevenue = \App\Models\WholesaleOrder::whereMonth('created_at', now()->month)
             ->where('status', '!=', 'cancelled')
+            ->when(!auth()->user()->isOwner() && !auth()->user()->isAdminPusat(), fn($q) => $q->where('branch_id', auth()->user()->branch_id))
             ->sum('total_amount') ?? 0;
         $totalCombinedRevenue = $retailRevenue + $wholesaleRevenue;
 
@@ -53,7 +54,7 @@ class ReportController extends Controller
             ],
             [
                 'title' => 'Total Transaksi',
-                'value' => Transaction::whereMonth('created_at', now()->month)->count(),
+                'value' => $this->scopeBranch(Transaction::whereMonth('created_at', now()->month))->count(),
                 'color' => 'info',
                 'icon' => 'fas fa-exchange-alt',
                 'link' => route('reports.sales')
@@ -78,24 +79,32 @@ class ReportController extends Controller
         
         // Monthly statistics
         $totalProductsSold = DB::table('transaction_details')
-            ->whereMonth('created_at', now()->month)
-            ->sum('quantity') ?? 0;
-            
+            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
+            ->whereMonth('transaction_details.created_at', now()->month)
+            ->select(DB::raw('SUM(transaction_details.quantity) as total'))
+            ->when(!auth()->user()->isOwner(), function ($q) {
+                $q->where('transactions.branch_id', auth()->user()->branch_id);
+            })
+            ->value('total') ?? 0;
+
         // Calculate Expenses for the month
-        $monthlyExpenses = Expense::whereMonth('date', now()->month)->sum('amount') ?? 0;
+        $monthlyExpenses = $this->scopeBranch(Expense::whereMonth('date', now()->month))->sum('amount') ?? 0;
 
         // BUG-11 FIX: Tambahkan perhitungan COGS
         $monthlyCOGS = DB::table('transaction_details')
             ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
             ->whereMonth('transactions.created_at', now()->month)
             ->whereYear('transactions.created_at', now()->year)
+            ->when(!auth()->user()->isOwner(), function ($q) {
+                $q->where('transactions.branch_id', auth()->user()->branch_id);
+            })
             ->select(DB::raw('SUM(transaction_details.purchase_price * transaction_details.quantity) as total_cogs'))
             ->value('total_cogs') ?? 0;
 
         $monthlyStats = [
             'revenue' => $totalCombinedRevenue,
             'expenses' => $monthlyExpenses,
-            'transactions' => Transaction::whereMonth('created_at', now()->month)->count() ?? 0,
+            'transactions' => $this->scopeBranch(Transaction::whereMonth('created_at', now()->month))->count() ?? 0,
             'products_sold' => $totalProductsSold,
             'cogs' => $monthlyCOGS,
             'profit' => $totalCombinedRevenue - $monthlyCOGS - $monthlyExpenses
@@ -103,20 +112,22 @@ class ReportController extends Controller
 
         // Chart data for monthly performance (last 6 months)
         $monthlyChartData = ['labels' => [], 'revenue' => [], 'expenses' => [], 'profit' => []];
+        $user = auth()->user();
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
             
-            $revRetail = Transaction::whereMonth('created_at', $date->month)
-                ->whereYear('created_at', $date->year)
+            $revRetail = $this->scopeBranch(Transaction::whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year))
                 ->sum('total_amount') ?? 0;
             $revWholesale = \App\Models\WholesaleOrder::whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->where('status', '!=', 'cancelled')
+                ->when(!$user->isOwner() && !$user->isAdminPusat(), fn($q) => $q->where('branch_id', $user->branch_id))
                 ->sum('total_amount') ?? 0;
             $rev = $revRetail + $revWholesale;
 
-            $exp = Expense::whereMonth('date', $date->month)
-                ->whereYear('date', $date->year)
+            $exp = $this->scopeBranch(Expense::whereMonth('date', $date->month)
+                ->whereYear('date', $date->year))
                 ->sum('amount') ?? 0;
                 
             $monthlyChartData['labels'][] = $date->format('M Y');
@@ -173,24 +184,33 @@ class ReportController extends Controller
     public function inventory()
     {
         Gate::authorize('view_reports');
-        $lowStock = DB::table('inventories')
+
+        $branchFilter = function ($query) {
+            $user = auth()->user();
+            if (!$user->isOwner() && $user->branch_id) {
+                $query->where('inventories.branch_id', $user->branch_id);
+            }
+            return $query;
+        };
+
+        $lowStock = $branchFilter(DB::table('inventories')
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->whereColumn('inventories.current_stock', '<', 'inventories.minimum_stock')
             ->where('inventories.current_stock', '>', 0)
-            ->select('products.name', 'inventories.*')
+            ->select('products.name', 'inventories.*'))
             ->get();
         
-        $outOfStock = DB::table('inventories')
+        $outOfStock = $branchFilter(DB::table('inventories')
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->where('inventories.current_stock', 0)
-            ->select('products.name', 'inventories.*')
+            ->select('products.name', 'inventories.*'))
             ->get();
         
-        $expiringSoon = DB::table('inventories')
+        $expiringSoon = $branchFilter(DB::table('inventories')
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->whereNotNull('inventories.expiration_date')
             ->where('inventories.expiration_date', '<=', Carbon::now()->addDays(30))
-            ->select('products.name', 'inventories.*')
+            ->select('products.name', 'inventories.*'))
             ->get();
         
         return view('reports.inventory', compact('lowStock', 'outOfStock', 'expiringSoon'));
@@ -206,14 +226,15 @@ class ReportController extends Controller
         $endDate   = Carbon::create($year, $month, 1)->endOfMonth();
 
         // Revenue (Retail)
-        $retailRevenue = Transaction::whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
+        $retailRevenue = $this->scopeBranch(Transaction::whereMonth('created_at', $month)
+            ->whereYear('created_at', $year))
             ->sum('total_amount');
 
         // Revenue (Grosir - hanya yang selesai)
         $wholesaleRevenue = \App\Models\WholesaleOrder::whereMonth('created_at', $month)
             ->whereYear('created_at', $year)
             ->where('status', 'completed')
+            ->when(!auth()->user()->isOwner() && !auth()->user()->isAdminPusat(), fn($q) => $q->where('branch_id', auth()->user()->branch_id))
             ->sum('total_amount');
 
         $totalRevenue = $retailRevenue + $wholesaleRevenue;
@@ -223,18 +244,18 @@ class ReportController extends Controller
             ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
             ->whereMonth('transactions.created_at', $month)
             ->whereYear('transactions.created_at', $year)
+            ->when(!auth()->user()->isOwner(), function ($q) {
+                $q->where('transactions.branch_id', auth()->user()->branch_id);
+            })
             ->selectRaw('SUM(transaction_details.purchase_price * transaction_details.quantity) as total')
             ->value('total') ?? 0;
 
         // Gross Profit
         $grossProfit = $totalRevenue - $cogs;
 
-        // TODO (Siti - Backlog Agustus): Bug Data Leak Laporan Laba Rugi
-        // Saat ini query expenses mengambil total dari semua cabang.
-        // Solusi: Gunakan $this->scopeBranch(Expense::whereMonth(...)) agar data akurat.
         // Operating Expenses
-        $expenses = Expense::whereMonth('date', $month)
-            ->whereYear('date', $year)
+        $expenses = $this->scopeBranch(Expense::whereMonth('date', $month)
+            ->whereYear('date', $year))
             ->sum('amount');
 
         // Net Profit
@@ -244,8 +265,8 @@ class ReportController extends Controller
         $profit = $netProfit;
 
         // Expense breakdown
-        $expenseBreakdown = Expense::whereMonth('date', $month)
-            ->whereYear('date', $year)
+        $expenseBreakdown = $this->scopeBranch(Expense::whereMonth('date', $month)
+            ->whereYear('date', $year))
             ->join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
             ->selectRaw('expense_categories.name, SUM(expenses.amount) as total')
             ->groupBy('expense_categories.name')
@@ -339,11 +360,13 @@ class ReportController extends Controller
     public function exportLowStock()
     {
         Gate::authorize('view_reports');
+        $user = auth()->user();
         $lowStock = DB::table('inventories')
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->whereColumn('inventories.current_stock', '<', 'inventories.minimum_stock')
             ->where('inventories.current_stock', '>', 0)
             ->select('products.name', 'inventories.*')
+            ->when(!$user->isOwner() && $user->branch_id, fn($q) => $q->where('inventories.branch_id', $user->branch_id))
             ->get();
             
         $pdf = Pdf::loadView('reports.exports.inventory-pdf', [
@@ -357,11 +380,13 @@ class ReportController extends Controller
     public function exportExpiry()
     {
         Gate::authorize('view_reports');
+        $user = auth()->user();
         $expiringSoon = DB::table('inventories')
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->whereNotNull('inventories.expiration_date')
             ->where('inventories.expiration_date', '<=', Carbon::now()->addDays(30))
             ->select('products.name', 'inventories.*')
+            ->when(!$user->isOwner() && $user->branch_id, fn($q) => $q->where('inventories.branch_id', $user->branch_id))
             ->get();
             
         $pdf = Pdf::loadView('reports.exports.inventory-pdf', [
@@ -425,6 +450,7 @@ class ReportController extends Controller
     public function exportCsvInventory()
     {
         Gate::authorize('view_reports');
+        $user = auth()->user();
         $items = DB::table('inventories')
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->leftJoin('product_categories', 'products.product_category_id', '=', 'product_categories.id')
@@ -438,6 +464,7 @@ class ReportController extends Controller
                 'inventories.cost_per_unit',
                 'inventories.expiration_date'
             )
+            ->when(!$user->isOwner() && $user->branch_id, fn($q) => $q->where('inventories.branch_id', $user->branch_id))
             ->orderBy('products.name')
             ->get();
 

@@ -103,6 +103,50 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
         </div>
         @endif
     </div>
+
+    {{-- Stats Row 2: Additional KPIs --}}
+    <div class="row">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-gradient-secondary">
+                <div class="inner">
+                    <h3>{{ $totalCustomers ?? 0 }}</h3>
+                    <p>Total Pelanggan</p>
+                </div>
+                <div class="icon"><i class="fas fa-users"></i></div>
+                <a href="{{ route('customers.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-gradient-pink">
+                <div class="inner">
+                    <h3>{{ $lowStockProductsCount ?? 0 }}</h3>
+                    <p>Stok Menipis</p>
+                </div>
+                <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <a href="{{ route('inventory.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-gradient-teal">
+                <div class="inner">
+                    <h3>Rp {{ number_format($monthSales, 0, ',', '.') }}</h3>
+                    <p>Penjualan Bulan Ini</p>
+                </div>
+                <div class="icon"><i class="fas fa-chart-line"></i></div>
+                <a href="{{ route('reports.sales') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-gradient-indigo">
+                <div class="inner">
+                    <h3>{{ $totalProducts ?? 0 }}</h3>
+                    <p>Total Produk</p>
+                </div>
+                <div class="icon"><i class="fas fa-boxes"></i></div>
+                <a href="{{ route('products.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
     @endcan
 
     @can('reports.view')
@@ -640,15 +684,21 @@ $(function() {
                 var d = parseFloat(kpi.delta);
                 var arrow = d >= 0 ? 'fa-arrow-up text-success' : 'fa-arrow-down text-danger';
                 var badgeClass = d >= 0 ? 'badge-success' : 'badge-danger';
-                html += '<div class="col-md-3 col-sm-6 mb-1">' +
-                    '<div class="info-box card-apms" style="min-height:48px;">' +
-                    '<span class="info-box-icon bg-light elevation-1" style="width:38px;font-size:0.85rem;line-height:48px;"><i class="fas ' + (icons[key]||'fa-chart-bar') + '"></i></span>' +
-                    '<div class="info-box-content" style="padding:3px 6px;">' +
-                    '<span class="info-box-text" style="font-size:0.65rem;">' + kpi.label + '</span>' +
-                    '<span class="info-box-number font-weight-bold" style="font-size:0.8rem;">' + kpi.current + '</span>' +
-                    '<span class="text-muted" style="font-size:0.6rem;">Prev: ' + kpi.previous + '</span> ' +
-                    '<span class="badge ' + badgeClass + '" style="font-size:0.55rem;"><i class="fas ' + arrow + ' mr-1"></i>' + Math.abs(d) + '%</span>' +
-                    '</div></div></div>';
+                var deltaText = (d >= 0 ? '+' : '') + d + '%';
+                html += '<div class="col-lg-3 col-md-6 mb-2">' +
+                    '<div class="card card-apms border-left-primary h-100">' +
+                    '<div class="card-body py-2 px-3">' +
+                    '<div class="d-flex align-items-center">' +
+                    '<div class="mr-3">' +
+                    '<i class="fas ' + (icons[key]||'fa-chart-bar') + ' fa-2x text-primary"></i>' +
+                    '</div>' +
+                    '<div class="flex-grow-1">' +
+                    '<p class="mb-0 text-muted small text-uppercase font-weight-bold">' + kpi.label + '</p>' +
+                    '<h5 class="mb-0 font-weight-bold">' + kpi.current + '</h5>' +
+                    '<div class="d-flex align-items-center mt-1">' +
+                    '<small class="text-muted mr-2"><i class="fas fa-history mr-1"></i>' + kpi.previous + '</small>' +
+                    '<span class="badge ' + badgeClass + ' px-2"><i class="fas ' + arrow + ' mr-1"></i>' + deltaText + '</span>' +
+                    '</div></div></div></div></div>';
             });
             $('#comparison-cards').html(html);
             $('#comparison-loading').hide();

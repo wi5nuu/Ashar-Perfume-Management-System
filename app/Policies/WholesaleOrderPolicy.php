@@ -18,9 +18,14 @@ class WholesaleOrderPolicy
         return $user->hasPermission('wholesale.view');
     }
 
+    protected function hasBranchAccess(User $user, WholesaleOrder $order): bool
+    {
+        return $user->isOwner() || $user->isAdminPusat() || $user->branch_id === $order->branch_id;
+    }
+
     public function view(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.view');
+        return $user->hasPermission('wholesale.view') && $this->hasBranchAccess($user, $order);
     }
 
     public function create(User $user): bool
@@ -30,46 +35,46 @@ class WholesaleOrderPolicy
 
     public function update(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.manage');
+        return $user->hasPermission('wholesale.manage') && $this->hasBranchAccess($user, $order);
     }
 
     public function delete(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.manage');
+        return $user->hasPermission('wholesale.manage') && $this->hasBranchAccess($user, $order);
     }
 
     public function confirm(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.manage');
+        return $user->hasPermission('wholesale.manage') && $this->hasBranchAccess($user, $order);
     }
 
     public function process(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.manage');
+        return $user->hasPermission('wholesale.manage') && $this->hasBranchAccess($user, $order);
     }
 
     public function pack(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.manage');
+        return $user->hasPermission('wholesale.manage') && $this->hasBranchAccess($user, $order);
     }
 
     public function ship(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.manage');
+        return $user->hasPermission('wholesale.manage') && $this->hasBranchAccess($user, $order);
     }
 
     public function deliver(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.manage');
+        return $user->hasPermission('wholesale.manage') && $this->hasBranchAccess($user, $order);
     }
 
     public function cancel(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.manage');
+        return $user->hasPermission('wholesale.manage') && $this->hasBranchAccess($user, $order);
     }
 
     public function print(User $user, WholesaleOrder $order): bool
     {
-        return $user->hasPermission('wholesale.view');
+        return $user->hasPermission('wholesale.view') && $this->hasBranchAccess($user, $order);
     }
 }

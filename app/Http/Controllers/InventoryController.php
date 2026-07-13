@@ -107,15 +107,13 @@ class InventoryController extends Controller
         $validated = $request->validated();
         $user      = Auth::user();
 
-        // TODO (Siti - Backlog Agustus): Bug Logika Owner Adjust Stock
-        // Jika user adalah Owner, query di bawah tidak mem-filter branch_id dari request.
-        // Akibatnya penyesuaian stok akan diambil secara acak dari database jika produk ada di >1 cabang.
-        // Solusi: Ambil $validated['branch_id'] jika owner, dan masukkan ke query.
         try {
             return DB::transaction(function () use ($validated, $user) {
                 // Lock the inventory row for concurrent access safety
                 $query = Inventory::where('product_id', $validated['product_id']);
-                if ($user->branch_id) {
+                if ($user->isOwner() && !empty($validated['branch_id'])) {
+                    $query->where('branch_id', $validated['branch_id']);
+                } elseif ($user->branch_id) {
                     $query->where('branch_id', $user->branch_id);
                 }
                 $inventory = $query->lockForUpdate()->first();
@@ -147,7 +145,7 @@ class InventoryController extends Controller
                 // Record audit trail
                 InventoryMovement::record(
                     productId:   $inventory->product_id,
-                    branchId:    $user->branch_id,
+                    branchId:    $inventory->branch_id,
                     type:        'adjustment',
                     quantity:    $newStock - $oldStock, // signed delta
                     stockBefore: $oldStock,
@@ -159,7 +157,7 @@ class InventoryController extends Controller
 
                 Log::info('Stock adjusted', [
                     'product_id'  => $inventory->product_id,
-                    'branch_id'   => $user->branch_id,
+                    'branch_id'   => $inventory->branch_id,
                     'type'        => $validated['adjustment_type'],
                     'old_stock'   => $oldStock,
                     'new_stock'   => $newStock,

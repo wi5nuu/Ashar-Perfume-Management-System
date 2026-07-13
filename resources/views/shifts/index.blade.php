@@ -212,7 +212,7 @@
                         <small class="text-danger mt-1 d-block"><i class="fas fa-exclamation-triangle"></i> Maksimal ukuran: 1 MB (Untuk hemat memori server tahunan).</small>
                     </div>
                     <div class="form-group">
-                        <label>Catatan Tambahan (Opsional)</label>
+                        <label>Ctatan Tambahan (Opsional)</label>
                         <textarea name="notes" class="form-control" rows="2" placeholder="Contoh: Ada selisih Rp 500 karena tidak ada kembalian koin"></textarea>
                     </div>
                 </div>

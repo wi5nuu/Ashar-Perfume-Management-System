@@ -592,7 +592,7 @@ class AiAssistantController extends Controller
 
         $lowStock = $this->scope(Inventory::query())->whereColumn('current_stock', '<=', 'minimum_stock')->count();
         $outStock = $this->scope(Inventory::query())->where('current_stock', '<=', 0)->count();
-        $totalInv = Product::count();
+        $totalInv = Product::count(); 
 
         $stockScore = $totalInv > 0 ? max(0, 100 - (($lowStock + $outStock) / $totalInv) * 100) : 100;
         $profitScore = max(0, min(100, ($margin / 20) * 100));

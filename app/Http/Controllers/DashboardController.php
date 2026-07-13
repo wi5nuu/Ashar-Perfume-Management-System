@@ -388,21 +388,27 @@ class DashboardController extends Controller
         }
 
         // Helper: compute KPIs for a date range
-        $compute = function (Carbon $start, Carbon $end) use ($scopeBranch) {
+        $compute = function (Carbon $start, Carbon $end) use ($scopeBranch, $user) {
             $revenue = (float) $scopeBranch(Transaction::query())
                 ->whereBetween('created_at', [$start, $end])->sum('total_amount');
 
             $transactions = (int) $scopeBranch(Transaction::query())
                 ->whereBetween('created_at', [$start, $end])->count();
 
-            $wholesale = (float) $scopeBranch(WholesaleOrder::query())
+            $wholesaleRevenue = (float) $scopeBranch(WholesaleOrder::query())
                 ->where('status', '!=', 'cancelled')
                 ->whereBetween('created_at', [$start, $end])->sum('total_amount');
 
-            $totalRevenue = $revenue + $wholesale;
+            $wholesaleOrders = (int) $scopeBranch(WholesaleOrder::query())
+                ->where('status', '!=', 'cancelled')
+                ->whereBetween('created_at', [$start, $end])->count();
+
+            $totalRevenue = $revenue + $wholesaleRevenue;
+            $totalTransactions = $transactions + $wholesaleOrders;
 
             $cogs = (float) (TransactionDetail::join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
                 ->whereBetween('transactions.created_at', [$start, $end])
+                ->when(!$user->isOwner() && $user->branch_id, fn($q) => $q->where('transactions.branch_id', $user->branch_id))
                 ->select(DB::raw('SUM(transaction_details.purchase_price * transaction_details.quantity) as cogs'))
                 ->value('cogs') ?? 0);
 
@@ -410,11 +416,11 @@ class DashboardController extends Controller
                 ->whereBetween('date', [$start, $end])->sum('amount');
 
             $profit = $totalRevenue - $cogs - $expenses;
-            $avgBasket = $transactions > 0 ? $totalRevenue / $transactions : 0;
+            $avgBasket = $transactions > 0 ? $revenue / $transactions : 0;
 
             return [
                 'revenue'       => $totalRevenue,
-                'transactions'  => $transactions,
+                'transactions'  => $totalTransactions,
                 'profit'        => $profit,
                 'avg_basket'    => $avgBasket,
             ];
@@ -440,13 +446,13 @@ class DashboardController extends Controller
                     'delta'    => $delta($current['revenue'], $previous['revenue']),
                 ],
                 'transactions' => [
-                    'label'    => 'Transactions',
+                    'label'    => 'Transaksi (Eceran+Grosir)',
                     'current'  => $current['transactions'],
                     'previous' => $previous['transactions'],
                     'delta'    => $delta($current['transactions'], $previous['transactions']),
                 ],
                 'profit' => [
-                    'label'    => 'Net Profit',
+                    'label'    => 'Laba Bersih',
                     'current'  => $fmt($current['profit']),
                     'previous' => $fmt($previous['profit']),
                     'delta'    => $delta($current['profit'], $previous['profit']),

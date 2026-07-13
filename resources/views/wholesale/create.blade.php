@@ -251,7 +251,7 @@
     </form>
 </div>
 
-@push('scripts')
+@push('scripts')i 
 <script>
 let rowCount = 1;
 
@@ -285,9 +285,10 @@ $(document).on('click', '.product-btn-parfum', function() {
     if (btn.data('size')) row.find('.volume-input').val(btn.data('size'));
     updateRowNumbers();
     recalcAll();
-    highlightRow(row);
+    highlightRow(row); 
 });
 
+w
 // ── Click Produk Grosir → add to table ──
 $(document).on('click', '.product-btn-wp', function() {
     const btn = $(this);

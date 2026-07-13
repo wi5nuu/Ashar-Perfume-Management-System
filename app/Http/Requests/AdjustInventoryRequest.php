@@ -20,12 +20,18 @@ class AdjustInventoryRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'product_id' => 'required|exists:products,id',
             'adjustment_type' => 'required|in:add,subtract,set,correction',
             'quantity' => 'required|integer|min:0',
             'reason' => 'required',
             'cost_per_unit' => 'nullable|numeric|min:0'
         ];
+
+        if ($this->user()?->isOwner()) {
+            $rules['branch_id'] = 'required|exists:branches,id';
+        }
+
+        return $rules;
     }
 }
