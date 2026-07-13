@@ -57,8 +57,8 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                 <a href="{{ route('transactions.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box {{ $bg }}success">
+        <div class="col-lg-4 col-md-6 col-6">
+            <div class="small-box bg-gradient-success">
                 <div class="inner">
                     <h3>Rp {{ number_format($wholesaleSalesToday, 0, ',', '.') }}</h3>
                     <p>Penjualan Grosir Hari Ini</p>
@@ -77,35 +77,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                 <a href="{{ route('transactions.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
-        @if($user->isOwner() || $user->can('stock_requests.view'))
-        <div class="col-lg-3 col-6">
-            <div class="small-box {{ $bg }}info">
-                <div class="inner">
-                    <h3>{{ $pendingStockRequests ?? 0 }}</h3>
-                    <p>Permintaan Stok Pending</p>
-                </div>
-                <div class="icon"><i class="fas fa-clipboard-list"></i></div>
-                <a href="{{ route('stock-requests.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
-        </div>
-        @endif
-        @if($user->isOwner() || $user->can('expenses.view'))
-        <div class="col-lg-3 col-6">
-            <div class="small-box {{ $bg }}danger">
-                <div class="inner">
-                    <h3>Rp {{ number_format($todayExpenses, 0, ',', '.') }}</h3>
-                    <p>Biaya Hari Ini</p>
-                </div>
-                <div class="icon"><i class="fas fa-coins"></i></div>
-                <a href="{{ route('expenses.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
-        </div>
-        @endif
-    </div>
-
-    {{-- Stats Row 2: Additional KPIs --}}
-    <div class="row">
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-4 col-md-6 col-6">
             <div class="small-box bg-gradient-secondary">
                 <div class="inner">
                     <h3>{{ $totalCustomers ?? 0 }}</h3>
@@ -125,7 +97,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                 <a href="{{ route('inventory.index') }}" class="small-box-footer">Detail <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-4 col-md-6 col-6">
             <div class="small-box bg-gradient-teal">
                 <div class="inner">
                     <h3>Rp {{ number_format($monthSales, 0, ',', '.') }}</h3>
@@ -156,28 +128,28 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                         </label>
                     </div>
                 </div>
-                <div class="card-body pt-1 pb-2 px-2" id="comparison-body">
-                    <div class="text-center text-muted py-2" id="comparison-loading" style="font-size:0.8rem;">
-                        <i class="fas fa-spinner fa-spin mr-1"></i> Loading comparison...
+                <div class="card-body py-3 px-3" id="comparison-body">
+                    <div class="text-center text-muted py-3" id="comparison-loading">
+                        <i class="fas fa-spinner fa-spin mr-1"></i> Memuat perbandingan...
                     </div>
                     <div id="comparison-content" style="display:none;">
-                        <div id="comparison-cards" class="row g-0"></div>
+                        <div id="comparison-cards" class="row"></div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-lg-4">
-            <div class="card card-apms h-100">
-                <div class="card-header py-2">
+            <div class="card card-apms">
+                <div class="card-header py-2 px-3">
                     <h5 class="card-title mb-0 font-weight-bold"><i class="fas fa-chart-pie mr-1"></i> Distribusi Pembayaran</h5>
                 </div>
-                <div class="card-body py-1 px-2">
-                    <div class="row align-items-center g-0">
-                        <div class="col-5 text-center">
-                            <canvas id="paymentChart" height="80" style="max-height:80px;max-width:80px;margin:0 auto;"></canvas>
+                <div class="card-body py-3 px-3">
+                    <div class="d-flex align-items-center">
+                        <div class="text-center flex-shrink-0 mr-3">
+                            <canvas id="paymentChart" height="80" style="max-height:80px;max-width:80px;"></canvas>
                         </div>
-                        <div class="col-7">
-                            <canvas id="paymentBarChart" height="80" style="max-height:80px;width:100%;"></canvas>
+                        <div style="flex:1;min-width:0;">
+                            <canvas id="paymentBarChart" height="80" style="width:100%;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -197,9 +169,9 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                         </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="position-relative mb-4">
-                        <canvas id="salesChart" height="250"></canvas>
+                <div class="card-body px-3 py-3">
+                    <div style="position:relative;height:220px;">
+                        <canvas id="salesChart" style="max-height:220px;width:100%;"></canvas>
                     </div>
                 </div>
             </div>
@@ -305,7 +277,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                     </ul>
                 </div>
                 <div class="card-footer text-center">
-                    <a href="{{ route('inventory.index') }}" class="uppercase">Lihat Semua Peringatan</a>
+                    <a href="{{ route('inventory.index') }}" class="text-uppercase">Lihat Semua Peringatan</a>
                 </div>
             </div>
             @endcan
@@ -344,16 +316,16 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                 <div class="card-body py-2">
                     <div class="row text-center">
                         <div class="col-4">
-                            <h5 class="mb-0">Rp {{ number_format($monthSales, 0, ',', '.') }}</h5>
+                            <h5 class="mb-0">Rp {{ number_format($periodSales, 0, ',', '.') }}</h5>
                             <small>Revenue</small>
                         </div>
                         <div class="col-4 border-left border-right">
-                            <h5 class="mb-0">Rp {{ number_format($monthExpenses, 0, ',', '.') }}</h5>
+                            <h5 class="mb-0">Rp {{ number_format($periodExpenses, 0, ',', '.') }}</h5>
                             <small>Expense</small>
                         </div>
                         <div class="col-4">
                             <h5 class="mb-0">Rp {{ number_format($profit, 0, ',', '.') }}</h5>
-                            <small>Profit</small>
+                            <small>Laba</small>
                         </div>
                     </div>
                 </div>
@@ -457,7 +429,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                             <div class="border rounded py-2 bg-light">
                                 <i class="fas {{ $srIcons[$s] }} text-{{ $srColors[$s] }}"></i>
                                 <div class="font-weight-bold small">{{ $stockRequestStats[$s] ?? 0 }}</div>
-                                <small class="text-muted" style="font-size:0.6rem;">{{ $srLabels[$s] }}</small>
+                                <small class="text-muted" style="font-size:0.7rem;">{{ $srLabels[$s] }}</small>
                             </div>
                         </div>
                         @endforeach
@@ -570,7 +542,9 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
 <script>
 $(function() {
     @can('reports.view')
+    if ($('#salesChart').length) {
     var salesChartCanvas = $('#salesChart').get(0).getContext('2d');
+    if (!salesChartCanvas) return;
     var salesChartData = {
         labels: @json(collect($salesData)->pluck('month')),
         datasets: [{
@@ -638,6 +612,7 @@ $(function() {
             },
             options: { maintainAspectRatio: false, responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
         });
+        if ($('#paymentBarChart').length) {
         var pmBarCtx = $('#paymentBarChart').get(0).getContext('2d');
         new Chart(pmBarCtx, {
             type: 'bar',
@@ -692,10 +667,14 @@ $(function() {
             $('#comparison-cards').html(html);
             $('#comparison-loading').hide();
             $('#comparison-content').show();
+        }).fail(function() {
+            $('#comparison-loading').hide();
+            $('#comparison-content').html('<div class="text-center text-danger py-3"><i class="fas fa-exclamation-circle mr-1"></i> Gagal memuat perbandingan</div>').show();
         });
     }
     loadComparison('mom');
     $('[name="comp_mode"]').on('change', function() { loadComparison($(this).val()); });
+    $('.btn-group-toggle label').on('click', function() { $(this).find('input').prop('checked', true).trigger('change'); });
     @endcan
 });
 </script>
