@@ -276,7 +276,7 @@ class DashboardController extends Controller
      */
     public function getStats(Request $request)
     {
-        if (!auth()->user()->can('view_reports')) {
+        if (!auth()->user()->can('reports.view')) {
             return response()->json([]);
         }
 
