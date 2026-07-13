@@ -1,36 +1,6 @@
-const CACHE_NAME = 'apms-cache-v2';
-const urlsToCache = [
-    '/',
-    '/favicon.ico',
-    '/logotoko.png'
-];
+const CACHE = 'apms-v1';
+const URLS = ['/','/css/app.css','/js/app.js','/offline'];
 
-self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
-    );
-});
-
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
-    );
-});
-
-self.addEventListener('fetch', event => {
-    // Network first strategy
-    event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
-        })
-    );
-});
+self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS))); });
+self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r||fetch(e.request).catch(()=>caches.match('/offline')))); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))); });
