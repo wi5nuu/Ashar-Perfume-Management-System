@@ -130,3 +130,10 @@ return [
     ],
 
 ];
+
+    'accounting' => [
+        'driver' => 'daily',
+        'path' => storage_path('logs/accounting.log'),
+        'level' => env('LOG_LEVEL', 'info'),
+        'days' => 30,
+    ],
