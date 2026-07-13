@@ -362,7 +362,7 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
         </div>
     </div>
     @else
-    {{-- Compact Dashboard for Admin Cabang / roles without reports.view --}}
+    {{-- Compact Dashboard for roles without reports.view --}}
     <div class="row">
         <div class="col-lg-7">
             @can('transactions.view')
