@@ -532,34 +532,30 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
 
     @can('reports.view')
     @if(count($smartInsights) > 0)
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-12">
-                <div class="card card-apms border-left-primary">
-                    <div class="card-header bg-white pt-2 pb-2">
-                        <h5 class="card-title text-primary font-weight-bold mb-0">
-                            <i class="fas fa-robot mr-1"></i> AI Strategic Advisor
-                        </h5>
-                        <div class="card-tools">
-                            <span class="badge badge-info">Smart Insights</span>
-                        </div>
-                    </div>
-                    <div class="card-body py-2">
-                        <div class="row">
-                            @foreach($smartInsights as $insight)
-                            <div class="col-md-3">
-                                <div class="d-flex align-items-start">
-                                    <div class="mr-2">
-                                        <i class="fas {{ $insight['icon'] ?? '' }} fa-lg {{ $insight['color'] ?? '' }}"></i>
-                                    </div>
-                                    <div>
-                                        <strong style="font-size:0.85rem;">{{ $insight['title'] ?? '' }}</strong>
-                                        <p class="small text-muted mb-0" style="font-size:0.75rem;">{{ $insight['text'] ?? '' }}</p>
-                                    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="card card-apms border-left-primary shadow-sm">
+                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+                    <h5 class="text-primary font-weight-bold mb-0">
+                        <i class="fas fa-robot mr-1"></i> AI Strategic Advisor
+                    </h5>
+                    <span class="badge badge-info">Smart Insights</span>
+                </div>
+                <div class="card-body py-2 px-3">
+                    <div class="row">
+                        @foreach($smartInsights as $insight)
+                        <div class="col-md-3 col-6 mb-2">
+                            <div class="d-flex align-items-start">
+                                <div class="mr-2 mt-1">
+                                    <i class="fas {{ $insight['icon'] ?? 'fa-lightbulb' }} fa-lg {{ $insight['color'] ?? 'text-primary' }}"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block" style="font-size:0.85rem;">{{ $insight['title'] ?? '' }}</strong>
+                                    <span class="text-muted" style="font-size:0.75rem;">{{ $insight['text'] ?? '' }}</span>
                                 </div>
                             </div>
-                            @endforeach
                         </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
