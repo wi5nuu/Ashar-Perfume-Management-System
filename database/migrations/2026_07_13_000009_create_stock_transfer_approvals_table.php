@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('stock_transfer_approvals', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('stock_transfer_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('stock_transfer_id')->nullable()->index();
             $table->foreignId('requested_by')->constrained('users');
             $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->enum('status',['pending','approved','rejected'])->default('pending');
