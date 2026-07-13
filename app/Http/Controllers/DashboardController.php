@@ -258,16 +258,13 @@ class DashboardController extends Controller
         $profit = $periodProfit;
 
         return view('dashboard.index', compact(
-            'todaySales', 'todayTransactions', 'periodSales', 'periodLabel', 'period',
-            'totalProducts', 'lowStockProductsCount', 'lowStockAlerts',
-            'totalCustomers', 'recentTransactions', 'topProducts', 'periodExpenses', 'periodProfit',
-            'salesData', 'lowStockAlerts', 'expiringAlerts', 'periodCOGS', 'periodGrossProfit',
-            'activeShift', 'wholesaleSalesToday', 'wholesaleSalesPeriod',
-            'monthSales', 'wholesaleSalesMonth', 'monthExpenses', 'smartInsights',
-            'totalCombinedRevenue', 'activeStaff', 'wholesaleSummary', 'paymentData',
-            'canViewFinance', 'branchRevenueData', 'profit',
-            'pendingStockRequests', 'recentStockRequests', 'stockRequestStats',
-            'todayExpenses', 'recentExpenses'
+            'todaySales', 'todayTransactions', 'periodSales',
+            'lowStockProductsCount', 'lowStockAlerts',
+            'totalCustomers', 'recentTransactions', 'topProducts', 'periodExpenses',
+            'salesData', 'expiringAlerts', 'activeShift', 'wholesaleSalesToday',
+            'monthSales', 'monthExpenses', 'smartInsights', 'paymentData',
+            'profit', 'recentStockRequests', 'stockRequestStats',
+            'recentExpenses'
         ));
     }
 
