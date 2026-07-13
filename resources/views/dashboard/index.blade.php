@@ -614,9 +614,10 @@ $(function() {
             }
         }
     });
+    }
 
     @php
-        $pmLabels = ['cash' => 'Cash', 'qris' => 'QRIS', 'transfer' => 'Transfer', 'ewallet' => 'E-Wallet', 'debit_card' => 'Debit Card', 'credit_card' => 'Credit Card'];
+        $pmLabels = ['cash' => 'CASH', 'qris' => 'QRIS', 'transfer' => 'TRANSFER', 'ewallet' => 'E-WALLET', 'debit_card' => 'DEBIT', 'credit_card' => 'KREDIT'];
         $pmColors = ['cash' => '#FF6B35', 'qris' => '#3498db', 'transfer' => '#2ecc71', 'ewallet' => '#e74c3c', 'debit_card' => '#9b59b6', 'credit_card' => '#f39c12'];
         $pmData = $paymentData ?? [];
         $pmKeys = array_keys($pmData);
