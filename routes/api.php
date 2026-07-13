@@ -45,3 +45,6 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('v1/admin')->name(
             ->count();
     })->name('security.active-sessions');
 });
+
+// Health Check
+Route::get('health', App\Http\Controllers\Api\HealthController::class);
