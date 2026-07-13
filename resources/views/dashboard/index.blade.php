@@ -315,11 +315,11 @@ $greeting = now()->format('H') < 10 ? 'Selamat Pagi' : (now()->format('H') < 15 
                     <h3 class="card-title">Produk Terlaris</h3>
                 </div>
                 <div class="card-body p-0">
-                    <ul class="products-list product-list-in-card pl-2 pr-2">
+                    <ul class="products-list product-list-in-card px-3">
                         @foreach($topProducts as $index => $product)
                         <li class="item">
                             <div class="product-img">
-                                <span class="badge bg-primary">{{ $index + 1 }}</span>
+                                <span class="badge badge-primary">{{ $index + 1 }}</span>
                             </div>
                             <div class="product-info">
                                 <a href="javascript:void(0)" class="product-title">
