@@ -658,30 +658,33 @@ $(function() {
                 }
             }
         });
+        }
     }
 
+    var comparisonRequest;
     function loadComparison(mode) {
+        if (comparisonRequest) comparisonRequest.abort();
         $('#comparison-loading').show();
         $('#comparison-content').hide();
-        $.getJSON('/api/dashboard/comparison', { mode: mode }, function(data) {
+        comparisonRequest = $.getJSON('/api/dashboard/comparison', { mode: mode }, function(data) {
             var html = '';
             var icons = { revenue: 'fa-money-bill-wave', transactions: 'fa-receipt', profit: 'fa-chart-line', avg_basket: 'fa-shopping-cart' };
             $.each(data.kpis, function(key, kpi) {
                 var d = parseFloat(kpi.delta);
-                var arrow = d >= 0 ? 'fa-arrow-up text-success' : 'fa-arrow-down text-danger';
-                var badgeClass = d >= 0 ? 'badge-success' : 'badge-danger';
+                var arrow = d > 0 ? 'fa-arrow-up text-success' : (d < 0 ? 'fa-arrow-down text-danger' : 'fa-arrow-right text-muted');
+                var badgeClass = d > 0 ? 'badge-success' : (d < 0 ? 'badge-danger' : 'badge-secondary');
                 var deltaText = (d >= 0 ? '+' : '') + d + '%';
-                html += '<div class="col-lg-3 col-md-6 mb-2">' +
+                html +=                 '<div class="col-lg-3 col-md-6 mb-2">' +
                     '<div class="card card-apms border-left-primary h-100">' +
-                    '<div class="card-body py-2 px-3">' +
-                    '<div class="d-flex align-items-center">' +
-                    '<div class="mr-3">' +
+                    '<div class="card-body py-3 px-3">' +
+                    '<div class="d-flex align-items-start">' +
+                    '<div class="mr-3 flex-shrink-0">' +
                     '<i class="fas ' + (icons[key]||'fa-chart-bar') + ' fa-2x text-primary"></i>' +
                     '</div>' +
-                    '<div class="flex-grow-1">' +
-                    '<p class="mb-0 text-muted small text-uppercase font-weight-bold">' + kpi.label + '</p>' +
-                    '<h5 class="mb-0 font-weight-bold">' + kpi.current + '</h5>' +
-                    '<div class="d-flex align-items-center mt-1">' +
+                    '<div class="flex-grow-1 min-w-0">' +
+                    '<p class="mb-1 text-muted small text-uppercase font-weight-bold">' + kpi.label + '</p>' +
+                    '<h5 class="mb-1 font-weight-bold text-truncate">' + kpi.current + '</h5>' +
+                    '<div class="d-flex align-items-center flex-wrap">' +
                     '<small class="text-muted mr-2"><i class="fas fa-history mr-1"></i>' + kpi.previous + '</small>' +
                     '<span class="badge ' + badgeClass + ' px-2"><i class="fas ' + arrow + ' mr-1"></i>' + deltaText + '</span>' +
                     '</div></div></div></div></div>';
