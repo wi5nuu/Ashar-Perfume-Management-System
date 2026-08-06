@@ -3,16 +3,30 @@
 @section('title', 'Manajemen Kupon')
 
 @section('content')
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="page-header-apms">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h1><i class="fas fa-ticket-alt mr-2"></i>Manajemen Kupon</h1>
+                    <ol class="breadcrumb mt-1">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                        <li class="breadcrumb-item active">Kupon</li>
+                    </ol>
+                </div>
+                <a href="{{ route('coupons.create') }}" class="btn btn-primary-apms">
+                    <i class="fas fa-plus mr-1"></i> Kupon Baru
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid">
+    <x-alert />
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex align-items-center">
-                    <h3 class="card-title mb-0">Daftar Kupon</h3>
-                    <a href="{{ route('coupons.create') }}" class="btn btn-primary-apms ml-auto">
-                        <i class="fas fa-plus"></i> Kupon Baru
-                    </a>
-                </div>
+            <div class="card card-apms">
                 <div class="card-body">
                     @if($coupons->count())
                     <table class="table table-hover">

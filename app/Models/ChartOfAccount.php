@@ -25,4 +25,22 @@ class ChartOfAccount extends Model
         $credit = (float) $this->journalDetails()->sum('credit');
         return ($this->normal_balance === 'debit' ? $debit - $credit : $credit - $debit);
     }
+
+    /**
+     * Balance scoped to a date range — used by cashFlow report so the numbers
+     * actually reflect the selected period rather than all-time totals.
+     */
+    public function balanceBetween(string $startDate, string $endDate): float
+    {
+        $details = $this->journalDetails()
+            ->whereHas('journalEntry', function ($q) use ($startDate, $endDate) {
+                $q->whereDate('date', '>=', $startDate)
+                  ->whereDate('date', '<=', $endDate);
+            });
+
+        $debit  = (float) $details->sum('debit');
+        $credit = (float) (clone $details)->sum('credit');
+
+        return ($this->normal_balance === 'debit' ? $debit - $credit : $credit - $debit);
+    }
 }

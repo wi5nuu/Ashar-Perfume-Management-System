@@ -26,34 +26,33 @@ class InventoryController extends Controller
         $user = auth()->user();
         $warehouseId = request()->get('warehouse_id');
 
-        $query = Inventory::with(['product', 'branch', 'warehouse']);
-        if (!$user->isOwner()) {
-            $query->where('branch_id', $user->branch_id);
-        }
+        // Tampilkan hanya inventory utama (branch_id=null) — 1 record per produk
+        $query = Inventory::with(['product.category', 'branch', 'warehouse'])
+            ->whereNull('branch_id');
+
         if ($warehouseId) {
             $query->where('warehouse_id', $warehouseId);
         }
+
         $inventories = $query->latest()->paginate(20)->appends(request()->query());
 
         $lowStockQuery = Inventory::with('product')
+            ->whereNull('branch_id')
             ->whereColumn('current_stock', '<', 'minimum_stock')
             ->where('current_stock', '>', 0);
 
         $outOfStockQuery = Inventory::with('product')
+            ->whereNull('branch_id')
             ->where('current_stock', '<=', 0);
 
         $now             = Carbon::now()->startOfDay();
         $thirtyDaysAhead = Carbon::now()->addDays(30)->endOfDay();
 
         $expiringSoonQuery = Inventory::with('product')
+            ->whereNull('branch_id')
             ->whereNotNull('expiration_date')
             ->whereBetween('expiration_date', [$now, $thirtyDaysAhead]);
 
-        if (!$user->isOwner()) {
-            $lowStockQuery->where('branch_id', $user->branch_id);
-            $outOfStockQuery->where('branch_id', $user->branch_id);
-            $expiringSoonQuery->where('branch_id', $user->branch_id);
-        }
         if ($warehouseId) {
             $lowStockQuery->where('warehouse_id', $warehouseId);
             $outOfStockQuery->where('warehouse_id', $warehouseId);
@@ -64,9 +63,12 @@ class InventoryController extends Controller
         $outOfStock   = $outOfStockQuery->get();
         $expiringSoon = $expiringSoonQuery->get();
 
-        $totalInventoryValue = $inventories->sum(function ($item) {
-            return $item->current_stock * ($item->cost_per_unit ?? 0);
-        });
+        // Calculate total inventory value from the FULL result set (not just
+        // the current page) so the KPI card is always accurate.
+        $totalInventoryValue = Inventory::whereNull('branch_id')
+            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
+            ->get()
+            ->sum(fn($item) => $item->current_stock * ($item->cost_per_unit ?? 0));
 
         $products = Product::where('is_active', true)->get();
 
@@ -265,6 +267,44 @@ class InventoryController extends Controller
                 'out_of_stock' => $outOfStock->map(fn($i) => ['product' => $i->product?->name ?? 'Unknown']),
                 'expiring'     => $expiringSoon->map(fn($i) => ['product' => $i->product?->name ?? 'Unknown', 'expires' => $i->expiration_date?->format('Y-m-d') ?? 'N/A']),
             ],
+        ]);
+    }
+
+    /**
+     * Get stock movement history for a specific inventory item.
+     */
+    public function history(Inventory $inventory)
+    {
+        Gate::authorize('manage_inventory');
+
+        $movements = InventoryMovement::where('product_id', $inventory->product_id)
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get()
+            ->map(fn($m) => [
+                'id'           => $m->id,
+                'type'         => $m->type,
+                'type_label'   => match($m->type) {
+                    'sale'       => 'Penjualan',
+                    'adjustment' => 'Penyesuaian',
+                    'receipt'    => 'Penerimaan',
+                    'return'     => 'Retur',
+                    'transfer'   => 'Transfer',
+                    default      => ucfirst($m->type),
+                },
+                'quantity'     => $m->quantity,
+                'stock_before' => $m->stock_before,
+                'stock_after'  => $m->stock_after,
+                'notes'        => $m->notes,
+                'user'         => $m->user?->name ?? 'System',
+                'date'         => $m->created_at->format('d/m/Y H:i'),
+                'date_raw'     => $m->created_at->toISOString(),
+            ]);
+
+        return response()->json([
+            'product'   => $inventory->product?->name ?? '-',
+            'movements' => $movements,
         ]);
     }
 }

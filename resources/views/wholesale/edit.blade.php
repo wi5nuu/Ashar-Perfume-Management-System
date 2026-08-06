@@ -185,7 +185,7 @@ function recalcTotal() {
     $('#grandTotalDisplay').text('Rp ' + total.toLocaleString('id-ID'));
 }
 
-$('document').ready(function() {
+$(document).ready(function() {
     $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
     recalcTotal();
 });

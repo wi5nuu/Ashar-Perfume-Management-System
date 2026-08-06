@@ -17,19 +17,24 @@ class DebtDueReminder implements ShouldBroadcast
     public $customerName;
     public $debtAmount;
     public $daysOverdue;
+    public $branchId;
 
-    public function __construct($transactionId, $invoiceNumber, $customerName, $debtAmount, $daysOverdue)
+    public function __construct($transactionId, $invoiceNumber, $customerName, $debtAmount, $daysOverdue, $branchId = null)
     {
         $this->transactionId = $transactionId;
         $this->invoiceNumber = $invoiceNumber;
-        $this->customerName = $customerName;
-        $this->debtAmount = $debtAmount;
-        $this->daysOverdue = $daysOverdue;
+        $this->customerName  = $customerName;
+        $this->debtAmount    = $debtAmount;
+        $this->daysOverdue   = $daysOverdue;
+        $this->branchId      = $branchId;
     }
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('notifications')];
+        // Broadcast on the branch-scoped channel — managers only see debt
+        // reminders for their own branch. Owner/admin subscribe to all branches.
+        $branch = $this->branchId ?? 0;
+        return [new PrivateChannel("notifications.{$branch}")];
     }
 
     public function broadcastAs(): string

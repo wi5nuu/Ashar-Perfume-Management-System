@@ -28,6 +28,7 @@ class PayrollController extends Controller
             ->with([
                 'payrollSettings',
                 'payrolls' => function ($q) use ($month) {
+                    // month is stored as Y-m string — match exactly
                     $q->where('month', $month);
                 },
             ])
@@ -67,15 +68,21 @@ class PayrollController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($employees, $month) {
+            // Pre-fetch all attendance counts in a single query — avoids N+1 inside the loop
+            $parsedMonth  = Carbon::parse($month . '-01');
+            $attendanceCounts = Attendance::whereIn('user_id', $employees->pluck('id'))
+                ->whereMonth('date', $parsedMonth->month)
+                ->whereYear('date', $parsedMonth->year)
+                ->where('status', 'present')
+                ->selectRaw('user_id, COUNT(*) as total')
+                ->groupBy('user_id')
+                ->pluck('total', 'user_id');
+
+            DB::transaction(function () use ($employees, $month, $attendanceCounts) {
                 foreach ($employees as $employee) {
                     $settings = $employee->payrollSettings;
 
-                    $attendanceCount = Attendance::where('user_id', $employee->id)
-                        ->whereMonth('date', Carbon::parse($month . '-01')->month)
-                        ->whereYear('date', Carbon::parse($month . '-01')->year)
-                        ->where('status', 'present')
-                        ->count();
+                    $attendanceCount = $attendanceCounts->get($employee->id, 0);
 
                     $basic     = (float) ($employee->basic_salary ?? 0);
                     $allowance = (float) ($settings?->allowance ?? 0);

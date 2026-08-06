@@ -129,6 +129,20 @@ class SecurityController extends Controller
         return view('admin.security.integrity', compact('score', 'anomalies'));
     }
 
+    /**
+     * Manually trigger audit-log cleanup (same job the scheduler runs weekly).
+     * Accessible only to users with manage_settings permission.
+     */
+    public function cleanupLogs()
+    {
+        $deleted = $this->monitor->cleanOldLogs();
+
+        Log::info('Audit log cleanup triggered manually by ' . auth()->user()->name . " — {$deleted} records deleted.");
+
+        return redirect()->route('admin.security.overview')
+            ->with('success', "{$deleted} log lama berhasil dibersihkan.");
+    }
+
     public function passwordChangeForm()
     {
         return view('auth.passwords.change');

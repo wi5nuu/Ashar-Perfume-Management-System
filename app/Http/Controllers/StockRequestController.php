@@ -26,7 +26,8 @@ class StockRequestController extends Controller
         $query = StockRequest::with(['branch', 'requester', 'items.product'])->latest();
 
         if (!$user->isOwner()) {
-            if ($user->isAdminPusat() || $user->isAdminCabang()) {
+            if ($user->isAdmin()) {
+                // admin tanpa branch_id lihat semua, admin dengan branch_id lihat cabangnya
                 if ($user->branch_id) {
                     $query->where('branch_id', $user->branch_id);
                 }
@@ -36,10 +37,18 @@ class StockRequestController extends Controller
         }
 
         $requests = $query->paginate(15);
+
+        // Scope stats per branch agar konsisten dengan query utama
+        $statsQuery = StockRequest::query();
+        if (!$user->isOwner()) {
+            if (!($user->isAdmin() && !$user->branch_id)) {
+                $statsQuery->where('branch_id', $user->branch_id);
+            }
+        }
         $stats = [
-            'pending' => StockRequest::where('status', 'pending')->count(),
-            'shipped' => StockRequest::where('status', 'shipped')->count(),
-            'received' => StockRequest::where('status', 'received')->count(),
+            'pending'  => (clone $statsQuery)->where('status', 'pending')->count(),
+            'shipped'  => (clone $statsQuery)->where('status', 'shipped')->count(),
+            'received' => (clone $statsQuery)->where('status', 'received')->count(),
         ];
 
         return view('stock-requests.index', compact('requests', 'stats'));
@@ -50,7 +59,7 @@ class StockRequestController extends Controller
         $user = auth()->user();
         $products = Product::with('inventories')->orderBy('name')->get();
 
-        if ($user->isAdminPusat() || $user->isOwner()) {
+        if ($user->isAdmin() || $user->isOwner()) {
             $excludeId = Branch::where('code', 'PST-01')->value('id');
             $branches = Branch::where('is_active', true)
                 ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
@@ -76,7 +85,7 @@ class StockRequestController extends Controller
         ]);
 
         $user = auth()->user();
-        if (!$user->isOwner() && !$user->isAdminPusat()) {
+        if (!$user->isOwner() && !$user->isAdmin()) {
             $data['branch_id'] = $user->branch_id;
         }
 
@@ -106,7 +115,7 @@ class StockRequestController extends Controller
     public function show(StockRequest $stockRequest)
     {
         $user = auth()->user();
-        if (!$user->isOwner() && !$user->isAdminPusat() && $stockRequest->branch_id !== $user->branch_id) {
+        if (!$user->isOwner() && !$user->isAdmin() && $stockRequest->branch_id !== $user->branch_id) {
             abort(403, 'Anda hanya dapat melihat permintaan stok di cabang Anda.');
         }
         $stockRequest->load(['branch', 'requester', 'approver', 'items.product']);
@@ -233,6 +242,19 @@ class StockRequestController extends Controller
 
     public function cancel(StockRequest $stockRequest)
     {
+        $user = auth()->user();
+
+        // Authorization: hanya requester, admin, atau owner yang bisa cancel
+        if (!$user->isOwner() && !$user->isAdmin()) {
+            if ($stockRequest->requested_by !== $user->id) {
+                abort(403, 'Anda tidak berhak membatalkan permintaan ini.');
+            }
+            // Branch scoping: user biasa hanya bisa cancel milik cabangnya
+            if ($user->branch_id && $stockRequest->branch_id !== $user->branch_id) {
+                abort(403, 'Permintaan ini bukan milik cabang Anda.');
+            }
+        }
+
         if (!in_array($stockRequest->status, ['pending', 'approved'])) {
             return back()->with('error', 'Hanya permintaan pending/approved yang bisa dibatalkan.');
         }

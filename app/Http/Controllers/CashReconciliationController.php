@@ -19,7 +19,7 @@ class CashReconciliationController extends Controller
     {
         Gate::authorize('manage_transactions');
         $user = auth()->user();
-        if (!$user->isOwner() && !$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+        if (!$user->isOwner() && !$user->isAdmin() && $shift->branch_id !== $user->branch_id) {
             abort(403, 'Anda hanya dapat merekonsiliasi shift di cabang Anda.');
         }
 
@@ -37,10 +37,14 @@ class CashReconciliationController extends Controller
             ->selectRaw('SUM(paid_amount - change_amount) as net_cash')
             ->value('net_cash') ?? 0;
 
-        $cashExpenses = Expense::where('user_id', $shift->user_id)
-            ->where('created_at', '>=', $shift->start_time ?? '1970-01-01')
-            ->where('created_at', '<=', $shift->end_time ?? now())
-            ->sum('amount') ?? 0;
+        // Gunakan start_time shift secara langsung — jika null, tidak ada expense yang relevan
+        $cashExpenses = 0;
+        if ($shift->start_time) {
+            $cashExpenses = Expense::where('user_id', $shift->user_id)
+                ->where('created_at', '>=', $shift->start_time)
+                ->where('created_at', '<=', $shift->end_time ?? now())
+                ->sum('amount');
+        }
 
         $expectedCash = $shift->initial_cash + $cashSales - $cashExpenses;
 
@@ -57,7 +61,7 @@ class CashReconciliationController extends Controller
     {
         Gate::authorize('manage_transactions');
         $user = auth()->user();
-        if (!$user->isOwner() && !$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+        if (!$user->isOwner() && !$user->isAdmin() && $shift->branch_id !== $user->branch_id) {
             abort(403, 'Anda hanya dapat merekonsiliasi shift di cabang Anda.');
         }
 
@@ -117,7 +121,7 @@ class CashReconciliationController extends Controller
     {
         Gate::authorize('manage_employees');
         $user = auth()->user();
-        if (!$user->isOwner() && !$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+        if (!$user->isOwner() && !$user->isAdmin() && $shift->branch_id !== $user->branch_id) {
             abort(403, 'Anda hanya dapat mereview rekonsiliasi shift di cabang Anda.');
         }
 
@@ -144,3 +148,4 @@ class CashReconciliationController extends Controller
             ->with('success', 'Rekonsiliasi telah direview dan disetujui.');
     }
 }
+

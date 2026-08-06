@@ -29,7 +29,9 @@ class LoginThrottleMiddleware
             $email = $request->input('email');
             if ($email) {
                 $user = User::where('email', $email)->first();
-                if ($user && $user->is_locked && $user->locked_until && now()->lessThan($user->locked_until)) {
+                // Cast is_locked to bool explicitly — some DB drivers return "1"/"0" strings
+                // which are both truthy, causing unlocked accounts to be incorrectly blocked.
+                if ($user && (bool) $user->is_locked && $user->locked_until && now()->lessThan($user->locked_until)) {
                     return back()->withErrors([
                         'email' => 'Silakan coba lagi nanti atau hubungi administrator.',
                     ])->onlyInput('email');

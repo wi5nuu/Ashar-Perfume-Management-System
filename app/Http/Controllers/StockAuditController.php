@@ -57,8 +57,8 @@ class StockAuditController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            $query = Inventory::query();
-            if ($branchId) $query->where('branch_id', $branchId);
+            $query = Inventory::query()
+                ->when(is_null($branchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $branchId));
             $inventories = $query->inRandomOrder()
                 ->take($request->limit)
                 ->with('product')
@@ -137,7 +137,7 @@ class StockAuditController extends Controller
                     if ($item->physical_stock !== null) {
                         $query = Inventory::where('product_id', $item->product_id);
                         $invBranchId = $stockAudit->branch_id ?? auth()->user()->branch_id;
-                        if ($invBranchId) $query->where('branch_id', $invBranchId);
+                        $query->when(is_null($invBranchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $invBranchId));
                         $inventory = $query->lockForUpdate()->first();
                         if ($inventory) {
                             $inventory->update(['current_stock' => $item->physical_stock]);

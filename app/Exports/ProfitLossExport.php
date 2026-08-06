@@ -22,11 +22,15 @@ class ProfitLossExport implements FromArray, WithHeadings, WithStyles
 
     public function array(): array
     {
-        $revenue = Transaction::whereBetween('created_at', [$this->startDate, $this->endDate])
+        // Append time bounds so transactions on the last day are fully included.
+        $start = $this->startDate . ' 00:00:00';
+        $end   = $this->endDate   . ' 23:59:59';
+
+        $revenue = Transaction::whereBetween('created_at', [$start, $end])
             ->where('payment_status', '!=', 'cancelled')
             ->sum('total_amount');
 
-        $cogs = Transaction::whereBetween('created_at', [$this->startDate, $this->endDate])
+        $cogs = Transaction::whereBetween('created_at', [$start, $end])
             ->where('payment_status', '!=', 'cancelled')
             ->join('transaction_details', 'transactions.id', '=', 'transaction_details.transaction_id')
             ->sum(\DB::raw('transaction_details.purchase_price * transaction_details.quantity'));

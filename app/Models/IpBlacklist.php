@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class IpBlacklist extends Model
 {
@@ -30,22 +31,32 @@ class IpBlacklist extends Model
 
     public static function block(string $ip, string $reason = 'auto', int $minutes = 60): self
     {
-        return self::create([
-            'ip_address' => $ip,
-            'reason' => $reason,
-            'attempts' => 10,
-            'blocked_until' => now()->addMinutes($minutes),
-        ]);
+        // Use updateOrCreate to avoid duplicate rows when the same IP is
+        // blocked multiple times (e.g. burst traffic triggering multiple requests
+        // simultaneously before the first insert commits).
+        return self::updateOrCreate(
+            ['ip_address' => $ip],
+            [
+                'reason'        => $reason,
+                'attempts'      => DB::raw('attempts + 1'),
+                'blocked_until' => now()->addMinutes($minutes),
+            ]
+        );
     }
 
     public static function recordAttempt(string $ip): int
     {
-        $record = self::where('ip_address', $ip)->first();
-        if ($record) {
+        // Use updateOrCreate so concurrent requests don't create duplicate rows.
+        $record = self::updateOrCreate(
+            ['ip_address' => $ip],
+            ['attempts' => 1]
+        );
+
+        if (!$record->wasRecentlyCreated) {
             $record->increment('attempts');
-            return $record->attempts;
+            $record->refresh();
         }
-        self::create(['ip_address' => $ip, 'attempts' => 1]);
-        return 1;
+
+        return $record->attempts;
     }
 }

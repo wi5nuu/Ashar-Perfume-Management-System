@@ -17,9 +17,13 @@ class IdleTimeoutMiddleware
             $now = now()->timestamp;
 
             if ($lastActivity && ($now - $lastActivity) > ($timeout * 60)) {
+                // Invalidate session BEFORE logout so the session token is
+                // regenerated. If logout() is called first it may try to
+                // persist the session after flush().
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
                 Auth::logout();
-                session()->flush();
-                return redirect()->route('login')->with('status', 'Sesi Anda telah berakhir karena tidak ada aktivitas silakan masuk lagi.');
+                return redirect()->route('login')->with('status', 'Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan masuk lagi.');
             }
 
             session(['last_activity' => $now]);

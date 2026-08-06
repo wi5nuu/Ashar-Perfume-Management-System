@@ -42,10 +42,10 @@
                         <select id="productSelect" class="form-control select2" style="width:100%">
                             <option value="">— Cari Produk —</option>
                             @foreach($products as $p)
-                                @php $pStock = $p->track_inventory ? $p->inventories->sum('current_stock') : 0; @endphp
-                                <option value="{{ $p->id }}" data-name="{{ $p->name }}" data-stock="{{ $pStock }}">
-                                    {{ $p->name }} @if(!$p->track_inventory)(Tanpa Stok) @else ({{ $pStock }} stok) @endif
-                                </option>
+                @php $pStock = $p->track_inventory ? $p->inventories->sum('bulk_stock_ml') : 0; @endphp
+                <option value="{{ $p->id }}" data-name="{{ $p->name }}" data-stock="{{ $pStock }}">
+                    {{ $p->name }} @if(!$p->track_inventory)(Tanpa Stok) @else ({{ number_format($pStock, 0) }}ml) @endif
+                </option>
                             @endforeach
                         </select>
                     </div>

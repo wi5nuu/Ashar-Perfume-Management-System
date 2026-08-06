@@ -97,7 +97,7 @@
                                     @foreach($products as $p)
                                     <tr>
                                         <td><input type="checkbox" name="product_ids[]" value="{{ $p->id }}" class="product-check"></td>
-                                        <td>{{ $p->name }} <small class="text-muted">{{ $p->size ?? '' }} {{ $p->unit ?? '' }}</small></td>
+                                        <td>{{ $p->name }} <small class="text-muted">{{ $p->size ?? '' }}</small></td>
                                         <td class="text-right">Rp {{ number_format($p->selling_price, 0, ',', '.') }}</td>
                                         <td class="text-right">Rp {{ number_format($p->wholesale_price, 0, ',', '.') }}</td>
                                         <td class="text-right">Rp {{ number_format($p->purchase_price, 0, ',', '.') }}</td>

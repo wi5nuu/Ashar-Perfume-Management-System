@@ -13,6 +13,7 @@ class WholesaleOrderDetail extends Model
         'wholesale_order_id',
         'product_id',
         'wholesale_product_id',
+        'accessory_id',
         'product_name',
         'quantity',
         'volume_ml',
@@ -43,5 +44,10 @@ class WholesaleOrderDetail extends Model
     public function wholesaleProduct()
     {
         return $this->belongsTo(WholesaleProduct::class);
+    }
+
+    public function accessory()
+    {
+        return $this->belongsTo(Accessory::class);
     }
 }

@@ -1,0 +1,191 @@
+﻿/* ================================================
+   APMS PRO - Mobile-First Responsive System v2.0
+   Professional, Touch-Friendly, Fast
+================================================ */
+
+/* ==================================================
+   PERFORMANCE & BASE
+================================================== */
+*, *::before, *::after {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+img { max-width: 100%; height: auto; }
+
+/* ==================================================
+   MOBILE (< 576px) - Android & iPhone
+================================================== */
+@media (max-width: 575.98px) {
+    body { font-size: 13px; line-height: 1.5; }
+    h1, .h1 { font-size: 1.3rem !important; }
+    h2, .h2 { font-size: 1.15rem !important; }
+    h3, .h3 { font-size: 1rem !important; }
+    h4, .h4 { font-size: 0.9rem !important; }
+
+    .content-wrapper { margin-left: 0 !important; padding: 0 !important; }
+    .content { padding: 10px !important; }
+    .container-fluid { padding: 0 10px !important; }
+
+    .card { margin-bottom: 10px !important; border-radius: 10px !important; }
+    .card-header { padding: 10px 14px !important; }
+    .card-body { padding: 12px !important; }
+    .card-footer { padding: 8px 14px !important; }
+
+    .btn { font-size: 0.8rem !important; padding: 8px 14px !important; border-radius: 8px !important; min-height: 40px; }
+    .btn-sm { padding: 6px 10px !important; font-size: 0.75rem !important; min-height: 32px; }
+    .btn-block { width: 100%; display: block; }
+
+    .form-control { font-size: 16px !important; padding: 10px 12px !important; height: auto !important; min-height: 44px; border-radius: 8px !important; }
+    select.form-control { font-size: 16px !important; }
+    .form-group { margin-bottom: 12px !important; }
+    label { font-size: 0.8rem !important; font-weight: 600; margin-bottom: 4px !important; }
+
+    .table { font-size: 0.72rem !important; }
+    .table th, .table td { padding: 8px 8px !important; }
+    .table-responsive { -webkit-overflow-scrolling: touch; }
+
+    .dataTables_wrapper .dataTables_filter input { width: 100% !important; }
+    .dataTables_wrapper .dataTables_paginate .paginate_button { padding: 5px 8px !important; font-size: 0.75rem !important; }
+
+    .modal-dialog { margin: 8px !important; max-width: calc(100% - 16px) !important; }
+    .modal-header { padding: 12px 16px !important; }
+    .modal-body { padding: 16px !important; max-height: calc(100vh - 160px); overflow-y: auto; }
+    .modal-footer { padding: 10px 16px !important; }
+    .modal-title { font-size: 1rem !important; }
+
+    .badge { font-size: 0.65rem !important; padding: 3px 8px !important; }
+
+    .info-box { min-height: 70px !important; margin-bottom: 10px !important; }
+    .info-box-icon { width: 60px !important; font-size: 1.4rem !important; line-height: 70px !important; }
+    .info-box-content { padding: 8px 12px !important; }
+    .info-box-text { font-size: 0.68rem !important; text-transform: uppercase; letter-spacing: 0.05em; }
+    .info-box-number { font-size: 1.1rem !important; font-weight: 700 !important; }
+
+    .small-box { margin-bottom: 10px !important; border-radius: 12px !important; }
+    .small-box > .inner { padding: 16px !important; }
+    .small-box h3 { font-size: 1.4rem !important; line-height: 1.2; }
+    .small-box p { font-size: 0.72rem !important; }
+    .small-box .icon { font-size: 55px !important; top: 10px !important; right: 10px !important; }
+
+    .content-header { padding: 10px !important; }
+    .content-header h1 { font-size: 1.1rem !important; }
+    .breadcrumb { font-size: 0.68rem !important; padding: 3px 0 !important; background: transparent !important; margin-bottom: 0 !important; }
+
+    .main-header { min-height: 50px !important; }
+    .main-header .navbar-nav .nav-link { padding: 0.4rem 0.6rem !important; }
+
+    .nav-sidebar .nav-link { padding: 10px 15px !important; border-radius: 8px; }
+    .nav-sidebar .nav-link p { font-size: 0.85rem !important; }
+
+    canvas { max-height: 220px !important; }
+    .alert { font-size: 0.8rem !important; padding: 10px 14px !important; border-radius: 10px !important; }
+    .dropdown-menu { font-size: 0.8rem !important; }
+    .dropdown-item { padding: 10px 16px !important; }
+    .pagination { font-size: 0.75rem !important; }
+    .page-link { padding: 6px 10px !important; }
+    .nav-tabs .nav-link { font-size: 0.8rem !important; padding: 8px 12px !important; }
+}
+
+/* ==================================================
+   VERY SMALL (< 375px) - Older Androids
+================================================== */
+@media (max-width: 374.98px) {
+    body { font-size: 12px; }
+    .card-body { padding: 10px !important; }
+    .btn { font-size: 0.75rem !important; padding: 7px 10px !important; }
+    .table th, .table td { font-size: 0.65rem !important; padding: 5px 6px !important; }
+    .info-box-number { font-size: 1rem !important; }
+    .small-box h3 { font-size: 1.2rem !important; }
+    .small-box > .inner { padding: 12px !important; }
+}
+
+/* ==================================================
+   TABLET (576px - 767px)
+================================================== */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .card-body { padding: 16px !important; }
+    .btn { font-size: 0.85rem !important; }
+    .info-box-number { font-size: 1.3rem !important; }
+    .small-box h3 { font-size: 1.75rem !important; }
+}
+
+/* ==================================================
+   LANDSCAPE MOBILE
+================================================== */
+@media (max-height: 500px) and (orientation: landscape) {
+    .main-header { min-height: 44px !important; }
+    .content { padding: 6px !important; }
+    .card { margin-bottom: 8px !important; }
+    .modal-body { max-height: calc(100vh - 100px); }
+}
+
+/* ==================================================
+   ACCESSIBILITY
+================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--primary, #FF6B35) !important;
+    outline-offset: 2px !important;
+}
+
+/* ==================================================
+   SKELETON LOADING
+================================================== */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.4s ease-in-out infinite;
+    border-radius: 6px;
+    color: transparent !important;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ==================================================
+   SAFE AREA - Notched Devices (iPhone X+, Android)
+================================================== */
+@supports (padding: max(0px)) {
+    .main-header {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+    }
+    .mobile-bottom-nav {
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+}
+
+/* ==================================================
+   PRINT
+================================================== */
+@media print {
+    .main-header, .main-sidebar, .main-footer,
+    .mobile-bottom-nav, .back-to-top, .no-print { display: none !important; }
+    .content-wrapper { margin: 0 !important; padding: 0 !important; }
+    .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+    body { font-size: 10pt; }
+    .table { font-size: 9pt !important; }
+}

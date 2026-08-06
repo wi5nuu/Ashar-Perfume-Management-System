@@ -127,13 +127,21 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'accounting' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/accounting.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+            'days' => 30,
+        ],
+
+        'audit' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/audit.log'),
+            'level' => 'info',
+            'days' => 90,
+            'permission' => 0640,
+        ],
+
     ],
 
 ];
-
-    'accounting' => [
-        'driver' => 'daily',
-        'path' => storage_path('logs/accounting.log'),
-        'level' => env('LOG_LEVEL', 'info'),
-        'days' => 30,
-    ],

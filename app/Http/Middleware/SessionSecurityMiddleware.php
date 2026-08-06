@@ -15,11 +15,18 @@ class SessionSecurityMiddleware
         if (Auth::check()) {
             $user = Auth::user();
 
-            if ($user->is_locked && ($user->locked_until === null || now()->lessThan($user->locked_until))) {
-                Auth::logoutCurrentDevice();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-                return redirect()->route('login')->withErrors(['email' => 'Sesi Anda telah diakhiri karena akun dikunci.']);
+            // Check if account is locked. The condition must also handle the case
+            // where locked_until has already passed — in that case we auto-unlock.
+            if ($user->is_locked) {
+                if ($user->locked_until !== null && now()->greaterThanOrEqualTo($user->locked_until)) {
+                    // Lock period expired — auto-unlock the account
+                    $user->unlock();
+                } else {
+                    Auth::logoutCurrentDevice();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    return redirect()->route('login')->withErrors(['email' => 'Sesi Anda telah diakhiri karena akun dikunci.']);
+                }
             }
 
             if ($user->requires_password_change) {

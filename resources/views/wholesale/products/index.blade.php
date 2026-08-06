@@ -71,7 +71,13 @@
                                         @endif
                                     </td>
                                     <td>@if($product->price_per_ml) Rp {{ number_format($product->price_per_ml, 0, ',', '.') }} @else - @endif</td>
-                                    <td>{{ $product->stock }}</td>
+                                    <td>
+                                        @if(in_array($product->type, ['aroma', 'methanol']))
+                                            {{ \App\Helpers\PerformanceHelper::formatMl($product->stock) }}
+                                        @else
+                                            {{ number_format($product->stock, 0, ',', '.') }} {{ $product->unit }}
+                                        @endif
+                                    </td>
                                     <td>
                                         @if($product->is_active)
                                             <span class="badge badge-success">Aktif</span>

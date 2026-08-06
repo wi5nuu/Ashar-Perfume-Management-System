@@ -18,20 +18,46 @@ class SalesReturnController extends Controller
     {
         Gate::authorize('manage_transactions');
 
+        $user = auth()->user();
+
+        $baseQuery = SalesReturn::query();
+        if (!$user->isOwner()) {
+            $baseQuery->where('branch_id', $user->branch_id);
+        }
+
+        // KPI — hitung dari semua data, bukan dari paginator
+        $kpiPending   = (clone $baseQuery)->where('status', 'pending')->count();
+        $kpiApproved  = (clone $baseQuery)->whereIn('status', ['approved', 'completed'])->count();
+        $kpiTotalRefund = (clone $baseQuery)->sum('total_refund');
+
         $query = SalesReturn::with(['transaction', 'user', 'branch']);
+        if (!$user->isOwner()) {
+            $query->where('branch_id', $user->branch_id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $user = auth()->user();
-        if (!$user->isOwner()) {
-            $query->where('branch_id', $user->branch_id);
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('return_number', 'like', "%{$search}%")
+                  ->orWhereHas('transaction', fn($t) => $t->where('invoice_number', 'like', "%{$search}%"));
+            });
         }
 
         $returns = $query->latest()->paginate(15);
 
-        return view('returns.index', compact('returns'));
+        return view('returns.index', compact('returns', 'kpiPending', 'kpiApproved', 'kpiTotalRefund'));
     }
 
     /**
@@ -65,6 +91,32 @@ class SalesReturnController extends Controller
             $return = DB::transaction(function () use ($validated) {
                 $user = auth()->user();
                 $transaction = Transaction::lockForUpdate()->findOrFail($validated['transaction_id']);
+
+                // Cumulative return qty check — prevent double-return exploit.
+                // Sum all previously returned quantities per detail_id across ALL
+                // non-cancelled return requests for this transaction.
+                $alreadyReturned = \App\Models\SalesReturnItem::whereIn('transaction_detail_id', collect($validated['items'])->pluck('detail_id'))
+                    ->whereHas('salesReturn', fn($q) => $q->where('transaction_id', $transaction->id)->whereNotIn('status', ['cancelled']))
+                    ->selectRaw('transaction_detail_id, SUM(quantity) as total_returned')
+                    ->groupBy('transaction_detail_id')
+                    ->pluck('total_returned', 'transaction_detail_id');
+
+                foreach ($validated['items'] as $item) {
+                    $detail = TransactionDetail::lockForUpdate()->findOrFail($item['detail_id']);
+
+                    if ($detail->transaction_id !== $transaction->id) {
+                        throw new \RuntimeException("Detail #{$item['detail_id']} does not belong to this transaction.");
+                    }
+
+                    $previouslyReturned = (int) ($alreadyReturned[$item['detail_id']] ?? 0);
+                    $remaining = $detail->quantity - $previouslyReturned;
+
+                    if ($item['quantity'] > $remaining) {
+                        throw new \RuntimeException(
+                            "Return quantity ({$item['quantity']}) exceeds remaining returnable quantity ({$remaining}) for item #{$item['detail_id']}."
+                        );
+                    }
+                }
 
                 $return = SalesReturn::create([
                     'return_number'  => SalesReturn::generateReturnNumber(),
@@ -128,7 +180,7 @@ class SalesReturnController extends Controller
      */
     public function approve(SalesReturn $return)
     {
-        Gate::authorize('manage_employees');
+        Gate::authorize('manage_transactions');
 
         if ($return->status !== 'pending') {
             return back()->with('error', 'Hanya retur pending yang bisa diapprove.');
@@ -156,7 +208,7 @@ class SalesReturnController extends Controller
      */
     public function complete(SalesReturn $return)
     {
-        Gate::authorize('manage_employees');
+        Gate::authorize('manage_transactions');
 
         if ($return->status !== 'approved') {
             return back()->with('error', 'Retur harus diapprove terlebih dahulu.');
@@ -168,8 +220,8 @@ class SalesReturnController extends Controller
         try {
             DB::transaction(function () use ($return, $branchId, $user) {
                 foreach ($return->items as $item) {
-                    $query = Inventory::where('product_id', $item->product_id);
-                    if ($branchId) $query->where('branch_id', $branchId);
+                    $query = Inventory::where('product_id', $item->product_id)
+                        ->when(is_null($branchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $branchId));
                     $inventory = $query->lockForUpdate()->first();
 
                     if ($inventory) {

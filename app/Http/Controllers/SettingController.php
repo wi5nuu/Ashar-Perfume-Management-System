@@ -37,6 +37,16 @@ class SettingController extends Controller
         'store_website'         => 'url|max:255',
         'operating_hours_start' => 'string|max:10',
         'operating_hours_end'   => 'string|max:10',
+        // Harga tetap per tier per ukuran
+        'tier_price_30ml_premium'  => 'numeric|min:0',
+        'tier_price_30ml_sedang'   => 'numeric|min:0',
+        'tier_price_30ml_biasa'    => 'numeric|min:0',
+        'tier_price_50ml_premium'  => 'numeric|min:0',
+        'tier_price_50ml_sedang'   => 'numeric|min:0',
+        'tier_price_50ml_biasa'    => 'numeric|min:0',
+        'tier_price_100ml_premium' => 'numeric|min:0',
+        'tier_price_100ml_sedang'  => 'numeric|min:0',
+        'tier_price_100ml_biasa'   => 'numeric|min:0',
     ];
 
     /**
@@ -401,9 +411,10 @@ class SettingController extends Controller
 
         $newPassword = \Illuminate\Support\Str::random(16);
 
+        // 'new_password' column was dropped in migration 2026_08_06_140121 —
+        // do NOT include it here or the update will throw SQLSTATE[42S22].
         $resetRequest->update([
             'status' => 'approved',
-            'new_password' => Hash::make($newPassword),
             'resolved_by' => auth()->id(),
             'resolved_at' => now(),
         ]);

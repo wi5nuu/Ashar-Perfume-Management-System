@@ -97,11 +97,11 @@ class PurchaseOrderController extends Controller
                         'subtotal'   => $lineTotal,
                     ]);
 
-                    // Update supplier price list
+                    // Lock the existing price row before updateOrCreate to prevent race conditions
                     SupplierPrice::where([
                             'supplier_id' => $validated['supplier_id'],
-                            'product_id' => $item['product_id'],
-                        ])->lockForUpdate()->first();
+                            'product_id'  => $item['product_id'],
+                        ])->lockForUpdate()->get(); // lock existing row(s) before upsert
                     SupplierPrice::updateOrCreate(
                         ['supplier_id' => $validated['supplier_id'], 'product_id' => $item['product_id']],
                         ['unit_cost' => $item['unit_cost'], 'last_quoted_at' => now()]
@@ -216,8 +216,8 @@ class PurchaseOrderController extends Controller
                     $item->update(['received_quantity' => $newReceived]);
 
                     // Atomic stock increment with pessimistic lock
-                    $query = Inventory::where('product_id', $item->product_id);
-                    if ($branchId) $query->where('branch_id', $branchId);
+                    $query = Inventory::where('product_id', $item->product_id)
+                        ->when(is_null($branchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $branchId));
                     $inventory = $query->lockForUpdate()->first();
 
                     if ($inventory) {

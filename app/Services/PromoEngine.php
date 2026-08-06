@@ -39,10 +39,12 @@ class PromoEngine
     public static function buyXGetYDiscount(int $x, int $y, float $discountPct): self
     {
         return (new self)->addRule("Beli {$x} gratis {$y}", function ($items, $subtotal) use ($x) {
-            return $items->sum('quantity') >= $x;
+            return $items->sum(fn($i) => is_array($i) ? ($i['quantity'] ?? 0) : ($i->quantity ?? 0)) >= $x;
         }, function ($items, $subtotal) use ($y, $discountPct) {
-            $cheapest = $items->sortBy('price')->first();
-            return ($cheapest['price'] ?? 0) * $y * $discountPct;
+            // Support both array items (from POS request) and object items (from Eloquent)
+            $cheapest = $items->sortBy(fn($i) => is_array($i) ? ($i['price'] ?? 0) : ($i->price ?? 0))->first();
+            $price = is_array($cheapest) ? ($cheapest['price'] ?? 0) : ($cheapest->price ?? 0);
+            return $price * $y * $discountPct;
         });
     }
 

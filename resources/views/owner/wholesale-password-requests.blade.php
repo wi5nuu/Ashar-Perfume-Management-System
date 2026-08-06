@@ -128,10 +128,34 @@ function showPassword(id) {
         method: 'POST',
         data: { _token: '{{ csrf_token() }}' },
         success: function(res) {
+            const safeName  = document.createElement('span');
+            safeName.textContent = res.name || '';
+            const safeEmail = document.createElement('span');
+            safeEmail.textContent = res.email || '';
+            const safePw    = document.createElement('code');
+            safePw.textContent = res.password || '';
+            safePw.style.cssText = 'font-size:1.3em;background:#f0f0f0;padding:6px 12px;border-radius:4px';
+
+            const container = document.createElement('div');
+            container.appendChild(document.createTextNode('Email: '));
+            const strong = document.createElement('strong');
+            strong.appendChild(safeEmail);
+            container.appendChild(strong);
+            container.appendChild(document.createElement('br'));
+            container.appendChild(document.createElement('br'));
+            container.appendChild(document.createTextNode('Password: '));
+            container.appendChild(safePw);
+            container.appendChild(document.createElement('br'));
+            container.appendChild(document.createElement('br'));
+            const note = document.createElement('small');
+            note.className = 'text-muted';
+            note.textContent = 'Password ini sudah dikirim sebelumnya.';
+            container.appendChild(note);
+
             Swal.fire({
                 icon: 'info',
-                title: 'Password ' + res.name,
-                html: 'Email: <strong>' + res.email + '</strong><br><br>Password: <code style="font-size:1.3em;background:#f0f0f0;padding:6px 12px;border-radius:4px">' + res.password + '</code><br><br><small class="text-muted">Password ini sudah dikirim sebelumnya.</small>',
+                title: document.createTextNode('Password ').textContent + (res.name || ''),
+                html: container,
                 confirmButtonText: 'Tutup',
             });
         },

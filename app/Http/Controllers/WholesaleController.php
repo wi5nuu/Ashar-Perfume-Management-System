@@ -7,6 +7,7 @@ use App\Models\WholesaleOrder;
 use App\Models\WholesaleOrderDetail;
 use App\Models\WholesaleProduct;
 use App\Models\Product;
+use App\Models\Accessory;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\WholesaleLoyaltyService;
@@ -16,7 +17,11 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Events\NewWholesaleOrder;
+use App\Events\StockUpdated;
+use App\Models\Inventory;
+use App\Models\InventoryMovement;
 use App\Notifications\WholesaleOrderNotification;
+use Illuminate\Support\Facades\Log;
 
 class WholesaleController extends Controller
 {
@@ -26,7 +31,7 @@ class WholesaleController extends Controller
         
         $query = WholesaleOrder::with(['user', 'customer', 'handler']);
 
-        if (!auth()->user()->isOwner() && !auth()->user()->isAdminPusat()) {
+        if (!auth()->user()->isOwner() && !auth()->user()->isAdmin()) {
             $query->where('branch_id', auth()->user()->branch_id);
         }
 
@@ -53,30 +58,60 @@ class WholesaleController extends Controller
         $orders = $query->latest()->paginate(10);
         $statuses = ['pending', 'reviewed', 'on_progress', 'packed', 'shipped', 'delivered', 'completed', 'cancelled'];
 
-        return view('wholesale.index', compact('orders', 'statuses'));
+        // KPI counts — query all orders (no pagination filter) for accurate totals
+        $kpiQuery = WholesaleOrder::query();
+        if (!auth()->user()->isOwner() && !auth()->user()->isAdmin()) {
+            $kpiQuery->where('branch_id', auth()->user()->branch_id);
+        }
+        $kpiTotal     = $kpiQuery->count();
+        $kpiPending   = (clone $kpiQuery)->whereIn('status', ['pending', 'reviewed'])->count();
+        $kpiProcess   = (clone $kpiQuery)->whereIn('status', ['shipped', 'on_progress', 'packed'])->count();
+        $kpiCompleted = (clone $kpiQuery)->whereIn('status', ['delivered', 'completed'])->count();
+
+        return view('wholesale.index', compact('orders', 'statuses', 'kpiTotal', 'kpiPending', 'kpiProcess', 'kpiCompleted'));
     }
 
     public function create()
     {
         Gate::authorize('wholesale.manage');
+        
+        // Load categories untuk filter di view (tanpa is_active karena kolom tidak ada)
+        $categories = \App\Models\ProductCategory::orderBy('name')->get();
+        
         $wholesaleProducts = WholesaleProduct::where('is_active', true)->orderBy('name')->get();
-        $products = Product::where('is_active', true)->with('inventories')->orderBy('name')->get(['id', 'name', 'selling_price', 'wholesale_price', 'size']);
+        
+        // Load produk parfum (botol, is_refill=false) dengan relasi category dan inventories
+        $products = Product::where('is_active', true)
+            ->with(['inventories', 'category'])
+            ->orderBy('name')
+            ->get();
+
+        // Load aksesori aktif
+        $accessories = \App\Models\Accessory::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        
         $customers = Customer::where('is_active', true)
-            ->when(auth()->user()->branch_id && !auth()->user()->isOwner() && !auth()->user()->isAdminPusat(), function ($q) {
+            ->where('type', 'wholesale')
+            ->when(auth()->user()->branch_id && !auth()->user()->isOwner() && !auth()->user()->isAdmin(), function ($q) {
                 $q->where('branch_id', auth()->user()->branch_id);
             })
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'type']);
-        $handlers = User::where('can_login', true)->whereIn('role', ['owner', 'admin', 'admin_pusat', 'manager', 'supervisor', 'warehouse'])->orderBy('name')->get(['id', 'name', 'role']);
+            
+        $handlers = User::where('can_login', true)
+            ->whereIn('role', ['owner', 'admin', 'manager', 'supervisor', 'warehouse'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'role']);
 
-        return view('wholesale.create', compact('wholesaleProducts', 'products', 'customers', 'handlers'));
+        return view('wholesale.create', compact('categories', 'wholesaleProducts', 'products', 'accessories', 'customers', 'handlers'));
     }
 
     public function store(Request $request)
     {
         Gate::authorize('wholesale.manage');
         $request->validate([
-            'package_target_amount' => 'required|numeric|min:0',
+            'package_target_amount' => 'nullable|numeric|min:0',
             'shipping_cost' => 'nullable|numeric|min:0',
             'recipient_name' => 'required|string',
             'recipient_phone' => 'required|string',
@@ -90,6 +125,7 @@ class WholesaleController extends Controller
             'items' => 'required|array|min:1|max:200',
             'items.*.product_id' => 'nullable|exists:products,id',
             'items.*.wholesale_product_id' => 'nullable|exists:wholesale_products,id',
+            'items.*.accessory_id' => 'nullable|exists:accessories,id',
             'items.*.product_name' => 'required|string|max:255',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
@@ -98,24 +134,40 @@ class WholesaleController extends Controller
             'items.*.price_per_ml' => 'nullable|numeric|min:0',
         ]);
 
+        // Validasi: setiap item harus punya minimal 1 ID produk
+        foreach ($request->items as $idx => $item) {
+            if (empty($item['product_id']) && empty($item['wholesale_product_id']) && empty($item['accessory_id'])) {
+                return back()->withErrors([
+                    'items' => "Item #" . ($idx + 1) . " harus memiliki produk yang valid (parfum, produk grosir, atau aksesori)."
+                ])->withInput();
+            }
+        }
+
         try {
             DB::beginTransaction();
 
-            // Validasi stok sebelum membuat pesanan
+            // Validasi dan potong stok langsung saat order dibuat (pending)
             $branchId = Auth::user()->branch_id;
             foreach ($request->items as $item) {
-                if (!$item['product_id']) continue;
+                // Potong stok parfum (bulk ml)
+                if (!empty($item['product_id'])) {
+                    $volumeMl = (float) ($item['volume_ml'] ?? 0);
+                    $totalMl  = $volumeMl * (int) $item['quantity'];
 
-                $inventory = \App\Models\Inventory::where('product_id', $item['product_id'])
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-                    ->lockForUpdate()
-                    ->first();
+                    if ($totalMl <= 0) {
+                        throw new \Exception("Volume ml tidak valid untuk produk: {$item['product_name']}.");
+                    }
 
-                if (!$inventory || $inventory->current_stock < $item['quantity']) {
-                    throw new \Exception(
-                        "Stok tidak cukup untuk '{$item['product_name']}'. " .
-                        "Dibutuhkan: {$item['quantity']}, Tersedia: " . ($inventory->current_stock ?? 0)
-                    );
+                    $this->deductBulkStock($item['product_id'], $branchId, $totalMl, $item['product_name']);
+                }
+
+                // Potong stok aksesori (unit pcs/set/dll)
+                if (!empty($item['accessory_id'])) {
+                    $accessory = Accessory::lockForUpdate()->find($item['accessory_id']);
+                    if (!$accessory) {
+                        throw new \Exception("Aksesori tidak ditemukan: {$item['product_name']}.");
+                    }
+                    $accessory->deductStock((int) $item['quantity']);
                 }
             }
 
@@ -146,6 +198,7 @@ class WholesaleController extends Controller
                     'wholesale_order_id' => $order->id,
                     'product_id' => $item['product_id'] ?? null,
                     'wholesale_product_id' => $item['wholesale_product_id'] ?? null,
+                    'accessory_id' => $item['accessory_id'] ?? null,
                     'product_name' => $item['product_name'],
                     'quantity' => $item['quantity'],
                     'volume_ml' => $item['volume_ml'] ?? null,
@@ -206,7 +259,7 @@ class WholesaleController extends Controller
         Gate::authorize('wholesale.view');
         $order->load(['user', 'customer', 'handler', 'details.wholesaleProduct', 'details.product']);
         $whatsappUrl = "https://wa.me/" . preg_replace('/[^0-9]/', '', $order->recipient_phone) . "?text=" . $this->generateWhatsAppMessage($order);
-        $handlers = User::where('can_login', true)->whereIn('role', ['owner', 'admin', 'admin_pusat', 'manager', 'supervisor', 'warehouse'])->orderBy('name')->get(['id', 'name', 'role']);
+        $handlers = User::where('can_login', true)->whereIn('role', ['owner', 'admin', 'manager', 'supervisor', 'warehouse'])->orderBy('name')->get(['id', 'name', 'role']);
         return view('wholesale.show', compact('order', 'whatsappUrl', 'handlers'));
     }
 
@@ -219,7 +272,7 @@ class WholesaleController extends Controller
         $wholesaleProducts = WholesaleProduct::where('is_active', true)->orderBy('name')->get();
         $products = Product::where('is_active', true)->orderBy('name')->get(['id', 'name', 'selling_price', 'wholesale_price', 'size']);
         $customers = Customer::where('is_active', true)->orderBy('name')->get(['id', 'name', 'phone', 'type']);
-        $handlers = User::where('can_login', true)->whereIn('role', ['owner', 'admin', 'admin_pusat', 'manager', 'supervisor', 'warehouse'])->orderBy('name')->get(['id', 'name', 'role']);
+        $handlers = User::where('can_login', true)->whereIn('role', ['owner', 'admin', 'manager', 'supervisor', 'warehouse'])->orderBy('name')->get(['id', 'name', 'role']);
         return view('wholesale.edit', compact('order', 'wholesaleProducts', 'products', 'customers', 'handlers'));
     }
 
@@ -256,22 +309,32 @@ class WholesaleController extends Controller
         try {
             DB::beginTransaction();
 
-            // Validasi stok sebelum memperbarui pesanan
             $branchId = $order->branch_id ?? Auth::user()->branch_id;
+
+            // Kembalikan stok lama dari detail order sebelumnya
+            $order->load('details');
+            foreach ($order->details as $oldDetail) {
+                if (!$oldDetail->product_id) continue;
+
+                $oldVolumeMl = (float) ($oldDetail->volume_ml ?? 0);
+                $oldTotalMl  = $oldVolumeMl * (int) $oldDetail->quantity;
+                if ($oldTotalMl <= 0) continue;
+
+                $this->restoreBulkStock($oldDetail->product_id, $branchId, $oldTotalMl, $oldDetail->product_name);
+            }
+
+            // Potong stok baru dari item yang diperbarui
             foreach ($request->items as $item) {
                 if (!$item['product_id']) continue;
 
-                $inventory = \App\Models\Inventory::where('product_id', $item['product_id'])
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-                    ->lockForUpdate()
-                    ->first();
+                $volumeMl = (float) ($item['volume_ml'] ?? 0);
+                $totalMl  = $volumeMl * (int) $item['quantity'];
 
-                if (!$inventory || $inventory->current_stock < $item['quantity']) {
-                    throw new \Exception(
-                        "Stok tidak cukup untuk '{$item['product_name']}'. " .
-                        "Dibutuhkan: {$item['quantity']}, Tersedia: " . ($inventory->current_stock ?? 0)
-                    );
+                if ($totalMl <= 0) {
+                    throw new \Exception("Volume ml tidak valid untuk produk: {$item['product_name']}.");
                 }
+
+                $this->deductBulkStock($item['product_id'], $branchId, $totalMl, $item['product_name']);
             }
 
             $order->update([
@@ -326,8 +389,35 @@ class WholesaleController extends Controller
         if (!in_array($order->status, ['pending', 'reviewed', 'cancelled'])) {
             return back()->with('error', 'Hanya pesanan pending/reviewed/cancelled yang bisa dihapus.');
         }
-        $order->details()->delete();
-        $order->delete();
+
+        try {
+            DB::beginTransaction();
+
+            $branchId = $order->branch_id ?? Auth::user()->branch_id;
+
+            // Kembalikan stok jika order masih pending/reviewed (stok sudah dipotong)
+            if (in_array($order->status, ['pending', 'reviewed'])) {
+                $order->load('details');
+                foreach ($order->details as $detail) {
+                    if (!$detail->product_id) continue;
+
+                    $volumeMl = (float) ($detail->volume_ml ?? 0);
+                    $totalMl  = $volumeMl * (int) $detail->quantity;
+                    if ($totalMl <= 0) continue;
+
+                    $this->restoreBulkStock($detail->product_id, $branchId, $totalMl, $detail->product_name);
+                }
+            }
+
+            $order->details()->delete();
+            $order->delete();
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menghapus pesanan: ' . $e->getMessage());
+        }
+
         return redirect()->route('wholesale.index')->with('success', 'Pesanan berhasil dihapus.');
     }
 
@@ -343,39 +433,6 @@ class WholesaleController extends Controller
                 return back()->with('error', "Hanya order berstatus 'pending' yang bisa dikonfirmasi.");
             }
 
-            $branchId = $order->branch_id ?? Auth::user()->branch_id;
-
-            foreach ($order->details as $detail) {
-                if (!$detail->product_id) continue; // skip non-inventory items (e.g. fragrance oils)
-
-                $query = \App\Models\Inventory::where('product_id', $detail->product_id);
-                if ($branchId) $query->where('branch_id', $branchId);
-                $inventory = $query->lockForUpdate()->first();
-
-                if (!$inventory) {
-                    // Try without branch filter
-                    $inventory = \App\Models\Inventory::where('product_id', $detail->product_id)
-                        ->lockForUpdate()
-                        ->first();
-                }
-
-                if (!$inventory) {
-                    throw new \Exception("Stok tidak ditemukan untuk produk: {$detail->product_name}.");
-                }
-
-                if ($inventory->current_stock < $detail->quantity) {
-                    throw new \Exception(
-                        "Stok tidak cukup untuk '{$detail->product_name}'. " .
-                        "Dibutuhkan: {$detail->quantity}, Tersedia: {$inventory->current_stock}"
-                    );
-                }
-
-                $inventory->update([
-                    'current_stock' => $inventory->current_stock - $detail->quantity,
-                    'stock_out' => $inventory->stock_out + $detail->quantity,
-                ]);
-            }
-
             $order->update([
                 'status' => 'reviewed',
                 'confirmed_at' => Carbon::now(),
@@ -383,21 +440,140 @@ class WholesaleController extends Controller
 
             DB::commit();
             $this->notifyCustomer($order, 'reviewed');
-            return back()->with('success', 'Pesanan dikonfirmasi dan stok gudang otomatis terpotong!');
+            return back()->with('success', 'Pesanan dikonfirmasi.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal mengkonfirmasi: ' . $e->getMessage());
         }
     }
 
+    /**
+     * Kurangi current_stock dari inventory untuk transaksi grosir.
+     * total_ml = quantity (botol) × volume_ml (ukuran botol: 30/50/100ml)
+     * Dipanggil saat order berstatus completed.
+     */
+    private function deductBulkStock(int $productId, ?int $branchId, float $totalMl, string $productName): void
+    {
+        $inventory = Inventory::where('product_id', $productId)
+            ->when(
+                is_null($branchId),
+                fn($q) => $q->whereNull('branch_id'),
+                fn($q) => $q->where('branch_id', $branchId)
+            )
+            ->lockForUpdate()
+            ->first();
+
+        // Fallback ke stok pusat (branch_id = null) jika stok cabang tidak ada
+        if (!$inventory && $branchId) {
+            $inventory = Inventory::where('product_id', $productId)
+                ->whereNull('branch_id')
+                ->lockForUpdate()
+                ->first();
+        }
+
+        if (!$inventory) {
+            throw new \Exception("Stok tidak ditemukan untuk produk: {$productName}.");
+        }
+
+        $stockBefore = (float) ($inventory->current_stock ?? 0);
+
+        if ($stockBefore < $totalMl) {
+            throw new \Exception(
+                "Stok tidak cukup untuk '{$productName}'. " .
+                "Dibutuhkan: {$totalMl}ml, Tersedia: {$stockBefore}ml"
+            );
+        }
+
+        $newStock = $stockBefore - $totalMl;
+
+        $inventory->update([
+            'current_stock' => $newStock,
+            'stock_out'     => $inventory->stock_out + (int) $totalMl,
+        ]);
+
+        InventoryMovement::record(
+            productId:   $productId,
+            branchId:    $branchId,
+            type:        'sale',
+            quantity:    -(int) $totalMl,
+            stockBefore: (int) $stockBefore,
+            stockAfter:  (int) $newStock,
+            refType:     'wholesale_order',
+        );
+
+        event(new StockUpdated(
+            $productId,
+            $inventory->product?->name ?? "Product #{$productId}",
+            (int) $newStock
+        ));
+    }
+
+    private function restoreBulkStock(int $productId, ?int $branchId, float $totalMl, string $productName): void
+    {
+        $inventory = Inventory::where('product_id', $productId)
+            ->when(
+                is_null($branchId),
+                fn($q) => $q->whereNull('branch_id'),
+                fn($q) => $q->where('branch_id', $branchId)
+            )
+            ->lockForUpdate()
+            ->first();
+
+        // Fallback ke stok pusat (branch_id = null) jika stok cabang tidak ada
+        if (!$inventory && $branchId) {
+            $inventory = Inventory::where('product_id', $productId)
+                ->whereNull('branch_id')
+                ->lockForUpdate()
+                ->first();
+        }
+
+        if (!$inventory) {
+            throw new \Exception("Stok tidak ditemukan untuk produk: {$productName}.");
+        }
+
+        $stockBefore = (float) ($inventory->current_stock ?? 0);
+        $newStock    = $stockBefore + $totalMl;
+
+        $inventory->update([
+            'current_stock' => $newStock,
+            'stock_out'     => max(0, $inventory->stock_out - (int) $totalMl),
+        ]);
+
+        InventoryMovement::record(
+            productId:   $productId,
+            branchId:    $branchId,
+            type:        'return',
+            quantity:    (int) $totalMl,
+            stockBefore: (int) $stockBefore,
+            stockAfter:  (int) $newStock,
+            refType:     'wholesale_order',
+        );
+
+        event(new StockUpdated(
+            $productId,
+            $inventory->product?->name ?? "Product #{$productId}",
+            (int) $newStock
+        ));
+    }
+
     private function notifyCustomer(WholesaleOrder $order, string $status): void
     {
-        $customerUser = User::where('role', 'wholesale_customer')
-            ->where(function ($q) use ($order) {
-                $q->where('phone', $order->recipient_phone)
-                  ->orWhere('email', $order->customer?->email)
-                  ->orWhere('email', $order->recipient_phone . '@email.com');
-            })->first();
+        // Only look up by verified identifiers — never fabricate an email address
+        // from a phone number (e.g. phone@email.com leaks info and matches nothing real).
+        $customerUser = null;
+
+        if ($order->customer?->email) {
+            $customerUser = User::where('role', 'wholesale_customer')
+                ->where('email', $order->customer->email)
+                ->first();
+        }
+
+        if (!$customerUser && $order->recipient_phone) {
+            $customerUser = User::where('role', 'wholesale_customer')
+                ->where('phone', $order->recipient_phone)
+                ->first();
+        }
+
         if ($customerUser) {
             $customerUser->notify(new WholesaleOrderNotification($order, $status));
         }
@@ -471,10 +647,24 @@ class WholesaleController extends Controller
         if (!in_array($order->status, ['delivered', 'shipped', 'packed'])) {
             return back()->with('error', 'Order harus dalam status delivered/shipped/packed untuk diselesaikan.');
         }
-        $order->update([
-            'status' => 'completed',
-            'completed_at' => Carbon::now(),
-        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $order = WholesaleOrder::lockForUpdate()->findOrFail($order->id);
+
+            // Stok sudah dipotong saat order dibuat (pending), tidak perlu potong lagi di sini
+            $order->update([
+                'status' => 'completed',
+                'completed_at' => Carbon::now(),
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menyelesaikan order: ' . $e->getMessage());
+        }
+
         $this->notifyCustomer($order, 'completed');
 
         // Earn loyalty credits
@@ -503,11 +693,36 @@ class WholesaleController extends Controller
 
         $request->validate(['cancellation_reason' => 'required|string|max:500']);
 
-        $order->update([
-            'status' => 'cancelled',
-            'cancelled_at' => Carbon::now(),
-            'cancellation_reason' => $request->cancellation_reason,
-        ]);
+        try {
+            DB::beginTransaction();
+
+            $branchId = $order->branch_id ?? Auth::user()->branch_id;
+
+            // Kembalikan stok jika order masih pending/reviewed (stok sudah dipotong)
+            if (in_array($order->status, ['pending', 'reviewed'])) {
+                $order->load('details');
+                foreach ($order->details as $detail) {
+                    if (!$detail->product_id) continue;
+
+                    $volumeMl = (float) ($detail->volume_ml ?? 0);
+                    $totalMl  = $volumeMl * (int) $detail->quantity;
+                    if ($totalMl <= 0) continue;
+
+                    $this->restoreBulkStock($detail->product_id, $branchId, $totalMl, $detail->product_name);
+                }
+            }
+
+            $order->update([
+                'status' => 'cancelled',
+                'cancelled_at' => Carbon::now(),
+                'cancellation_reason' => $request->cancellation_reason,
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
+        }
 
         $this->notifyCustomer($order, 'cancelled');
         return back()->with('success', 'Pesanan dibatalkan.');

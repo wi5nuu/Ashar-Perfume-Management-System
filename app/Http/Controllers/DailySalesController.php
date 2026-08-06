@@ -8,11 +8,13 @@ use App\Models\WholesaleOrder;
 use App\Models\Expense;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class DailySalesController extends Controller
 {
     public function __invoke(Request $request)
     {
+        Gate::authorize('reports.view');
         $date = $request->date ?: now()->toDateString();
         $branchId = $request->branch_id;
 

@@ -14,7 +14,7 @@ class ExpensePolicy
 
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'admin_pusat', 'manager']);
+        return in_array($user->role, ['admin', 'manager']);
     }
 
     public function view(User $user, Expense $expense): bool

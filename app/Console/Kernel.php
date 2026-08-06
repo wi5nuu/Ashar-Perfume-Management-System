@@ -10,9 +10,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // ── DATABASE BACKUP (SQL) ──────────────────────────────────────
-        // Daily backup at 00:00 (midnight) — retain 7 hari
+        // Daily backup at 00:30 (to avoid overlap with Monday weekly backup at 01:00)
         $schedule->command('backup:database --no-encrypt')
-            ->dailyAt('00:00')
+            ->dailyAt('00:30')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/backup-daily.log'));
 
@@ -64,7 +64,7 @@ class Kernel extends ConsoleKernel
         
         // Clean up old audit logs every Sunday at 3 AM
         $schedule->call(function () {
-            \App\Services\Security\ActivityMonitor::cleanOldLogs();
+            app(\App\Services\Security\ActivityMonitor::class)->cleanOldLogs();
         })->weeklyOn(0, '03:00');
         
         // Force password change for users with expired passwords

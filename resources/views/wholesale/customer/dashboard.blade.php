@@ -267,7 +267,7 @@
             <div id="trackQr" style="display:inline-block"></div>
             <div style="font-size:0.72rem;color:#888;margin-top:4px;font-weight:600">Scan untuk lacak</div>
         </div>
-        <script>new QRCode(document.getElementById('trackQr'),{text:'{{ $tu }}',width:80,height:80});</script>
+        <script>new QRCode(document.getElementById('trackQr'),{text:@json($tu),width:80,height:80});</script>
     </div>
     @endif
 

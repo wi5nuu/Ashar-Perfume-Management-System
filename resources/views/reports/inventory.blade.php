@@ -25,7 +25,7 @@
                                 @forelse($lowStock as $item)
                                 <tr>
                                     <td>{{ $item->name }}</td>
-                                    <td><span class="badge badge-warning">{{ $item->current_stock }}</span></td>
+                                    <td><span class="badge badge-warning">{{ number_format($item->bulk_stock_ml ?? 0, 0) }}ml</span></td>
                                     <td>{{ $item->minimum_stock }}</td>
                                 </tr>
                                 @empty

@@ -4,6 +4,8 @@
 **Auditor:** Senior Enterprise Software Architect / ERP Consultant / Technical Auditor  
 **Version:** 1.0 (Laravel 12, PHP 8.2+, MySQL 8.0)
 
+> **Patch v2.0.1 — August 5, 2026:** Bug fix patch diterapkan. Lihat [CHANGELOG_UPGRADE.md](./CHANGELOG_UPGRADE.md) untuk detail lengkap.
+
 ---
 
 ## 1. Ringkasan Sistem
@@ -295,7 +297,7 @@
 | Aspek | Status | Detail |
 |-------|--------|--------|
 | **Authentication** | ✅ | Session + Sanctum API tokens, 2 custom flows |
-| **Authorization** | ✅ | RBAC (7 roles) + 30+ permissions + Gates + Policies |
+| **Authorization** | ✅ | RBAC (8 roles) + 30+ permissions + Gates + Policies |
 | **CSRF** | ✅ | Laravel VerifyCsrfToken + Sanctum CSRF |
 | **XSS** | 🟡 | Blade auto-escaping ✅, InputSanitizer (strip_tags) lemah, CSP partial (unsafe-inline style) |
 | **SQL Injection** | ✅ | Eloquent parameterized queries, raw queries use binding |
@@ -309,13 +311,20 @@
 | **Backup** | ✅ | Multi-schedule, encrypted, monitored |
 
 ### Critical Vulnerabilities
-1. **`.env` file committed to repository** — APP_KEY, DB_PASSWORD, REVERB secrets exposed
-2. **`SESSION_SECURE_COOKIE=false`** — session cookie dikirim via HTTP
-3. **Custom TOTP** — tidak ada rate limiting di 2FA, tidak ada recovery codes
-4. **`EncryptionService::decryptField()`** — mengembalikan plaintext jika dekripsi gagal
-5. **Dual authorization system** — RBAC + role-string gates bisa inkonsisten
-6. **KnownDevice model never used** — login notification for new device tidak aktif
-7. **Password reset stores password encrypted (not hashed)** — admin bisa lihat password user
+
+> Status terakhir diupdate: August 5, 2026 (Patch v2.0.1)
+
+| # | Isu | Status |
+|---|-----|--------|
+| 1 | **`.env` file committed to repository** — APP_KEY, DB_PASSWORD, REVERB secrets exposed | ⚠️ Open |
+| 2 | **`SESSION_SECURE_COOKIE=false`** — session cookie dikirim via HTTP | ⚠️ Open |
+| 3 | **Custom TOTP** — tidak ada rate limiting di 2FA, tidak ada recovery codes | ⚠️ Open |
+| 4 | **`EncryptionService::decryptField()`** — mengembalikan plaintext jika dekripsi gagal | ⚠️ Open |
+| 5 | **Dual authorization system** — `admin_pusat` di role-string gates tidak cocok dengan nilai `users.role` column | ✅ Fixed (v2.0.1) — semua Gate, middleware, controller, policy, view, dan broadcast channel dibersihkan |
+| 6 | **API key yunwu.ai ter-expose di docs** — hardcoded di `AI-INTEGRATION-GUIDE.md` | ✅ Fixed (v2.0.1) — diganti placeholder, key perlu di-revoke di dashboard yunwu.ai |
+| 7 | **KnownDevice model never used** — login notification for new device tidak aktif | ⚠️ Open |
+| 8 | **Password reset stores password encrypted (not hashed)** — admin bisa lihat password user | ⚠️ Open |
+| 9 | **Broadcast channels `inventory` + `notifications`** — pakai `admin_pusat`/`admin_cabang` yang tidak pernah cocok, user valid tidak bisa menerima event | ✅ Fixed (v2.0.1) — `routes/channels.php` diperbaiki |
 
 ---
 

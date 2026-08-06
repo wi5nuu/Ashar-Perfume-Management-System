@@ -1,425 +1,708 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
-@section('title', 'Buat Pesanan Grosir')
+@section('title', 'Kasir Grosir - APMS')
+
+@push('styles')
+<style>
+.product-card { cursor: pointer; transition: box-shadow .15s, transform .15s; border-radius: 8px; }
+.product-card:hover:not(.disabled-card) { box-shadow: 0 4px 16px rgba(255,107,53,.25); transform: translateY(-2px); }
+.product-card.disabled-card { opacity: .5; cursor: not-allowed; }
+.cart-table th, .cart-table td { font-size: .82rem; vertical-align: middle; }
+.stock-ok    { color: #2e7d32; font-weight: 600; }
+.stock-low   { color: #e65100; font-weight: 600; }
+.stock-empty { color: #c62828; font-weight: 600; }
+.badge-grosir { background:#1565c0; color:#fff; font-size:.72rem; padding:2px 7px; border-radius:10px; }
+
+/* Pembatas tinggi grid produk agar tidak scroll jauh */
+.product-grid-container {
+    max-height: calc(100vh - 280px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Pastikan footer selalu di bawah */
+html, body { height: 100%; margin: 0; }
+.wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+.content-wrapper { flex: 1; }
+
+/* Modal center vertical */
+#addProductModal .modal-dialog {
+    display: flex;
+    align-items: center;
+    min-height: calc(100vh - 60px);
+    margin: 30px auto;
+}
+</style>
+@endpush
 
 @section('content')
 <div class="container-fluid">
-    <form action="{{ route('wholesale.store') }}" method="POST" id="wholesaleForm">
+
+    {{-- Page header --}}
+    <div class="d-flex align-items-center mb-3" style="gap:10px;">
+        <h4 class="mb-0">Kasir</h4>
+        <span class="badge-grosir"><i class="fas fa-truck mr-1"></i>GROSIR</span>
+        <a href="{{ route('wholesale.index') }}" class="btn btn-sm btn-outline-secondary ml-auto">
+            <i class="fas fa-list mr-1"></i> Riwayat Pesanan
+        </a>
+    </div>
+
+    <form method="POST" action="{{ route('wholesale.store') }}" id="wholesaleForm">
         @csrf
-        <div class="row">
-            <div class="col-lg-8">
-                {{-- Product Tabs --}}
-                <div class="card card-apms border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="mb-0 font-weight-bold text-primary-apms">
-                            <i class="fas fa-boxes mr-2"></i> Pilih Produk
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <ul class="nav nav-tabs" id="productTabs" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" id="parfum-tab" data-toggle="tab" href="#parfum" role="tab">
-                                    <i class="fas fa-spray-can mr-1"></i> Parfum / Aroma
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="produk-tab" data-toggle="tab" href="#produk" role="tab">
-                                    <i class="fas fa-box mr-1"></i> Produk Grosir
-                                </a>
-                            </li>
-                        </ul>
-                        <div class="tab-content p-3">
-                            {{-- TAB 1: Parfum / Aroma --}}
-                            <div class="tab-pane fade show active" id="parfum" role="tabpanel">
-                                <div class="row mb-3">
-                                    <div class="col-md-8">
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" id="searchParfum" placeholder="Cari parfum / aroma..." onkeyup="filterParfum(this.value)">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row" id="parfumGrid">
-                                    @forelse($products as $p)
-                                    <div class="col-6 col-md-4 col-lg-3 mb-2 parfum-item" data-name="{{ strtolower($p->name) }}">
-                                        <button type="button" class="btn btn-outline-secondary btn-sm btn-block text-left product-btn-parfum"
-                                            data-pid="{{ $p->id }}"
-                                            data-name="{{ $p->name }}"
-                                            data-price="{{ $p->wholesale_price ?: $p->selling_price }}"
-                                            data-size="{{ $p->size }}">
-                                            <strong>{{ $p->name }}</strong><br>
-                                            <small>Rp {{ number_format($p->wholesale_price ?: $p->selling_price, 0, ',', '.') }}
-                                            @if($p->size) | {{ $p->size }}ml @endif
-                                            </small>
-                                        </button>
-                                    </div>
-                                    @empty
-                                    <div class="col-12 text-muted py-3">Tidak ada produk parfum.</div>
-                                    @endforelse
-                                </div>
-                            </div>
+        {{-- hidden cart items injected by JS --}}
+        <div id="hiddenCartInputs"></div>
 
-                            {{-- TAB 2: Produk Grosir --}}
-                            <div class="tab-pane fade" id="produk" role="tabpanel">
-                                <div class="row mb-3">
-                                    <div class="col-12">
-                                        <div class="btn-group btn-group-sm flex-wrap" role="group">
-                                            <button type="button" class="btn btn-outline-primary active" onclick="filterProdukType('all', this)">Semua</button>
-                                            @foreach(['botol', 'sarung', 'methanol', 'aksesoris', 'lainnya'] as $t)
-                                            <button type="button" class="btn btn-outline-primary" onclick="filterProdukType('{{ $t }}', this)">{{ ucfirst($t) }}</button>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row" id="produkGrid">
-                                    @forelse($wholesaleProducts as $wp)
-                                    <div class="col-6 col-md-4 col-lg-3 mb-2 produk-item" data-type="{{ $wp->type }}">
-                                        <button type="button" class="btn btn-outline-primary btn-sm btn-block text-left product-btn-wp"
-                                            data-wpid="{{ $wp->id }}"
-                                            data-name="{{ $wp->name }}"
-                                            data-price="{{ $wp->price_per_unit }}"
-                                            data-unit="{{ $wp->unit }}"
-                                            data-price-per-ml="{{ $wp->price_per_ml }}"
-                                            data-pieces="{{ $wp->pieces_per_unit }}"
-                                            data-price-per-piece="{{ $wp->price_per_piece }}">
-                                            <strong>{{ $wp->name }}</strong><br>
-                                            <small class="text-muted">
-                                                @if($wp->pieces_per_unit > 1)
-                                                    Rp {{ number_format($wp->price_per_piece, 0, ',', '.') }}/buah<br>
-                                                    <span class="text-info">1 {{ $wp->unit }} ({{ $wp->pieces_per_unit }} buah) = Rp {{ number_format($wp->price_per_unit, 0, ',', '.') }}</span>
-                                                @else
-                                                    Rp {{ number_format($wp->price_per_unit, 0, ',', '.') }}/{{ $wp->unit }}
-                                                @endif
-                                                @if($wp->price_per_ml) | {{ number_format($wp->price_per_ml, 0) }}/ml @endif
-                                            </small>
-                                        </button>
-                                    </div>
-                                    @empty
-                                    <div class="col-12 text-muted py-3">Belum ada produk grosir. <a href="{{ route('wholesale.products.index') }}">Tambah produk</a></div>
-                                    @endforelse
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="row">
 
-                {{-- Order Items Table --}}
-                <div class="card card-apms border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 font-weight-bold"><i class="fas fa-list mr-1"></i> Item Pesanan</h6>
-                        <span class="text-muted small" id="itemCount">0 item</span>
-                    </div>
-                    <div class="card-body p-2">
-                        <div class="table-responsive">
-                            <table class="table table-sm" id="itemsTable">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th style="width:5%">#</th>
-                                        <th style="width:30%">Nama Barang</th>
-                                        <th style="width:12%">Harga Satuan</th>
-                                        <th style="width:10%">Jumlah</th>
-                                        <th style="width:10%">Volume</th>
-                                        <th style="width:8%">Satuan</th>
-                                        <th style="width:15%">Subtotal</th>
-                                        <th style="width:5%"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="itemRows">
-                                    <tr class="item-row">
-                                        <td class="row-num align-middle font-weight-bold text-muted">1</td>
-                                        <td>
-                                            <input type="text" name="items[0][product_name]" class="form-control form-control-sm product-name" placeholder="Pilih produk dari katalog di atas" readonly required>
-                                            <input type="hidden" name="items[0][product_id]" class="product-id">
-                                            <input type="hidden" name="items[0][wholesale_product_id]" class="wholesale-product-id">
-                                            <input type="hidden" name="items[0][price_per_ml]" class="price-per-ml-input">
-                                        </td>
-                                        <td><input type="number" name="items[0][price]" class="form-control form-control-sm price-input" value="0" required step="500" readonly></td>
-                                        <td><input type="number" name="items[0][quantity]" class="form-control form-control-sm qty-input" value="1" min="1" required></td>
-                                        <td><input type="number" name="items[0][volume_ml]" class="form-control form-control-sm volume-input" placeholder="ml" step="1"></td>
-                                        <td><input type="text" name="items[0][unit]" class="form-control form-control-sm unit-input" placeholder="pcs" readonly></td>
-                                        <td class="subtotal-display font-weight-bold align-middle text-primary">Rp 0</td>
-                                        <td></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <button type="button" class="btn btn-outline-primary btn-sm mt-1" onclick="addItemRow()">
-                            <i class="fas fa-plus mr-1"></i> Tambah Baris Kosong
+        {{-- ═══════════════════════════════════════════════════════
+             LEFT: Product Grid
+        ═══════════════════════════════════════════════════════ --}}
+        <div class="col-md-8 col-12">
+
+            {{-- Search + Category filter --}}
+            <div class="card card-apms mb-3">
+                <div class="card-header d-flex align-items-center flex-wrap" style="gap:8px;">
+                    <h3 class="card-title mb-0 text-nowrap">Daftar Produk</h3>
+                    <div class="d-flex flex-nowrap overflow-auto" style="gap:4px; flex:1; min-width:0;">
+                        <button type="button" class="btn btn-sm btn-secondary active px-2 py-1" id="showAllProducts"
+                                style="white-space:nowrap;font-size:.75rem;flex-shrink:0;">Semua</button>
+                        @foreach($categories as $cat)
+                        @php
+                            $defColor = match($cat->tier ?? 'biasa') {
+                                'premium' => '#FFB300', 'sedang' => '#78909C', default => '#66BB6A'
+                            };
+                            $catColor = ($cat->color && preg_match('/^#[0-9a-fA-F]{6}$/', $cat->color))
+                                ? $cat->color : $defColor;
+                        @endphp
+                        <button type="button" class="btn btn-sm btn-category px-2 py-1"
+                                data-category="{{ $cat->id }}"
+                                style="background:{{ $catColor }};color:#fff;white-space:nowrap;font-size:.75rem;flex-shrink:0;border:none;">
+                            {{ $cat->name }}
                         </button>
+                        @endforeach
+                    </div>
+                    <div class="input-group input-group-sm ml-1" style="max-width:180px;flex-shrink:0;">
+                        <input type="text" id="productSearch" class="form-control" placeholder="Cari aroma...">
+                        <div class="input-group-append">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Right Panel --}}
-            <div class="col-lg-4">
-                <div class="card card-apms border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="mb-0 font-weight-bold text-primary-apms"><i class="fas fa-info-circle mr-2"></i> Info Pesanan</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label>Target Nilai Paket (Rp) *</label>
-                            <input type="number" name="package_target_amount" class="form-control form-control-lg text-primary font-weight-bold" placeholder="Contoh: 10000000" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Pelanggan</label>
-                            <select name="customer_id" class="form-control select2">
-                                <option value="">-- Pilih Pelanggan --</option>
-                                @foreach($customers as $c)
-                                <option value="{{ $c->id }}" data-phone="{{ $c->phone }}">{{ $c->name }} ({{ $c->phone }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <hr>
-                        <div class="form-group">
-                            <label>Nama Penerima *</label>
-                            <input type="text" name="recipient_name" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label>No. Telp Penerima *</label>
-                            <input type="text" name="recipient_phone" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Kode Referral (jika ada)</label>
-                            <input type="text" name="referral_code" class="form-control" placeholder="Contoh: ABC12345" maxlength="20">
-                            <small class="form-text text-muted">Kode referral dari pelanggan yang mereferensikan.</small>
-                        </div>
-                        <div class="form-group">
-                            <label>Alamat Lengkap *</label>
-                            <textarea name="shipping_address" class="form-control" rows="2" required></textarea>
-                        </div>
-                        <hr>
-                        <div class="form-group">
-                            <label>Kurir</label>
-                            <select name="shipping_courier" class="form-control">
-                                <option value="">-- Pilih --</option>
-                                <option value="J&T">J&T</option>
-                                <option value="JNE">JNE</option>
-                                <option value="Sicepat">Sicepat</option>
-                                <option value="Indah Cargo">Indah Cargo</option>
-                                <option value="Pos Indonesia">Pos Indonesia</option>
-                                <option value="Gojek">Gojek</option>
-                                <option value="Grab">Grab</option>
-                                <option value="Lainnya">Lainnya</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Biaya Kirim (Rp)</label>
-                            <input type="number" name="shipping_cost" class="form-control" value="0" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Penanggung Jawab</label>
-                            <select name="handler_id" class="form-control select2">
-                                <option value="">-- Pilih --</option>
-                                @foreach($handlers as $h)
-                                <option value="{{ $h->id }}">{{ $h->name }} ({{ $h->role }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Estimasi Packing (Hari)</label>
-                            <input type="number" name="packing_days" class="form-control" value="1" min="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Catatan</label>
-                            <textarea name="notes" class="form-control" rows="2" placeholder="Catatan internal / instruksi khusus"></textarea>
-                        </div>
+            {{-- Product Tabs: Parfum & Aksesori --}}
+            <ul class="nav nav-tabs mb-2" id="productTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="tab-parfum" data-toggle="tab" href="#tabParfum" role="tab">
+                        <i class="fas fa-wine-bottle mr-1"></i> Parfum
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-aksesori" data-toggle="tab" href="#tabAksesori" role="tab">
+                        <i class="fas fa-box mr-1"></i> Aksesori
+                    </a>
+                </li>
+            </ul>
 
-                        <hr>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Total Pesanan:</span>
-                            <span class="font-weight-bold" id="grandTotalDisplay">Rp 0</span>
+            <div class="tab-content" id="productTabContent">
+                {{-- Tab Parfum (botol, is_refill=false) --}}
+                <div class="tab-pane fade show active" id="tabParfum" role="tabpanel">
+                    <div class="product-grid-container">
+                        <div class="row product-grid" data-type="parfum">
+                        @forelse($products->where('is_refill', false) as $product)
+                        @php
+                            // Ambil stok dari inventories.current_stock (ml bibit), bukan initial_stock
+                            $inv = $product->inventories->where('branch_id', null)->first();
+                            $stock = $inv ? $inv->current_stock : 0; // dalam ml
+                            $stockLabel = $stock >= 1000 
+                                ? number_format($stock/1000, 1).' L' 
+                                : $stock.' ml';
+                            $disabled = $stock <= 0;
+                            $tier = $product->category?->tier ?? 'biasa';
+                            $borderClass = match($tier) {
+                                'premium' => 'border-warning', 'sedang' => 'border-secondary', default => ''
+                            };
+                        @endphp
+                        <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-2 product-item"
+                             data-id="{{ $product->id }}"
+                             data-name="{{ $product->name }}"
+                             data-stock="{{ $stock }}"
+                             data-type="product"
+                             data-category="{{ $product->product_category_id }}">
+                            <div class="card product-card {{ $borderClass }} {{ $disabled ? 'disabled-card' : '' }} h-100"
+                                 onclick="{{ !$disabled ? 'openAddModal('.$product->id.',\'product\')' : 'void(0)' }}">
+                                <div class="card-body p-0 d-flex flex-column justify-content-between" style="min-height:85px;">
+                                    <div class="flex-grow-1 d-flex align-items-center justify-content-center py-2 px-1">
+                                        <h6 class="mb-0 text-center" style="font-size:.78rem;">{{ $product->name }}</h6>
+                                    </div>
+                                    <div class="px-1 pb-1 text-center">
+                                        @if($disabled)
+                                            <span class="badge badge-danger" style="font-size:.65rem;">Habis</span>
+                                        @else
+                                            <span class="badge badge-info" style="font-size:.65rem;">{{ $stockLabel }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Biaya Kirim:</span>
-                            <span id="shippingCostDisplay">Rp 0</span>
+                        @empty
+                        <div class="col-12 text-center text-muted py-4">
+                            <i class="fas fa-wine-bottle fa-2x mb-2"></i>
+                            <p>Belum ada produk parfum.</p>
                         </div>
-                        <div class="d-flex justify-content-between mb-3 text-muted small">
-                            <span>Target:</span>
-                            <span id="targetDisplay">Rp 0</span>
-                        </div>
-                        <button type="submit" class="btn btn-primary-apms btn-block btn-lg shadow-sm">
-                            <i class="fas fa-save mr-2"></i> Simpan Pesanan Grosir
-                        </button>
-                        <a href="{{ route('wholesale.index') }}" class="btn btn-light btn-block mt-2">Batal</a>
+                        @endforelse
+                    </div>
                     </div>
                 </div>
+
+                {{-- Tab Aksesori --}}
+                <div class="tab-pane fade" id="tabAksesori" role="tabpanel">
+                    <div class="product-grid-container">
+                        <div class="row product-grid" data-type="aksesori">
+                        @forelse($accessories as $acc)
+                        @php
+                            $stock = $acc->current_stock ?? 0;
+                            $stockLabel = $stock.' '.$acc->unit;
+                            $disabled = $stock <= 0;
+                        @endphp
+                        <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-2 product-item"
+                             data-id="{{ $acc->id }}"
+                             data-name="{{ $acc->name }}"
+                             data-stock="{{ $stock }}"
+                             data-type="accessory"
+                             data-category="">
+                            <div class="card product-card {{ $disabled ? 'disabled-card' : '' }} h-100"
+                                 onclick="{{ !$disabled ? 'openAddModal('.$acc->id.',\'accessory\')' : 'void(0)' }}">
+                                <div class="card-body p-0 d-flex flex-column justify-content-between" style="min-height:85px;">
+                                    <div class="flex-grow-1 d-flex align-items-center justify-content-center py-2 px-1">
+                                        <h6 class="mb-0 text-center" style="font-size:.78rem;">{{ $acc->name }}</h6>
+                                    </div>
+                                    <div class="px-1 pb-1 text-center">
+                                        @if($disabled)
+                                            <span class="badge badge-danger" style="font-size:.65rem;">Habis</span>
+                                        @else
+                                            <span class="badge badge-info" style="font-size:.65rem;">{{ $stockLabel }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="col-12 text-center text-muted py-4">
+                            <i class="fas fa-box fa-2x mb-2"></i>
+                            <p>Belum ada aksesori.</p>
+                        </div>
+                        @endforelse
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>{{-- end left col --}}
+
+        {{-- ═══════════════════════════════════════════════════════
+             RIGHT: Cart + Shipping Form
+        ═══════════════════════════════════════════════════════ --}}
+        <div class="col-md-4 col-12">
+
+            {{-- Cart --}}
+            <div class="card card-apms mb-3">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0" style="font-size:.85rem;"><i class="fas fa-shopping-cart mr-1"></i>Keranjang</h3>
+                    <span class="badge badge-primary" id="cartCount">0</span>
+                </div>
+                <div class="card-body p-2">
+                    <div id="cartEmpty" class="text-center text-muted py-3">
+                        <i class="fas fa-shopping-cart fa-2x mb-2 d-block"></i>
+                        <small>Belum ada produk</small>
+                    </div>
+                    <div id="cartTableWrap" style="display:none;">
+                        <table class="table table-sm table-bordered cart-table mb-1">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Produk</th>
+                                    <th>Vol</th>
+                                    <th>Harga/ml</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 px-1">
+                        <strong style="font-size:.82rem;">Total Produk:</strong>
+                        <strong id="cartTotal" style="font-size:.82rem;">Rp 0</strong>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Shipping Info --}}
+            <div class="card card-apms mb-3">
+                <div class="card-header py-2">
+                    <h3 class="card-title mb-0" style="font-size:.85rem;"><i class="fas fa-truck mr-1"></i>Informasi Pengiriman</h3>
+                </div>
+                <div class="card-body p-2">
+                    @if($errors->any())
+                    <div class="alert alert-danger alert-sm p-2 mb-2" style="font-size:.78rem;">
+                        <ul class="mb-0 pl-3">
+                            @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+                        </ul>
+                    </div>
+                    @endif
+
+                    <div class="form-group mb-2">
+                        <label class="mb-0" style="font-size:.75rem;font-weight:600;">Nama Penerima *</label>
+                        <input type="text" name="recipient_name" class="form-control form-control-sm"
+                               value="{{ old('recipient_name') }}" required placeholder="Nama lengkap penerima">
+                    </div>
+                    <div class="form-group mb-2">
+                        <label class="mb-0" style="font-size:.75rem;font-weight:600;">No. HP Penerima *</label>
+                        <input type="text" name="recipient_phone" class="form-control form-control-sm"
+                               value="{{ old('recipient_phone') }}" required placeholder="08xxxxxxxxxx">
+                    </div>
+                    <div class="form-group mb-2">
+                        <label class="mb-0" style="font-size:.75rem;font-weight:600;">Alamat Pengiriman *</label>
+                        <textarea name="shipping_address" class="form-control form-control-sm" rows="2"
+                                  required placeholder="Alamat lengkap...">{{ old('shipping_address') }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group mb-2">
+                                <label class="mb-0" style="font-size:.75rem;font-weight:600;">Kurir</label>
+                                <input type="text" name="shipping_courier" class="form-control form-control-sm"
+                                       value="{{ old('shipping_courier') }}" placeholder="JNE / JNT / dll">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group mb-2">
+                                <label class="mb-0" style="font-size:.75rem;font-weight:600;">Ongkos Kirim</label>
+                                <input type="number" name="shipping_cost" class="form-control form-control-sm"
+                                       value="{{ old('shipping_cost', 0) }}" min="0" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label class="mb-0" style="font-size:.75rem;font-weight:600;">Target Jumlah Paket</label>
+                        <input type="number" name="package_target_amount" class="form-control form-control-sm"
+                               value="{{ old('package_target_amount') }}" min="1" placeholder="Jumlah paket">
+                    </div>
+                    <div class="form-group mb-2">
+                        <label class="mb-0" style="font-size:.75rem;font-weight:600;">Catatan</label>
+                        <textarea name="notes" class="form-control form-control-sm" rows="1"
+                                  placeholder="Catatan pesanan...">{{ old('notes') }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Summary & Submit --}}
+            <div class="card card-apms mb-3">
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Total Produk</small>
+                        <small id="summaryProducts">Rp 0</small>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <small>Ongkos Kirim</small>
+                        <small id="summaryShipping">Rp 0</small>
+                    </div>
+                    <hr class="my-1">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong style="font-size:.85rem;">Grand Total</strong>
+                        <strong id="summaryGrand" style="font-size:.85rem;color:#1565c0;">Rp 0</strong>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-sm" id="submitBtn" disabled>
+                        <i class="fas fa-paper-plane mr-1"></i> Buat Pesanan Grosir
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-block btn-sm mt-1" onclick="clearCart()">
+                        <i class="fas fa-trash mr-1"></i> Bersihkan Keranjang
+                    </button>
+                </div>
+            </div>
+
+        </div>{{-- end right col --}}
+
+    </div>{{-- end .row --}}
+    </form>
+
+</div>{{-- end container --}}
+
+{{-- ═══════════════════════════════════════════════════════
+     MODAL: Input untuk Parfum (ml) atau Aksesori (pcs)
+═══════════════════════════════════════════════════════ --}}
+<div class="modal fade" id="addProductModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title" style="font-size:.9rem;">
+                    <i class="fas fa-box mr-1 text-primary" id="modalIcon"></i>
+                    <span id="modalProductName">-</span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-3">
+                <small class="text-muted d-block mb-2" id="modalStockInfo"></small>
+                
+                {{-- Input untuk Parfum: Volume (ml) --}}
+                <div id="modalParfumInputs">
+                    <div class="form-group mb-2">
+                        <label style="font-size:.78rem;font-weight:600;">Volume (ml) *</label>
+                        <input type="number" id="modalVolume" class="form-control form-control-sm"
+                               min="1" placeholder="Contoh: 400, 1000, 2000">
+                        <small class="text-muted">Masukkan volume dalam ml (1000ml = 1L)</small>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label style="font-size:.78rem;font-weight:600;">Harga Total (dari nota) *</label>
+                        <div class="input-group input-group-sm">
+                            <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
+                            <input type="number" id="modalPriceParfum" class="form-control form-control-sm"
+                                   min="0" placeholder="Harga total untuk volume ini">
+                        </div>
+                        <small class="text-muted">Harga total dari nota buku grosir</small>
+                    </div>
+                </div>
+
+                {{-- Input untuk Aksesori: Qty (pcs) --}}
+                <div id="modalAccessoryInputs" style="display:none;">
+                    <div class="form-group mb-2">
+                        <label style="font-size:.78rem;font-weight:600;">Quantity (pcs) *</label>
+                        <input type="number" id="modalQty" class="form-control form-control-sm"
+                               min="1" value="1" placeholder="Jumlah pcs">
+                    </div>
+                    <div class="form-group mb-0">
+                        <label style="font-size:.78rem;font-weight:600;">Harga Satuan (dari nota) *</label>
+                        <div class="input-group input-group-sm">
+                            <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
+                            <input type="number" id="modalPriceAccessory" class="form-control form-control-sm"
+                                   min="0" placeholder="Harga per pcs">
+                        </div>
+                        <small class="text-muted">Harga per pcs dari nota buku grosir</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="confirmAddToCart()">
+                    <i class="fas fa-plus mr-1"></i> Tambah
+                </button>
             </div>
         </div>
-    </form>
+    </div>
 </div>
+@endsection
 
-@push('scripts')i 
+@push('scripts')
 <script>
-let rowCount = 1;
+// ── Cart State ────────────────────────────────────────────────
+let cart = [];
+let pendingProductId = null;
 
-// ── TAB 1: Filter Parfum ──
-function filterParfum(val) {
-    const q = val.toLowerCase().trim();
-    document.querySelectorAll('.parfum-item').forEach(el => {
-        el.style.display = (!q || el.dataset.name.includes(q)) ? '' : 'none';
+// ── On DOM Ready ──────────────────────────────────────────────
+$(document).ready(function () {
+    loadCart();
+
+    // Category filter
+    $('#showAllProducts').on('click', function () {
+        $('.btn-category').removeClass('active');
+        $(this).addClass('active');
+        filterProducts();
+    });
+    $('.btn-category').on('click', function () {
+        $('#showAllProducts').removeClass('active');
+        $('.btn-category').removeClass('active');
+        $(this).addClass('active');
+        filterProducts();
+    });
+
+    // Search filter
+    $('#productSearch').on('input', filterProducts);
+
+    // Shipping cost change → update summary
+    $('input[name="shipping_cost"]').on('input', updateSummary);
+});
+
+// ── Product Filtering ─────────────────────────────────────────
+function filterProducts() {
+    const catId  = $('.btn-category.active').data('category') || null;
+    const search = $('#productSearch').val().toLowerCase().trim();
+
+    $('.product-item').each(function () {
+        const matchCat    = !catId || $(this).data('category') == catId;
+        const matchSearch = !search || $(this).data('name').toLowerCase().includes(search);
+        $(this).toggle(matchCat && matchSearch);
     });
 }
 
-// ── TAB 2: Filter Produk Grosir ──
-function filterProdukType(type, btn) {
-    document.querySelector('#produkGrid').querySelectorAll('.btn.active').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    const items = document.querySelectorAll('.produk-item');
-    if (type === 'all') { items.forEach(el => el.style.display = ''); return; }
-    items.forEach(el => { el.style.display = el.dataset.type === type ? '' : 'none'; });
+// ── Add to Cart Modal ─────────────────────────────────────────
+let pendingItemType = 'product'; // 'product' or 'accessory'
+
+function openAddModal(itemId, itemType) {
+    const el = $(`.product-item[data-id="${itemId}"][data-type="${itemType}"]`);
+    const stock = parseInt(el.data('stock')) || 0;
+    if (stock <= 0) {
+        Swal.fire('Stok Habis', 'Produk ini tidak tersedia.', 'warning');
+        return;
+    }
+    
+    pendingProductId = itemId;
+    pendingItemType = itemType;
+    $('#modalProductName').text(el.data('name'));
+    
+    if (itemType === 'product') {
+        // Parfum: tampilkan input volume ml
+        $('#modalIcon').removeClass('fa-box').addClass('fa-wine-bottle');
+        const stockLabel = stock >= 1000 ? (stock/1000).toFixed(1)+' L' : stock+' ml';
+        $('#modalStockInfo').text('Stok tersedia: ' + stockLabel);
+        $('#modalVolume').val('').attr('max', stock);
+        $('#modalPriceParfum').val('');
+        $('#modalParfumInputs').show();
+        $('#modalAccessoryInputs').hide();
+        $('#addProductModal').modal('show');
+        setTimeout(() => $('#modalVolume').focus(), 400);
+    } else {
+        // Aksesori: tampilkan input qty pcs
+        $('#modalIcon').removeClass('fa-wine-bottle').addClass('fa-box');
+        $('#modalStockInfo').text('Stok tersedia: ' + stock + ' pcs');
+        $('#modalQty').val(1).attr('max', stock);
+        $('#modalPriceAccessory').val('');
+        $('#modalParfumInputs').hide();
+        $('#modalAccessoryInputs').show();
+        $('#addProductModal').modal('show');
+        setTimeout(() => $('#modalQty').focus(), 400);
+    }
 }
 
-// ── Click Parfum (retail product) → add to table ──
-$(document).on('click', '.product-btn-parfum', function() {
-    const btn = $(this);
-    const row = findOrCreateRow();
-    row.find('.product-name').val(btn.data('name'));
-    row.find('.product-id').val(btn.data('pid'));
-    row.find('.wholesale-product-id').val('');
-    row.find('.price-input').val(btn.data('price'));
-    row.find('.unit-input').val('pcs');
-    row.find('.price-per-ml-input').val('');
-    if (btn.data('size')) row.find('.volume-input').val(btn.data('size'));
-    updateRowNumbers();
-    recalcAll();
-    highlightRow(row); 
-});
+function confirmAddToCart() {
+    const el = $(`.product-item[data-id="${pendingProductId}"][data-type="${pendingItemType}"]`);
+    const stock = parseInt(el.data('stock')) || 0;
 
-w
-// ── Click Produk Grosir → add to table ──
-$(document).on('click', '.product-btn-wp', function() {
-    const btn = $(this);
-    const row = findOrCreateRow();
-    row.find('.product-name').val(btn.data('name'));
-    row.find('.wholesale-product-id').val(btn.data('wpid'));
-    row.find('.product-id').val('');
-    row.find('.unit-input').val(btn.data('unit'));
-    row.find('.price-per-ml-input').val(btn.data('price-per-ml') || '');
-    row.find('.volume-input').val('');
+    if (pendingItemType === 'product') {
+        // Parfum: validasi volume ml + harga total
+        const volume = parseFloat($('#modalVolume').val()) || 0;
+        const price = parseFloat($('#modalPriceParfum').val()) || 0;
 
-    // Show price per piece prominently for multi-piece products
-    const pieces = parseInt(btn.data('pieces')) || 1;
-    const pricePerPiece = parseFloat(btn.data('price-per-piece')) || 0;
-    const pricePerUnit = parseFloat(btn.data('price')) || 0;
+        if (volume <= 0) {
+            Swal.fire('Input Error', 'Volume harus diisi dan lebih dari 0.', 'warning');
+            return;
+        }
+        if (price <= 0) {
+            Swal.fire('Input Error', 'Harga total harus diisi dan lebih dari 0.', 'warning');
+            return;
+        }
 
-    if (pieces > 1) {
-        // For sarung, aksesoris — show price per piece, qty = pieces
-        row.find('.price-input').val(pricePerPiece);
-        row.find('.qty-input').val(pieces);
-        row.find('.price-input').prop('readonly', true);
+        // Check total volume in cart + new doesn't exceed stock
+        const existingVol = cart
+            .filter(i => i.product_id == pendingProductId)
+            .reduce((s, i) => s + (i.volume_ml || 0), 0);
+
+        if (existingVol + volume > stock) {
+            const stockLabel = stock >= 1000 ? (stock/1000).toFixed(1)+' L' : stock+' ml';
+            Swal.fire('Stok Tidak Cukup', `Stok hanya ${stockLabel}.`, 'warning');
+            return;
+        }
+
+        // Check if same product+volume+price already in cart → merge
+        const existIdx = cart.findIndex(i => i.product_id == pendingProductId && i.volume_ml == volume && i.price == price);
+
+        if (existIdx >= 0) {
+            Swal.fire('Sudah Ada', 'Item dengan volume dan harga yang sama sudah ada di cart.', 'info');
+            return;
+        }
+
+        cart.push({
+            product_id: pendingProductId,
+            accessory_id: null,
+            product_name: el.data('name'),
+            volume_ml: volume,
+            price: price,
+        });
+
     } else {
-        // Regular items
-        row.find('.price-input').val(pricePerUnit);
-        row.find('.qty-input').val(1);
-        row.find('.price-input').prop('readonly', false);
+        // Aksesori: validasi qty pcs + harga satuan
+        const qty = Math.max(1, parseInt($('#modalQty').val()) || 1);
+        const pricePerUnit = parseFloat($('#modalPriceAccessory').val()) || 0;
+
+        if (qty <= 0) {
+            Swal.fire('Input Error', 'Quantity harus diisi dan lebih dari 0.', 'warning');
+            return;
+        }
+        if (pricePerUnit <= 0) {
+            Swal.fire('Input Error', 'Harga satuan harus diisi dan lebih dari 0.', 'warning');
+            return;
+        }
+
+        // Check total qty in cart + new doesn't exceed stock
+        const existingQty = cart
+            .filter(i => i.accessory_id == pendingProductId)
+            .reduce((s, i) => s + (i.quantity || 0), 0);
+
+        if (existingQty + qty > stock) {
+            Swal.fire('Stok Tidak Cukup', `Stok hanya ${stock} pcs.`, 'warning');
+            return;
+        }
+
+        // Check if same accessory+price already in cart → merge qty
+        const existIdx = cart.findIndex(i => i.accessory_id == pendingProductId && i.price_per_unit == pricePerUnit);
+
+        if (existIdx >= 0) {
+            cart[existIdx].quantity += qty;
+        } else {
+            cart.push({
+                product_id: null,
+                accessory_id: pendingProductId,
+                product_name: el.data('name'),
+                quantity: qty,
+                price_per_unit: pricePerUnit,
+            });
+        }
     }
 
-    updateRowNumbers();
-    recalcAll();
-    highlightRow(row);
-});
+    $('#addProductModal').modal('hide');
+    saveCart();
+    updateCartDisplay();
+}
 
-function findOrCreateRow() {
-    let empty = null;
-    $('.item-row').each(function() {
-        if (!$(this).find('.product-name').val()) { empty = $(this); return false; }
+// ── Cart Display ──────────────────────────────────────────────
+function updateCartDisplay() {
+    const tbody = $('#cartBody');
+    tbody.empty();
+
+    let totalProducts = 0;
+
+    if (cart.length === 0) {
+        $('#cartEmpty').show();
+        $('#cartTableWrap').hide();
+        $('#submitBtn').prop('disabled', true);
+        updateSummary(0);
+        updateHiddenInputs();
+        $('#cartCount').text(0);
+        return;
+    }
+
+    $('#cartEmpty').hide();
+    $('#cartTableWrap').show();
+    $('#submitBtn').prop('disabled', false);
+    $('#cartCount').text(cart.length);
+
+    cart.forEach((item, idx) => {
+        let lineTotal, displayInfo;
+        
+        if (item.product_id) {
+            // Parfum: volume ml + harga total
+            lineTotal = item.price;
+            const volLabel = item.volume_ml >= 1000 
+                ? (item.volume_ml/1000).toFixed(1)+' L' 
+                : item.volume_ml+' ml';
+            displayInfo = `<small>${escHtml(item.product_name)}</small>`;
+            displayInfo += `<td><small>${volLabel}</small></td>`;
+            displayInfo += `<td><small>Rp ${Math.round(lineTotal).toLocaleString('id-ID')}</small></td>`;
+        } else {
+            // Aksesori: qty pcs × harga satuan
+            lineTotal = item.price_per_unit * item.quantity;
+            displayInfo = `<small>${escHtml(item.product_name)}</small>`;
+            displayInfo += `<td><small>${item.quantity} pcs</small></td>`;
+            displayInfo += `<td><small>Rp ${item.price_per_unit.toLocaleString('id-ID')} × ${item.quantity}</small></td>`;
+        }
+        
+        totalProducts += lineTotal;
+
+        tbody.append(`
+            <tr>
+                <td>${displayInfo}</td>
+                <td><small>Rp ${Math.round(lineTotal).toLocaleString('id-ID')}</small></td>
+                <td><button type="button" class="btn btn-xs btn-outline-danger px-1 py-0"
+                        onclick="removeFromCart(${idx})"><i class="fas fa-times"></i></button></td>
+            </tr>
+        `);
     });
-    if (empty) return empty;
-    addItemRow();
-    return $('.item-row').last();
+
+    $('#cartTotal').text('Rp ' + Math.round(totalProducts).toLocaleString('id-ID'));
+    updateSummary(totalProducts);
+    updateHiddenInputs();
 }
 
-function addItemRow() {
-    const html = `<tr class="item-row">
-        <td class="row-num align-middle font-weight-bold text-muted">${rowCount + 1}</td>
-        <td>
-            <input type="text" name="items[${rowCount}][product_name]" class="form-control form-control-sm product-name" placeholder="Pilih produk dari katalog" readonly required>
-            <input type="hidden" name="items[${rowCount}][product_id]" class="product-id">
-            <input type="hidden" name="items[${rowCount}][wholesale_product_id]" class="wholesale-product-id">
-            <input type="hidden" name="items[${rowCount}][price_per_ml]" class="price-per-ml-input">
-        </td>
-        <td><input type="number" name="items[${rowCount}][price]" class="form-control form-control-sm price-input" value="0" required step="500" readonly></td>
-        <td><input type="number" name="items[${rowCount}][quantity]" class="form-control form-control-sm qty-input" value="1" min="1" required></td>
-        <td><input type="number" name="items[${rowCount}][volume_ml]" class="form-control form-control-sm volume-input" placeholder="ml" step="1"></td>
-        <td><input type="text" name="items[${rowCount}][unit]" class="form-control form-control-sm unit-input" placeholder="pcs" readonly></td>
-        <td class="subtotal-display font-weight-bold align-middle text-primary">Rp 0</td>
-        <td><button type="button" class="btn btn-link text-danger p-0" onclick="removeRow(this)"><i class="fas fa-times-circle"></i></button></td>
-    </tr>`;
-    $('#itemRows').append(html);
-    rowCount++;
-    updateRowNumbers();
-}
-
-function removeRow(btn) {
-    $(btn).closest('tr').remove();
-    updateRowNumbers();
-    recalcAll();
-}
-
-function updateRowNumbers() {
-    $('.item-row').each(function(i) {
-        $(this).find('.row-num').text(i + 1);
-    });
-    const count = $('.item-row').length;
-    $('#itemCount').text(count + ' item');
-}
-
-function highlightRow(row) {
-    row.css('background', '#fff3cd');
-    setTimeout(() => row.css('background', ''), 1200);
-}
-
-$(document).on('input', '.qty-input, .price-input', function() {
-    recalcAll();
-});
-
-$(document).on('input', 'input[name="shipping_cost"]', recalcAll);
-$(document).on('input', 'input[name="package_target_amount"]', updateTarget);
-
-function recalcRow(row) {
-    const qty = parseFloat(row.find('.qty-input').val()) || 0;
-    const price = parseFloat(row.find('.price-input').val()) || 0;
-    row.find('.subtotal-display').text('Rp ' + (qty * price).toLocaleString('id-ID'));
-}
-
-function recalcAll() {
-    let total = 0;
-    let itemCount = 0;
-    $('.item-row').each(function() {
-        const qty = parseFloat($(this).find('.qty-input').val()) || 0;
-        const price = parseFloat($(this).find('.price-input').val()) || 0;
-        const sub = qty * price;
-        total += sub;
-        if ($(this).find('.product-name').val()) itemCount++;
-        $(this).find('.subtotal-display').text('Rp ' + sub.toLocaleString('id-ID'));
-    });
-    $('#grandTotalDisplay').text('Rp ' + total.toLocaleString('id-ID'));
-    $('#itemCount').text(itemCount + ' item');
-    updateTarget();
-}
-
-function updateTarget() {
-    const target = parseFloat($('input[name="package_target_amount"]').val()) || 0;
-    $('#targetDisplay').text('Rp ' + target.toLocaleString('id-ID'));
+function updateSummary(totalProducts) {
+    if (typeof totalProducts !== 'number') {
+        // recalculate from cart
+        totalProducts = cart.reduce((s, i) => {
+            if (i.product_id) return s + i.price; // Parfum: harga total
+            else return s + (i.price_per_unit * i.quantity); // Aksesori: harga × qty
+        }, 0);
+    }
     const shipping = parseFloat($('input[name="shipping_cost"]').val()) || 0;
-    $('#shippingCostDisplay').text('Rp ' + shipping.toLocaleString('id-ID'));
+    const grand    = totalProducts + shipping;
+    $('#summaryProducts').text('Rp ' + Math.round(totalProducts).toLocaleString('id-ID'));
+    $('#summaryShipping').text('Rp ' + Math.round(shipping).toLocaleString('id-ID'));
+    $('#summaryGrand').text('Rp ' + Math.round(grand).toLocaleString('id-ID'));
 }
 
-$('document').ready(function() {
-    $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
-    $('select[name="customer_id"]').change(function() {
-        const opt = $(this).find('option:selected');
-        const phone = opt.data('phone');
-        const name = opt.text().split(' (')[0];
-        if (name && !$('input[name="recipient_name"]').val()) $('input[name="recipient_name"]').val(name);
-        if (phone && !$('input[name="recipient_phone"]').val()) $('input[name="recipient_phone"]').val(phone);
+function updateHiddenInputs() {
+    const container = $('#hiddenCartInputs');
+    container.empty();
+    cart.forEach((item, idx) => {
+        if (item.product_id) {
+            // Parfum: kirim product_id + volume_ml + price (total)
+            container.append(`<input type="hidden" name="items[${idx}][product_id]" value="${item.product_id}">`);
+            container.append(`<input type="hidden" name="items[${idx}][product_name]" value="${escAttr(item.product_name)}">`);
+            container.append(`<input type="hidden" name="items[${idx}][volume_ml]" value="${item.volume_ml}">`);
+            container.append(`<input type="hidden" name="items[${idx}][quantity]" value="1">`);
+            container.append(`<input type="hidden" name="items[${idx}][price]" value="${Math.round(item.price)}">`);
+            container.append(`<input type="hidden" name="items[${idx}][unit]" value="ml">`);
+        } else if (item.accessory_id) {
+            // Aksesori: kirim accessory_id + quantity + price (total)
+            container.append(`<input type="hidden" name="items[${idx}][accessory_id]" value="${item.accessory_id}">`);
+            container.append(`<input type="hidden" name="items[${idx}][product_name]" value="${escAttr(item.product_name)}">`);
+            container.append(`<input type="hidden" name="items[${idx}][quantity]" value="${item.quantity}">`);
+            container.append(`<input type="hidden" name="items[${idx}][price]" value="${Math.round(item.price_per_unit * item.quantity)}">`);
+            container.append(`<input type="hidden" name="items[${idx}][unit]" value="pcs">`);
+        }
     });
-    updateRowNumbers();
-    recalcAll();
+}
+
+// ── Cart Helpers ──────────────────────────────────────────────
+function removeFromCart(idx) {
+    cart.splice(idx, 1);
+    saveCart();
+    updateCartDisplay();
+}
+
+function clearCart() {
+    cart = [];
+    saveCart();
+    updateCartDisplay();
+}
+
+function saveCart() {
+    try { localStorage.setItem('apms_wholesale_cart', JSON.stringify(cart)); } catch(e) {}
+}
+
+function loadCart() {
+    try {
+        const saved = localStorage.getItem('apms_wholesale_cart');
+        if (saved) { cart = JSON.parse(saved) || []; }
+    } catch(e) { cart = []; }
+    updateCartDisplay();
+}
+
+// ── Form Submit Guard ─────────────────────────────────────────
+$('#wholesaleForm').on('submit', function (e) {
+    if (cart.length === 0) {
+        e.preventDefault();
+        Swal.fire('Keranjang Kosong', 'Tambahkan produk terlebih dahulu.', 'warning');
+        return false;
+    }
+    // Inject latest hidden inputs before submit
+    updateHiddenInputs();
 });
+
+// ── Utilities ─────────────────────────────────────────────────
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 </script>
 @endpush
-@endsection

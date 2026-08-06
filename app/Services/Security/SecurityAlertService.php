@@ -12,7 +12,7 @@ class SecurityAlertService
 
     public function __construct()
     {
-        $this->adminEmail = env('ADMIN_ALERT_EMAIL', 'admin@asharparfum.com');
+        $this->adminEmail = config('mail.admin_alert_email', 'admin@asharparfum.com');
     }
 
     public function suspiciousLogin(User $user, string $ip): void

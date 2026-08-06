@@ -56,7 +56,9 @@ class User extends Authenticatable
         'emergency_contact_relation',
         'referral_code',
         'referred_by_id',
-        'password',
+        // NOTE: 'password' intentionally excluded from $fillable to prevent
+        // mass-assignment. Set password explicitly via setPasswordAttribute or
+        // Hash::make() in controllers/commands.
     ];
 
     /**

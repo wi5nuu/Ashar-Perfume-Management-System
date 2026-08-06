@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 
 class CustomerDepositController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('can:manage_customers');
+    }
+
     public function index()
     {
         $accounts = DepositAccount::with('customer')->where('status', 'active')->paginate(20);
@@ -42,16 +48,29 @@ class CustomerDepositController extends Controller
 
     public function show(DepositAccount $account)
     {
+        // IDOR protection: non-owner users should only see deposit accounts
+        // for customers within their own branch.
+        $user = auth()->user();
+        if (!$user->isOwner() && $account->customer?->branch_id !== $user->branch_id) {
+            abort(403, 'Anda tidak memiliki akses ke rekening deposit ini.');
+        }
+
         $account->load(['customer', 'transactions' => fn($q) => $q->latest()->limit(50)]);
         return view('customer-deposits.show', compact('account'));
     }
 
     public function transaction(DepositAccount $account, Request $request)
     {
+        // IDOR protection: same branch check as show().
+        $user = auth()->user();
+        if (!$user->isOwner() && $account->customer?->branch_id !== $user->branch_id) {
+            abort(403, 'Anda tidak memiliki akses ke rekening deposit ini.');
+        }
+
         $validated = $request->validate([
             'type' => 'required|in:deposit,withdrawal',
-            'amount' => 'required|numeric|min:0',
-            'description' => 'nullable|string',
+            'amount' => 'required|numeric|min:0.01',
+            'description' => 'nullable|string|max:255',
         ]);
 
         try {

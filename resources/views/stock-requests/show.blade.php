@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Detail Permintaan Stok')
 @section('content')
 <div class="container-fluid pt-3">
@@ -103,7 +103,7 @@
                     {{-- PENDING: Approve (pusat) or Cancel --}}
                     @if($stockRequest->status === 'pending')
                         @can('stock_requests.approve')
-                            @if($u->isAdminPusat() || $u->isOwner())
+                            @if($u->isAdmin() || $u->isOwner())
                             <form method="POST" action="{{ route('stock-requests.approve', $stockRequest) }}" class="mb-2">
                                 @csrf @method('PATCH')
                                 <div class="form-group"><textarea name="notes" class="form-control form-control-sm" placeholder="Catatan persetujuan..." rows="2"></textarea></div>
@@ -124,7 +124,7 @@
                     {{-- APPROVED: Prepare / Set Delivery --}}
                     @if($stockRequest->status === 'approved')
                         @can('stock_requests.approve')
-                            @if($u->isAdminPusat() || $u->isOwner())
+                            @if($u->isAdmin() || $u->isOwner())
                             <form method="POST" action="{{ route('stock-requests.prepare', $stockRequest) }}">
                                 @csrf @method('PATCH')
                                 <h6 class="font-weight-bold">Siapkan Pengiriman</h6>
@@ -157,7 +157,7 @@
                     {{-- PREPARING: Ship (pusat) --}}
                     @if($stockRequest->status === 'preparing')
                         @can('stock_requests.approve')
-                            @if($u->isAdminPusat() || $u->isOwner())
+                            @if($u->isAdmin() || $u->isOwner())
                             <form method="POST" action="{{ route('stock-requests.ship', $stockRequest) }}" class="mb-2">
                                 @csrf @method('PATCH')
                                 <p class="text-muted small">Stok akan dikurangi dari gudang pusat dan barang ditandai sudah dikirim.</p>
@@ -170,7 +170,7 @@
                     {{-- SHIPPED: Receive (branch) --}}
                     @if($stockRequest->status === 'shipped')
                         @can('stock_requests.receive')
-                            @if($isBranch || $u->isAdminPusat() || $u->isOwner())
+                            @if($isBranch || $u->isAdmin() || $u->isOwner())
                             <form method="POST" action="{{ route('stock-requests.receive', $stockRequest) }}">
                                 @csrf @method('PATCH')
                                 <h6 class="font-weight-bold">Terima Barang</h6>
@@ -203,7 +203,7 @@
             </div>
 
             @can('stock_requests.approve')
-            @if($stockRequest->status === 'pending' && ($u->isAdminPusat() || $u->isOwner()))
+            @if($stockRequest->status === 'pending' && ($u->isAdmin() || $u->isOwner()))
             <div class="card card-apms shadow-sm border-0 mt-3">
                 <div class="card-header bg-white py-3 border-bottom">
                     <h5 class="font-weight-bold mb-0"><i class="fas fa-times-circle mr-2 text-danger"></i>Tolak</h5>
@@ -227,3 +227,4 @@
 function disableBtn(btn, t) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> ' + t; }
 </script>
 @endpush
+

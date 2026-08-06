@@ -355,7 +355,7 @@ function viewOrders(id, name) {
                     '<td><small>' + o.created_at + '</small></td>' +
                     '<td>' + o.items_count + '</td>' +
                     '<td><small>' + o.recipient_name + '</small></td>' +
-                    '<td><a href="/wholesale/' + o.id + '" class="btn btn-sm btn-outline-info" target="_blank" title="Lihat detail"><i class="fas fa-external-link-alt"></i></a></td>' +
+                    '<td><a href="{{ url('wholesale') }}/' + o.id + '" class="btn btn-sm btn-outline-info" target="_blank" title="Lihat detail"><i class="fas fa-external-link-alt"></i></a></td>' +
                     '</tr>';
             });
             $('#ordersBody').html(html);
@@ -375,20 +375,38 @@ function loadPasswordRequests() {
         method: 'GET',
         success: function(res) {
             if (res.pending && res.pending.length > 0) {
-                let html = '';
+                const tbody = document.getElementById('reqBody');
+                tbody.innerHTML = '';
                 res.pending.forEach(function(r) {
-                    html += '<tr>' +
-                        '<td class="font-weight-bold">' + r.name + '</td>' +
-                        '<td><code>' + r.email + '</code></td>' +
-                        '<td><small>' + r.created_at + '</small></td>' +
-                        '<td>' +
-                            '<button class="btn btn-sm btn-success" onclick="resolveRequest(' + r.id + ', \'' + r.name + '\', \'' + r.email + '\')">' +
-                                '<i class="fas fa-check mr-1"></i> Setujui & Tampilkan Password' +
-                            '</button>' +
-                        '</td>' +
-                        '</tr>';
+                    const tr = document.createElement('tr');
+
+                    const tdName = document.createElement('td');
+                    tdName.className = 'font-weight-bold';
+                    tdName.textContent = r.name || '';
+                    tr.appendChild(tdName);
+
+                    const tdEmail = document.createElement('td');
+                    const code = document.createElement('code');
+                    code.textContent = r.email || '';
+                    tdEmail.appendChild(code);
+                    tr.appendChild(tdEmail);
+
+                    const tdDate = document.createElement('td');
+                    const small = document.createElement('small');
+                    small.textContent = r.created_at || '';
+                    tdDate.appendChild(small);
+                    tr.appendChild(tdDate);
+
+                    const tdBtn = document.createElement('td');
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-sm btn-success';
+                    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Setujui & Tampilkan Password';
+                    btn.addEventListener('click', function() { resolveRequest(r.id, r.name, r.email); });
+                    tdBtn.appendChild(btn);
+                    tr.appendChild(tdBtn);
+
+                    tbody.appendChild(tr);
                 });
-                $('#reqBody').html(html);
                 $('#reqBadge').text(res.pending.length).show();
             } else {
                 $('#reqBody').html('<tr><td colspan="4" class="text-center text-muted py-4">Tidak ada permintaan pending.</td></tr>');
@@ -396,16 +414,33 @@ function loadPasswordRequests() {
             }
 
             if (res.resolved && res.resolved.length > 0) {
-                let html = '';
+                const tbody2 = document.getElementById('resolvedBody');
+                tbody2.innerHTML = '';
                 res.resolved.forEach(function(r) {
-                    html += '<tr>' +
-                        '<td>' + r.name + '</td>' +
-                        '<td><code>' + r.email + '</code></td>' +
-                        '<td>' + r.resolved_by + '</td>' +
-                        '<td><small>' + r.resolved_at + '</small></td>' +
-                        '</tr>';
+                    const tr = document.createElement('tr');
+
+                    const tdName = document.createElement('td');
+                    tdName.textContent = r.name || '';
+                    tr.appendChild(tdName);
+
+                    const tdEmail = document.createElement('td');
+                    const code2 = document.createElement('code');
+                    code2.textContent = r.email || '';
+                    tdEmail.appendChild(code2);
+                    tr.appendChild(tdEmail);
+
+                    const tdBy = document.createElement('td');
+                    tdBy.textContent = r.resolved_by || '';
+                    tr.appendChild(tdBy);
+
+                    const tdAt = document.createElement('td');
+                    const small2 = document.createElement('small');
+                    small2.textContent = r.resolved_at || '';
+                    tdAt.appendChild(small2);
+                    tr.appendChild(tdAt);
+
+                    tbody2.appendChild(tr);
                 });
-                $('#resolvedBody').html(html);
             } else {
                 $('#resolvedBody').html('<tr><td colspan="4" class="text-center text-muted py-4">Belum ada riwayat.</td></tr>');
             }
@@ -418,9 +453,23 @@ function loadPasswordRequests() {
 }
 
 function resolveRequest(id, name, email) {
+    // Build confirm message DOM-safe
+    const confirmEl = document.createElement('div');
+    confirmEl.appendChild(document.createTextNode('Reset password '));
+    const strongEmail = document.createElement('strong');
+    strongEmail.textContent = email || '';
+    confirmEl.appendChild(strongEmail);
+    confirmEl.appendChild(document.createTextNode('?'));
+    const note = document.createElement('br');
+    confirmEl.appendChild(note);
+    const noteSmall = document.createElement('small');
+    noteSmall.className = 'text-muted';
+    noteSmall.textContent = 'Password baru akan ditampilkan dan bisa Anda kirimkan ke pelanggan.';
+    confirmEl.appendChild(noteSmall);
+
     Swal.fire({
         title: 'Setujui Permintaan?',
-        html: 'Reset password <strong>' + email + '</strong>?<br><small class="text-muted">Password baru akan ditampilkan dan bisa Anda kirimkan ke pelanggan.</small>',
+        html: confirmEl,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Ya, Setujui!',
@@ -433,11 +482,37 @@ function resolveRequest(id, name, email) {
                 data: { _token: '{{ csrf_token() }}' },
                 success: function(res) {
                     const newPw = res.password || '(lihat log)';
+
+                    // Build DOM safely — no innerHTML from server data
+                    const frag = document.createDocumentFragment();
+                    const line1 = document.createElement('div');
+                    line1.appendChild(document.createTextNode('Password baru untuk '));
+                    const strong = document.createElement('strong');
+                    strong.textContent = res.name || '';
+                    line1.appendChild(strong);
+                    line1.appendChild(document.createTextNode(':'));
+                    frag.appendChild(line1);
+
+                    const codeLine = document.createElement('div');
+                    codeLine.style.margin = '8px 0';
+                    const code = document.createElement('code');
+                    code.style.fontSize = '1.3em';
+                    code.textContent = newPw;
+                    codeLine.appendChild(code);
+                    frag.appendChild(codeLine);
+
+                    const note = document.createElement('small');
+                    note.className = 'text-muted';
+                    note.textContent = 'Kirimkan password ini ke ' + (res.email || '') + ' via WhatsApp atau Email. Hanya ditampilkan sekali.';
+                    frag.appendChild(note);
+
+                    const wrapper = document.createElement('div');
+                    wrapper.appendChild(frag);
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil!',
-                        html: 'Password baru untuk <strong>' + res.name + '</strong>:<br><code style="font-size:1.3em">' + newPw + '</code><br><br>' +
-                            '<small class="text-muted">Kirimkan password ini ke ' + res.email + ' via WhatsApp atau Email.<br>Hanya ditampilkan sekali.</small>',
+                        html: wrapper,
                         timer: 120000,
                         showConfirmButton: true,
                         confirmButtonText: 'Saya sudah mengirimkan',

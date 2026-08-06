@@ -28,7 +28,10 @@ class ShiftController extends Controller
         /** @var \App\Models\User $authUser */
         $authUser = Auth::user();
         $shifts = Shift::with('user');
-        if (!$authUser->isOwner() && !$authUser->isAdminPusat()) {
+        // Dead-code note: the isOwner() check above already aborts, so the
+        // second isOwner() condition below is unreachable for owners — kept
+        // only for the isAdmin() branch which is still valid.
+        if (!$authUser->isAdmin()) {
             $shifts->where('branch_id', $authUser->branch_id);
         }
         $shifts = $shifts->latest()->paginate(20);
@@ -59,7 +62,7 @@ class ShiftController extends Controller
         if ($user->isOwner()) {
             abort(403);
         }
-        if (!$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+        if (!$user->isAdmin() && $shift->branch_id !== $user->branch_id) {
             abort(403, 'Anda hanya dapat melihat shift di cabang Anda.');
         }
         $shift->load(['user', 'reviewer']);
@@ -92,6 +95,7 @@ class ShiftController extends Controller
 
             Shift::create([
                 'user_id' => $user->id,
+                'branch_id' => $user->branch_id,
                 'start_time' => now(),
                 'initial_cash' => $request->initial_cash,
                 'status' => 'open',
@@ -117,7 +121,7 @@ class ShiftController extends Controller
         if ($user->isOwner()) {
             abort(403, 'Owner tidak dapat menutup shift.');
         }
-        if (!$user->isOwner() && !$user->isAdminPusat() && !$user->isManager() && $shift->user_id !== $user->id) {
+        if (!$user->isOwner() && !$user->isAdmin() && !$user->isManager() && $shift->user_id !== $user->id) {
             abort(403, 'Anda hanya dapat menutup shift milik sendiri.');
         }
 
@@ -216,7 +220,7 @@ class ShiftController extends Controller
             abort(403);
         }
         Gate::authorize('manage_employees');
-        if (!$user->isAdminPusat() && $shift->branch_id !== $user->branch_id) {
+        if (!$user->isAdmin() && $shift->branch_id !== $user->branch_id) {
             abort(403, 'Anda hanya dapat menghapus shift di cabang Anda.');
         }
 
@@ -236,7 +240,7 @@ class ShiftController extends Controller
             abort(403);
         }
         Gate::authorize('manage_employees');
-        if (!$reviewer->isAdminPusat() && $shift->branch_id !== $reviewer->branch_id) {
+        if (!$reviewer->isAdmin() && $shift->branch_id !== $reviewer->branch_id) {
             abort(403, 'Anda hanya dapat mereview shift di cabang Anda.');
         }
 

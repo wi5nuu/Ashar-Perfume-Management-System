@@ -67,6 +67,13 @@ class AttendanceController extends Controller
 
         $employee = \App\Models\User::findOrFail($request->user_id);
 
+        // IDOR protection: non-owner users can only add attendance for employees
+        // within their own branch.
+        $currentUser = auth()->user();
+        if (!$currentUser->isOwner() && $employee->branch_id !== $currentUser->branch_id) {
+            abort(403, 'Anda tidak dapat menambahkan absensi untuk karyawan di cabang lain.');
+        }
+
         Attendance::create([
             'user_id' => $request->user_id,
             'branch_id' => $employee->branch_id,
@@ -91,6 +98,18 @@ class AttendanceController extends Controller
             'show_welcome_popup' => true,
             'welcome_user_name' => $request->cashier_names
         ]);
+    }
+
+    /**
+     * Delete an attendance record.
+     */
+    public function destroy(Attendance $attendance)
+    {
+        Gate::authorize('manage_attendance');
+
+        $attendance->delete();
+
+        return back()->with('success', 'Data absensi berhasil dihapus.');
     }
 
     /**

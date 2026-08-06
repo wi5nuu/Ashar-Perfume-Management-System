@@ -28,10 +28,30 @@ class ExpenseController extends Controller
             $query->where('branch_id', $user->branch_id);
         }
 
-        $expenses      = $query->latest()->paginate(20);
+        // Hitung semua KPI dari query dasar SEBELUM paginate
         $totalExpenses = (clone $query)->sum('amount');
 
-        return view('expenses.index', compact('expenses', 'totalExpenses'));
+        $lastMonthExpenses = (clone $query)
+            ->whereBetween('created_at', [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()])
+            ->sum('amount');
+
+        $last30DaysSum = (clone $query)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->sum('amount');
+        $dailyAverage = $last30DaysSum / 30;
+
+        $topCategoryRow = (clone $query)
+            ->select('category_id', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
+            ->groupBy('category_id')
+            ->orderByDesc('total')
+            ->with('category')
+            ->first();
+        $topCategory = $topCategoryRow?->category?->name ?? '-';
+
+        // Paginate terakhir supaya clone sebelumnya tidak terpengaruh
+        $expenses = $query->latest()->paginate(20);
+
+        return view('expenses.index', compact('expenses', 'totalExpenses', 'lastMonthExpenses', 'dailyAverage', 'topCategory'));
     }
 
     /**

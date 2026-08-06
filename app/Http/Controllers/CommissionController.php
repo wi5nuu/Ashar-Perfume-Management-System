@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class CommissionController extends Controller
@@ -65,7 +66,7 @@ class CommissionController extends Controller
         try {
             $count = DB::transaction(function () use ($month, $rate) {
                 $startDate = $month . '-01';
-                $endDate = now()->parse($startDate)->endOfMonth();
+                $endDate = Carbon::parse($startDate)->endOfMonth();
 
                 $transactions = Transaction::whereBetween('created_at', [$startDate, $endDate])
                     ->where('payment_status', '!=', 'cancelled')

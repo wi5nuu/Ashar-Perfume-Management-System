@@ -28,8 +28,13 @@ class AdjustInventoryRequest extends FormRequest
             'cost_per_unit' => 'nullable|numeric|min:0'
         ];
 
+        // branch_id is required for owner (cross-branch access) — non-owners
+        // always operate on their own branch so no explicit branch_id is needed.
         if ($this->user()?->isOwner()) {
             $rules['branch_id'] = 'required|exists:branches,id';
+        } else {
+            // For non-owners, default to their assigned branch; allow override by admin.
+            $rules['branch_id'] = 'nullable|exists:branches,id';
         }
 
         return $rules;

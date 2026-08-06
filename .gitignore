@@ -8,6 +8,8 @@
 .env.*.local
 /credentials/
 /auth.json
+# Ad-hoc API test scripts (may reference secrets via env)
+/test_yunwu_api.py
 *.key
 *.pem
 *.crt

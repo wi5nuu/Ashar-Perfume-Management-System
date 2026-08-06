@@ -1,15 +1,28 @@
 @extends('layouts.app')
 @section('title', 'Permintaan Stok')
 @section('content')
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="page-header-apms">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h1><i class="fas fa-boxes mr-2"></i>Permintaan Stok</h1>
+                    <ol class="breadcrumb mt-1">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                        <li class="breadcrumb-item active">Permintaan Stok</li>
+                    </ol>
+                </div>
+                <a href="{{ route('stock-requests.create') }}" class="btn btn-primary-apms">
+                    <i class="fas fa-plus mr-1"></i> Ajukan Permintaan
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid pt-3">
     @include('stock-requests._nav')
-
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}<button type="button" class="close" data-dismiss="alert">&times;</button></div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show">{{ session('error') }}<button type="button" class="close" data-dismiss="alert">&times;</button></div>
-    @endif
+    <x-alert />
 
     <div class="row mb-3">
         <div class="col-md-3"><div class="small-box bg-info"><div class="inner"><h3>{{ $stats['pending'] }}</h3><p>Pending</p></div><div class="icon"><i class="fas fa-clock"></i></div></div></div>

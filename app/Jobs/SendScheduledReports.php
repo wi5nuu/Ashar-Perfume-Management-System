@@ -53,8 +53,11 @@ class SendScheduledReports implements ShouldQueue
     {
         $today = Carbon::today();
 
-        $retailSales = Transaction::whereDate('created_at', $today)->sum('total_amount');
-        $retailCount = Transaction::whereDate('created_at', $today)->count();
+        $retailResult = Transaction::whereDate('created_at', $today)
+            ->selectRaw('COUNT(*) as count, SUM(total_amount) as total')
+            ->first();
+        $retailSales = (float) ($retailResult->total ?? 0);
+        $retailCount = (int)  ($retailResult->count ?? 0);
 
         $wholesaleSales = WholesaleOrder::whereDate('created_at', $today)
             ->where('status', '!=', 'cancelled')

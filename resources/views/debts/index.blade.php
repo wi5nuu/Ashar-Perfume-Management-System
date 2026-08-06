@@ -3,7 +3,29 @@
 @section('title', 'Manajemen Kas Bon (Piutang)')
 
 @section('content')
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="page-header-apms">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h1><i class="fas fa-hand-holding-usd mr-2"></i>Manajemen Piutang</h1>
+                    <ol class="breadcrumb mt-1">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                        <li class="breadcrumb-item active">Piutang</li>
+                    </ol>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ route('debts.aging') }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-chart-bar mr-1"></i> Aging Piutang
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid">
+    <x-alert />
     <div class="row">
         <div class="col-md-12">
             <div class="card card-apms">

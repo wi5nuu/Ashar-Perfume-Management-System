@@ -3,7 +3,27 @@
 @section('title', 'Manajemen Shift & Closing Kasir')
 
 @section('content')
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="page-header-apms">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h1><i class="fas fa-user-clock mr-2"></i>Manajemen Shift</h1>
+                    <p class="mb-0 mt-1" style="color:rgba(255,255,255,.65);font-size:.82rem;">
+                        Kelola shift kasir dan closing harian
+                    </p>
+                    <ol class="breadcrumb mt-1">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                        <li class="breadcrumb-item active">Shift</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid">
+    <x-alert />
     <div class="row">
         <!-- Active Shift Section -->
         <div class="col-md-12 mb-4">

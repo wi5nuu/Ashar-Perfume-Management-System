@@ -19,11 +19,15 @@ class TransactionDetail extends Model
         'bonus_quantity',
         'bonus_note',
         'refill_volume_ml',
+        'is_bonus_item',
+        'bonus_ml',
     ];
 
     protected $casts = [
         'quantity'         => 'integer',
         'bonus_quantity'   => 'integer',
+        'is_bonus_item'    => 'boolean',
+        'bonus_ml'         => 'decimal:2',
         'price'            => 'decimal:2',
         'purchase_price'   => 'decimal:2',
         'subtotal'         => 'decimal:2',

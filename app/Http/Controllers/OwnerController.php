@@ -243,7 +243,6 @@ class OwnerController extends Controller
 
         $resetRequest->update([
             'status' => 'approved',
-            'new_password' => $newPassword,
             'resolved_by' => auth()->id(),
             'resolved_at' => now(),
         ]);
@@ -279,8 +278,9 @@ class OwnerController extends Controller
                     'invoice_number' => $o->invoice_number,
                     'total_amount' => (float) $o->total_amount,
                     'status' => $o->status,
-                    'created_at' => $o->created_at->format('d/m/Y H:i'),
-                    'items_count' => $o->details->count(),
+                    // created_at can be null on soft-deleted records with unusual data — use null-safe
+                    'created_at' => $o->created_at ? $o->created_at->format('d/m/Y H:i') : null,
+                    'items_count' => $o->details ? $o->details->count() : 0,
                     'recipient_name' => $o->recipient_name,
                     'deleted_at' => $o->deleted_at ? $o->deleted_at->format('d/m/Y H:i') : null,
                 ];

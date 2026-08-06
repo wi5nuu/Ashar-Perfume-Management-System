@@ -8,7 +8,8 @@ class StoreExpenseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasAnyRole(['admin', 'manager', 'owner']);
+        $role = $this->user()->role ?? '';
+        return in_array($role, ['admin', 'manager', 'owner']);
     }
 
     public function rules(): array

@@ -32,14 +32,15 @@ class GenerateMonthlyReport implements ShouldQueue
      */
     public function handle(): void
     {
-        // Simulasi proses berat generate PDF laporan
         Log::info("Mulai membuat laporan bulanan untuk {$this->month}/{$this->year} oleh User {$this->userId}");
-        
-        sleep(5); // Simulasi proses 5 detik
-        
+
+        // TODO: Implement actual PDF/report generation here.
+        // Removed sleep(5) — blocking a queue worker thread wastes worker capacity.
+        // Use job chaining or events if you need to signal completion to the user.
+
         Log::info("Laporan bulanan selesai dibuat!");
-        
-        // Disini kita bisa mem-broadcast event ke user bahwa laporan sudah siap di-download
+
+        // Broadcast to the requesting user that the report is ready:
         // event(new ReportGenerated($this->userId, $fileUrl));
     }
 }

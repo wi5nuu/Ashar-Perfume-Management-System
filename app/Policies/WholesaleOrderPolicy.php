@@ -20,7 +20,7 @@ class WholesaleOrderPolicy
 
     protected function hasBranchAccess(User $user, WholesaleOrder $order): bool
     {
-        return $user->isOwner() || $user->isAdminPusat() || $user->branch_id === $order->branch_id;
+        return $user->isOwner() || $user->isAdmin() || $user->branch_id === $order->branch_id;
     }
 
     public function view(User $user, WholesaleOrder $order): bool

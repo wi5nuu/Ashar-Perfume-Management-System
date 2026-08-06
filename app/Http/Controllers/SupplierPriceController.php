@@ -50,21 +50,27 @@ class SupplierPriceController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                SupplierPrice::where([
+                // Lock existing row if it exists to prevent concurrent duplicate inserts
+                $existing = SupplierPrice::where([
                         'supplier_id' => $validated['supplier_id'],
                         'product_id'  => $validated['product_id'],
                     ])->lockForUpdate()->first();
-                SupplierPrice::updateOrCreate(
-                    [
-                        'supplier_id' => $validated['supplier_id'],
-                        'product_id'  => $validated['product_id'],
-                    ],
-                    [
-                        'unit_cost'        => $validated['unit_cost'],
+
+                if ($existing) {
+                    $existing->update([
+                        'unit_cost'         => $validated['unit_cost'],
                         'minimum_order_qty' => $validated['minimum_order_qty'] ?? null,
-                        'last_quoted_at'   => now(),
-                    ]
-                );
+                        'last_quoted_at'    => now(),
+                    ]);
+                } else {
+                    SupplierPrice::create([
+                        'supplier_id'       => $validated['supplier_id'],
+                        'product_id'        => $validated['product_id'],
+                        'unit_cost'         => $validated['unit_cost'],
+                        'minimum_order_qty' => $validated['minimum_order_qty'] ?? null,
+                        'last_quoted_at'    => now(),
+                    ]);
+                }
             });
 
             Log::info('Supplier price saved', [

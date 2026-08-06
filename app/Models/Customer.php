@@ -10,8 +10,6 @@ class Customer extends Model
     protected $hidden = [
         'portal_token',
         'nik',
-        'phone',
-        'email',
     ];
 
     protected $fillable = [
@@ -81,12 +79,14 @@ class Customer extends Model
     }
 
     /**
-     * Total omzet dari semua channel (retail + grosir)
+     * Total omzet dari semua channel (retail + grosir).
+     * Uses DB aggregation instead of loading all records into memory
+     * to prevent memory exhaustion on customers with many transactions.
      */
     public function getTotalRevenueAttribute(): float
     {
-        $retail    = (float) $this->transactions->sum('total_amount');
-        $wholesale = (float) $this->wholesaleOrders
+        $retail = (float) $this->transactions()->sum('total_amount');
+        $wholesale = (float) $this->wholesaleOrders()
             ->where('status', '!=', 'cancelled')
             ->sum('total_amount');
         return $retail + $wholesale;

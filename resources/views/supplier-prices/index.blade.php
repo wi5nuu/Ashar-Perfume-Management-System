@@ -4,33 +4,22 @@
 @section('content')
 <div class="content-header">
     <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0"><i class="fas fa-hand-holding-usd"></i> Harga Supplier</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Harga Supplier</li>
-                </ol>
+        <div class="page-header-apms">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h1><i class="fas fa-hand-holding-usd mr-2"></i>Harga Supplier</h1>
+                    <ol class="breadcrumb mt-1">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                        <li class="breadcrumb-item active">Harga Supplier</li>
+                    </ol>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="container-fluid">
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show">
-            {{ session('error') }}
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-        </div>
-    @endif
+    <x-alert />
 
     {{-- Add / Update Price Form --}}
     <div class="card card-apms mb-4">
@@ -44,7 +33,7 @@
                     <select name="supplier_id" class="form-control form-control-sm" required>
                         <option value="">-- Supplier --</option>
                         @foreach($suppliers as $s)
-                            <option value="{{ $s->id }}" {{ $selectedSupplier == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                            <option value="{{ $s->id }}" {{ ($selectedSupplier ?? null) == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
                         @endforeach
                     </select>
                 </div>

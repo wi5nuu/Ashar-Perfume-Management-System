@@ -61,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
                 'dbNotifs' => collect(),
                 'dbNotifCount' => 0,
                 'pendingResetCount' => 0,
+                'ownerPendingResetCount' => 0,
                 'activeSessions' => 0,
                 'urgentWholesaleCount' => 0,
                 'totalNotif' => 0,
@@ -79,60 +80,76 @@ class AppServiceProvider extends ServiceProvider
 
             $cached = Cache::remember($cacheKey, 60, function () use ($branchId, $today, $now, $user) {
                 $d = [];
-                $ownerOrAdmin = $user->isOwner() || $user->isAdminPusat();
+                // owner = semua data, admin = semua data, manager/lainnya = data cabang saja
+                $isOwnerOrAdmin = in_array($user->role, ['owner', 'admin']);
+                $isSenior       = in_array($user->role, ['owner', 'admin', 'manager']);
 
-                // Urgent wholesale count (existing)
-                $urgentQuery = \App\Models\WholesaleOrder::where('status', 'pending');
-                if ($branchId > 0 && !$ownerOrAdmin) {
+                // Urgent & pending wholesale orders
+                $urgentQuery   = \App\Models\WholesaleOrder::where('status', 'pending');
+                $pendingQuery  = \App\Models\WholesaleOrder::where('status', 'pending');
+                if ($branchId > 0 && !$isOwnerOrAdmin) {
                     $urgentQuery->where('branch_id', $branchId);
-                }
-                $d['urgentWholesaleCount'] = $urgentQuery->where('packing_days', 1)->count();
-
-                // Pending wholesale orders
-                $pendingQuery = \App\Models\WholesaleOrder::where('status', 'pending');
-                if ($branchId > 0 && !$ownerOrAdmin) {
                     $pendingQuery->where('branch_id', $branchId);
                 }
-                $d['pendingGrosirCount'] = $pendingQuery->count();
-                $d['pendingGrosirOrders'] = (clone $pendingQuery)->with('customer')->latest()->take(5)->get();
+                $d['urgentWholesaleCount'] = (clone $urgentQuery)->where('packing_days', 1)->count();
+                $d['pendingGrosirCount']   = $pendingQuery->count();
+                $d['pendingGrosirOrders']  = (clone $pendingQuery)->with('customer')->latest()->take(5)->get();
 
-                // Login activities today
-                $loginQuery = \Illuminate\Support\Facades\DB::table('login_activities')
-                    ->whereDate('login_activities.created_at', $today);
-                $d['loginToday'] = (clone $loginQuery)
-                    ->join('users', 'login_activities.user_id', '=', 'users.id')
-                    ->select('users.name', 'users.role', 'login_activities.created_at', 'login_activities.ip_address')
-                    ->latest('login_activities.created_at')
-                    ->take(10)
-                    ->get();
-                $d['loginTodayCount'] = $loginQuery->distinct('login_activities.user_id')->count('login_activities.user_id');
+                // Login activities — hanya owner/admin yang boleh lihat
+                if ($isOwnerOrAdmin) {
+                    $loginQuery = \Illuminate\Support\Facades\DB::table('login_activities')
+                        ->whereDate('login_activities.created_at', $today);
+                    $d['loginToday'] = (clone $loginQuery)
+                        ->join('users', 'login_activities.user_id', '=', 'users.id')
+                        ->select('users.name', 'users.role', 'login_activities.created_at', 'login_activities.ip_address')
+                        ->latest('login_activities.created_at')
+                        ->take(10)
+                        ->get();
+                    $d['loginTodayCount'] = $loginQuery->distinct('login_activities.user_id')->count('login_activities.user_id');
+                } else {
+                    $d['loginToday']      = collect();
+                    $d['loginTodayCount'] = 0;
+                }
 
-                // Audit logs today
-                $auditQuery = \Illuminate\Support\Facades\DB::table('audit_logs')
-                    ->whereDate('audit_logs.created_at', $today);
-                $d['auditToday'] = (clone $auditQuery)
-                    ->leftJoin('users', 'audit_logs.user_id', '=', 'users.id')
-                    ->select('audit_logs.*', 'users.name as user_name', 'users.role as user_role')
-                    ->latest('audit_logs.created_at')
-                    ->take(5)
-                    ->get();
-                $d['auditTodayCount'] = $auditQuery->count();
+                // Audit logs — hanya owner/admin yang boleh lihat
+                if ($isOwnerOrAdmin) {
+                    $auditQuery = \Illuminate\Support\Facades\DB::table('audit_logs')
+                        ->whereDate('audit_logs.created_at', $today);
+                    $d['auditToday'] = (clone $auditQuery)
+                        ->leftJoin('users', 'audit_logs.user_id', '=', 'users.id')
+                        ->select('audit_logs.*', 'users.name as user_name', 'users.role as user_role')
+                        ->latest('audit_logs.created_at')
+                        ->take(5)
+                        ->get();
+                    $d['auditTodayCount'] = $auditQuery->count();
+                } else {
+                    $d['auditToday']      = collect();
+                    $d['auditTodayCount'] = 0;
+                }
 
-                // DB notifications
+                // DB notifications — scope ke notifiable user atau owner/admin lihat semua
                 $notifQuery = \Illuminate\Support\Facades\DB::table('notifications')
                     ->whereNull('read_at');
-                $d['dbNotifs'] = (clone $notifQuery)->latest()->take(5)->get();
+                if (!$isOwnerOrAdmin) {
+                    $notifQuery->where('notifiable_id', $user->id);
+                }
+                $d['dbNotifs']    = (clone $notifQuery)->latest()->take(5)->get();
                 $d['dbNotifCount'] = $notifQuery->count();
 
-                // Password reset requests
-                $d['pendingResetCount'] = \App\Models\PasswordResetRequest::pending()->count();
+                // Password reset requests — hanya owner/admin
+                $d['pendingResetCount'] = $isOwnerOrAdmin
+                    ? \App\Models\PasswordResetRequest::pending()->count()
+                    : 0;
+                $d['ownerPendingResetCount'] = $d['pendingResetCount'];
 
-                // Active sessions
-                $d['activeSessions'] = \Illuminate\Support\Facades\DB::table('sessions')
-                    ->where('last_activity', '>=', $now - 3600)
-                    ->distinct('user_id')->count('user_id');
+                // Active sessions — hanya owner/admin
+                $d['activeSessions'] = $isOwnerOrAdmin
+                    ? \Illuminate\Support\Facades\DB::table('sessions')
+                        ->where('last_activity', '>=', $now - 3600)
+                        ->distinct('user_id')->count('user_id')
+                    : 0;
 
-                // Total
+                // Total notif yang relevan per role
                 $d['totalNotif'] = $d['pendingGrosirCount'] + $d['dbNotifCount'] + $d['pendingResetCount'];
 
                 return $d;
@@ -154,19 +171,44 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Role-based gates
-        Gate::define('manage_products', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
-        Gate::define('manage_inventory', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
-        Gate::define('manage_transactions', fn($user) => in_array($user->role, ['admin_pusat', 'admin', 'cashier', 'manager', 'owner']));
-        Gate::define('manage_customers', fn($user) => in_array($user->role, ['admin', 'admin_pusat', 'manager', 'cashier', 'owner']));
-        Gate::define('manage_coupons', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
-        Gate::define('manage_expenses', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
-        Gate::define('view_reports', fn($user) => in_array($user->role, ['admin_pusat', 'manager', 'owner']));
-        Gate::define('manage_employees', fn($user) => $user->role === 'owner');
-        Gate::define('manage_settings', fn($user) => $user->role === 'owner');
-        Gate::define('manage_attendance', fn($user) => in_array($user->role, ['admin_pusat', 'admin', 'manager', 'owner', 'supervisor', 'cashier']));
-        Gate::define('manage_payroll', fn($user) => $user->role === 'owner');
-        Gate::define('audit.view', fn($user) => $user->role === 'owner');
-        Gate::define('roles.manage', fn($user) => $user->role === 'owner');
-        Gate::define('owner', fn($user) => $user->role === 'owner');
+        // Roles di DB: owner, admin, manager, supervisor, cashier, warehouse, employee, wholesale_customer
+        Gate::define('manage_products',    fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'warehouse']));
+        Gate::define('manage_inventory',   fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'warehouse']));
+        Gate::define('manage_transactions',fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'cashier', 'supervisor']));
+        Gate::define('manage_customers',   fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'cashier']));
+        Gate::define('manage_coupons',     fn($u) => in_array($u->role, ['owner', 'admin', 'manager']));
+        Gate::define('manage_expenses',    fn($u) => in_array($u->role, ['owner', 'admin', 'manager']));
+        Gate::define('manage_suppliers',   fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'warehouse']));
+        Gate::define('view_reports',       fn($u) => in_array($u->role, ['owner', 'admin', 'manager']));
+        Gate::define('manage_employees',   fn($u) => in_array($u->role, ['owner', 'admin']));
+        Gate::define('manage_settings',    fn($u) => in_array($u->role, ['owner', 'admin']));
+        Gate::define('manage_attendance',  fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'supervisor', 'cashier']));
+        Gate::define('manage_payroll',     fn($u) => in_array($u->role, ['owner', 'admin']));
+        Gate::define('audit.view',         fn($u) => in_array($u->role, ['owner', 'admin']));
+        Gate::define('roles.manage',       fn($u) => in_array($u->role, ['owner', 'admin']));
+        Gate::define('owner',              fn($u) => $u->role === 'owner');
+
+        // Granular feature gates used by specific controllers
+        Gate::define('inventory.view',        fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'warehouse']));
+        Gate::define('stock_requests.view',   fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'warehouse', 'cashier']));
+        Gate::define('expenses.view',         fn($u) => in_array($u->role, ['owner', 'admin', 'manager']));
+        Gate::define('expenses.manage',       fn($u) => in_array($u->role, ['owner', 'admin', 'manager']));
+        Gate::define('goods_receipts.view',   fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'warehouse']));
+        Gate::define('goods_receipts.create', fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'warehouse']));
+        Gate::define('wholesale.view',          fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'wholesale_customer']));
+        Gate::define('wholesale.manage',        fn($u) => in_array($u->role, ['owner', 'admin', 'manager']));
+        Gate::define('products.view',           fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'cashier', 'warehouse', 'supervisor']));
+        Gate::define('reports.view',            fn($u) => in_array($u->role, ['owner', 'admin', 'manager']));
+
+        // Transaction gates — dipakai di dashboard, sidebar, TransactionController
+        Gate::define('transactions.view',       fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'cashier', 'supervisor']));
+        Gate::define('transactions.create',     fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'cashier', 'supervisor']));
+
+        // Stock request gates — dipakai di dashboard, sidebar, StockRequestController
+        Gate::define('stock_requests.create',   fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'warehouse', 'cashier']));
+        Gate::define('stock_requests.approve',  fn($u) => in_array($u->role, ['owner', 'admin', 'manager']));
+
+        // Attendance gates — dipakai di sidebar dan attendances
+        Gate::define('attendances.view',        fn($u) => in_array($u->role, ['owner', 'admin', 'manager', 'supervisor']));
     }
 }

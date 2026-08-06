@@ -17,8 +17,20 @@ class CustomerPortalController extends Controller
      */
     private function resolveCustomer(string $token): Customer
     {
-        $customer = Customer::where('portal_token', $token)->firstOrFail();
-        return $customer;
+        return Customer::where('portal_token', $token)->firstOrFail();
+    }
+
+    /**
+     * Check token expiry — uses portal_token_created_at if available,
+     * falls back to updated_at. Tokens expire after 30 days.
+     */
+    private function isTokenExpired(Customer $customer): bool
+    {
+        $tokenCreated = $customer->portal_token_created_at
+            ?? $customer->updated_at
+            ?? $customer->created_at;
+
+        return $tokenCreated->diffInDays(now()) > 30;
     }
 
     /**
@@ -41,8 +53,7 @@ class CustomerPortalController extends Controller
     {
         $customer = $this->resolveCustomer($token);
 
-        $tokenCreated = $customer->updated_at ?? $customer->created_at;
-        if ($tokenCreated->diffInDays(now()) > 30) {
+        if ($this->isTokenExpired($customer)) {
             abort(410, 'Token ini sudah kedaluwarsa. Hubungi toko untuk token baru.');
         }
 
@@ -74,8 +85,7 @@ class CustomerPortalController extends Controller
     {
         $customer = $this->resolveCustomer($token);
 
-        $tokenCreated = $customer->updated_at ?? $customer->created_at;
-        if ($tokenCreated->diffInDays(now()) > 30) {
+        if ($this->isTokenExpired($customer)) {
             abort(410, 'Token ini sudah kedaluwarsa. Hubungi toko untuk token baru.');
         }
 
@@ -94,8 +104,7 @@ class CustomerPortalController extends Controller
     {
         $customer = $this->resolveCustomer($token);
 
-        $tokenCreated = $customer->updated_at ?? $customer->created_at;
-        if ($tokenCreated->diffInDays(now()) > 30) {
+        if ($this->isTokenExpired($customer)) {
             abort(410, 'Token ini sudah kedaluwarsa. Hubungi toko untuk token baru.');
         }
 

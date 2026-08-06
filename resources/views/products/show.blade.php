@@ -30,7 +30,7 @@
                                 <div class="info-box-content">
                                     <span class="info-box-text text-center text-muted">Kategori</span>
                                     <span class="info-box-number text-center text-dark">
-                                        {{ $product->category->name }}
+                                        {{ $product->category->name ?? '-' }}
                                     </span>
                                 </div>
                             </div>
@@ -40,7 +40,7 @@
                                 <div class="info-box-content">
                                     <span class="info-box-text text-center text-muted">Ukuran</span>
                                     <span class="info-box-number text-center text-dark">
-                                        {{ $product->size }} {{ $product->unit }}
+                                        {{ $product->size }}
                                     </span>
                                 </div>
                             </div>

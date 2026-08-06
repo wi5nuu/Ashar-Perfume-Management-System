@@ -1,5 +1,5 @@
-<!-- Stock Adjustment Modal -->
-<div class="modal fade" id="adjustModal" tabindex="-1" role="dialog">
+<!-- Stock Adjustment Modal (legacy - not used) -->
+<div class="modal fade" id="adjustModalLegacy" tabindex="-1" role="dialog" style="display:none!important;">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -20,8 +20,8 @@
                                 <select class="form-control select2" id="adjustProduct" name="product_id" required>
                                     <option value="">Pilih Produk</option>
                                     @foreach($products as $product)
-                                    <option value="{{ $product->id }}" data-stock="{{ $product->current_stock ?? 0 }}">
-                                        {{ $product->name }} (Stok: {{ $product->current_stock ?? 0 }})
+                                    <option value="{{ $product->id }}" data-stock="{{ $product->inventories->first()?->bulk_stock_ml ?? 0 }}">
+                                        {{ $product->name }} ({{ number_format((float)($product->inventories->first()?->bulk_stock_ml ?? 0), 0) }}ml tersedia)
                                     </option>
                                     @endforeach
                                 </select>

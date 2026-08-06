@@ -8,6 +8,12 @@ use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('can:audit.view');
+    }
+
     public function index(Request $request)
     {
         $logs = Activity::with('causer')

@@ -1,0 +1,286 @@
+// =============================================================================
+// APMS Global Design System
+// All shared UI classes defined here — no more inline <style> per view.
+// =============================================================================
+
+// ── Design Tokens ─────────────────────────────────────────────────────────────
+:root {
+    --primary:        #FF6B35;
+    --primary-dark:   #E55A2B;
+    --primary-light:  rgba(255, 107, 53, 0.1);
+    --secondary:      #2D3047;
+    --secondary-light:#3d4166;
+    --success:        #28a745;
+    --info:           #17a2b8;
+    --warning:        #ffc107;
+    --danger:         #dc3545;
+    --border-radius:  12px;
+    --border-radius-sm: 8px;
+    --shadow-sm:      0 2px 8px rgba(0,0,0,.06);
+    --shadow-md:      0 4px 16px rgba(0,0,0,.09);
+    --shadow-lg:      0 8px 32px rgba(0,0,0,.12);
+}
+
+// ── Page Header ───────────────────────────────────────────────────────────────
+// Standard gradient header used on all index/create/edit pages.
+// Usage: <div class="page-header-apms"> ... </div>
+.page-header-apms {
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    color: #fff;
+
+    h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+        line-height: 1.2;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        margin: 0;
+        padding: 0;
+        font-size: .8rem;
+    }
+
+    .breadcrumb-item a           { color: rgba(255,255,255,.7); }
+    .breadcrumb-item.active      { color: rgba(255,255,255,.9); }
+    .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,.4); }
+}
+
+// ── KPI Cards ────────────────────────────────────────────────────────────────
+// Uniform KPI stat cards used across all index pages.
+.kpi-card {
+    background: #fff;
+    border-radius: var(--border-radius);
+    padding: 1.1rem 1.25rem;
+    border: 1px solid #f0f0f0;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    height: 100%;
+    transition: transform .2s, box-shadow .2s;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+.kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+
+    &.orange { background: rgba(255,107,53,.12); color: var(--primary); }
+    &.blue   { background: rgba(0,123,255,.12);  color: #007bff; }
+    &.green  { background: rgba(40,167,69,.12);  color: var(--success); }
+    &.purple { background: rgba(111,66,193,.12); color: #6f42c1; }
+    &.teal   { background: rgba(32,201,151,.12); color: #20c997; }
+    &.red    { background: rgba(220,53,69,.12);  color: var(--danger); }
+    &.yellow { background: rgba(255,193,7,.15);  color: #856404; }
+}
+
+.kpi-label {
+    font-size: .75rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: .15rem;
+}
+
+.kpi-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--secondary);
+    line-height: 1.1;
+}
+
+.kpi-sub {
+    font-size: .73rem;
+    color: #6c757d;
+    margin-top: .15rem;
+}
+
+// ── Cards ────────────────────────────────────────────────────────────────────
+.card-apms {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+
+    .card-header {
+        background: #fff;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 1rem 1.5rem;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .5rem;
+
+        .card-title {
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin: 0;
+
+            i { color: var(--primary); margin-right: .4rem; }
+        }
+    }
+}
+
+// card-modern alias (used in some older views — kept for compatibility)
+.card-modern {
+    @extend .card-apms;
+}
+
+// ── Tables ───────────────────────────────────────────────────────────────────
+.table-modern {
+    thead th {
+        background: #f8f9fa;
+        font-size: .76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: #6c757d;
+        border-bottom: 2px solid #e9ecef;
+        padding: .8rem 1rem;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    tbody td {
+        padding: .8rem 1rem;
+        vertical-align: middle;
+        border-color: #f2f2f2;
+        font-size: .88rem;
+    }
+
+    tbody tr:hover { background: #fffaf8; }
+}
+
+// ── Filter Bar ───────────────────────────────────────────────────────────────
+.filter-bar {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid #eee;
+}
+
+// ── Badges ───────────────────────────────────────────────────────────────────
+.badge-modern {
+    padding: .35em .7em;
+    border-radius: 6px;
+    font-size: .73rem;
+    font-weight: 600;
+    letter-spacing: .3px;
+}
+
+.badge-active,
+.badge-approved,
+.badge-completed { background: rgba(40,167,69,.12);  color: #1e7e34; }
+.badge-pending   { background: rgba(255,193,7,.15);  color: #856404; }
+.badge-rejected,
+.badge-cancelled { background: rgba(220,53,69,.12);  color: #721c24; }
+.badge-info,
+.badge-reviewed  { background: rgba(23,162,184,.12); color: #0c5460; }
+.badge-shipped,
+.badge-on-progress { background: rgba(0,123,255,.12); color: #004085; }
+
+// ── Buttons ──────────────────────────────────────────────────────────────────
+.btn-primary-apms {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    font-size: .875rem;
+    transition: background .2s, box-shadow .2s;
+
+    &:hover, &:focus {
+        background: var(--primary-dark);
+        border-color: var(--primary-dark);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(255,107,53,.3);
+    }
+}
+
+.btn-secondary-apms {
+    background: var(--secondary);
+    border-color: var(--secondary);
+    color: #fff;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    font-size: .875rem;
+    transition: background .2s, box-shadow .2s;
+
+    &:hover, &:focus {
+        background: var(--secondary-light);
+        border-color: var(--secondary-light);
+        color: #fff;
+    }
+}
+
+.btn-action {
+    border-radius: 6px;
+    padding: .28rem .55rem;
+    font-size: .78rem;
+}
+
+// ── Forms ────────────────────────────────────────────────────────────────────
+.form-label-apms {
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: .3rem;
+
+    .required {
+        color: var(--danger);
+        margin-left: .2rem;
+    }
+}
+
+.form-control-apms {
+    border-radius: var(--border-radius-sm);
+    border-color: #dee2e6;
+    font-size: .88rem;
+    transition: border-color .15s, box-shadow .15s;
+
+    &:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 .2rem rgba(255,107,53,.15);
+    }
+}
+
+// ── Misc Utilities ───────────────────────────────────────────────────────────
+.chart-donut-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 180px;
+    margin: 0 auto;
+}
+
+.category-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+// ── Responsive helpers ───────────────────────────────────────────────────────
+@media (max-width: 768px) {
+    .page-header-apms h1 { font-size: 1.2rem; }
+    .kpi-value            { font-size: 1rem; }
+}

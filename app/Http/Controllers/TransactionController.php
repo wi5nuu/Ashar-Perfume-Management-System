@@ -36,7 +36,7 @@ class TransactionController extends Controller
             $query->where('branch_id', $user->branch_id);
         }
 
-        if ($request->has(['start_date', 'end_date'])) {
+        if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('created_at', [
                 Carbon::parse($request->start_date)->startOfDay(),
                 Carbon::parse($request->end_date)->endOfDay(),
@@ -58,18 +58,46 @@ class TransactionController extends Controller
         $user = auth()->user();
         $branchId = $user->branch_id;
 
-        $products = Product::with(['inventories' => function ($q) use ($branchId) {
-            if ($branchId) {
-                $q->where('branch_id', $branchId);
-            }
-        }])->where('is_active', true)->get();
+        $products = Product::with([
+            'inventories' => function ($q) use ($branchId) {
+                if ($branchId) {
+                    $q->where(function($query) use ($branchId) {
+                        $query->where('branch_id', $branchId)
+                              ->orWhereNull('branch_id');
+                    });
+                } else {
+                    $q->whereNull('branch_id');
+                }
+            },
+            'category',
+        ])->where('is_active', true)->get();
         $customers = Customer::where('is_active', true)
-            ->when($user->branch_id && !$user->isOwner() && !$user->isAdminPusat(), function ($q) use ($user) {
+            ->whereIn('type', ['retail', 'vip'])
+            ->when($user->branch_id && !$user->isOwner() && !$user->isAdmin(), function ($q) use ($user) {
                 $q->where('branch_id', $user->branch_id);
-            })->get();
+            })->orderBy('name')->get();
         $categories = \App\Models\ProductCategory::all();
 
-        return view('transactions.create', compact('products', 'customers', 'categories'));
+        // Harga tetap per tier per ukuran (dari settings)
+        $tierPrices = [
+            '30ml'  => [
+                'premium' => (int) \App\Models\Setting::getValue('tier_price_30ml_premium',  63000),
+                'sedang'  => (int) \App\Models\Setting::getValue('tier_price_30ml_sedang',   50000),
+                'biasa'   => (int) \App\Models\Setting::getValue('tier_price_30ml_biasa',    35000),
+            ],
+            '50ml'  => [
+                'premium' => (int) \App\Models\Setting::getValue('tier_price_50ml_premium',  125000),
+                'sedang'  => (int) \App\Models\Setting::getValue('tier_price_50ml_sedang',   100000),
+                'biasa'   => (int) \App\Models\Setting::getValue('tier_price_50ml_biasa',    70000),
+            ],
+            '100ml' => [
+                'premium' => (int) \App\Models\Setting::getValue('tier_price_100ml_premium', 250000),
+                'sedang'  => (int) \App\Models\Setting::getValue('tier_price_100ml_sedang',  200000),
+                'biasa'   => (int) \App\Models\Setting::getValue('tier_price_100ml_biasa',   140000),
+            ],
+        ];
+
+        return view('transactions.create', compact('products', 'customers', 'categories', 'tierPrices'));
     }
 
     /**
@@ -79,9 +107,12 @@ class TransactionController extends Controller
     {
         Gate::authorize('manage_transactions');
 
-        // Approval guard for large nominal (cashier only)
+        // Approval guard for large nominal (cashier only).
+        // Use validated() data — not raw $request->items — so the check operates on
+        // the same figures the transaction will actually be created with.
         $approvalThreshold = config('business.approval_threshold', 5000000);
-        $estimatedTotal = collect($request->items)->sum(fn($i) => $i['price'] * $i['quantity']);
+        $validatedItems    = $request->validated()['items'] ?? [];
+        $estimatedTotal    = collect($validatedItems)->sum(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 0));
 
         if ($estimatedTotal >= $approvalThreshold && auth()->user()->isCashier()) {
             return response()->json([
@@ -125,7 +156,7 @@ class TransactionController extends Controller
                     'total_amount'   => $total,
                     'final_amount'   => $total,
                     'paid_amount'    => $validated['paid_amount'],
-                    'change_amount'  => round($validated['paid_amount'] - $total),
+                    'change_amount'  => max(0, round($validated['paid_amount'] - $total)),
                     'payment_method' => $validated['payment_method'],
                     'payment_status' => $validated['paid_amount'] >= $total ? 'paid' : 'partial',
                     'debt_amount'    => $validated['paid_amount'] >= $total ? 0 : ($total - $validated['paid_amount']),
@@ -146,20 +177,47 @@ class TransactionController extends Controller
                     $quantity = $isRefill ? 1 : $item['quantity'];
 
                     $transaction->details()->create([
-                        'product_id'      => $product->id,
-                        'quantity'        => $quantity,
-                        'price'           => $item['price'],
-                        'purchase_price'  => $product->purchase_price,
-                        'subtotal'        => $item['price'] * $quantity,
-                        'bonus_quantity'  => $item['bonus_quantity'] ?? 0,
+                        'product_id'       => $product->id,
+                        'quantity'         => $quantity,
+                        'price'            => $item['price'],
+                        'purchase_price'   => $product->purchase_price,
+                        'subtotal'         => $item['price'] * $quantity,
+                        'bonus_quantity'   => $item['bonus_quantity'] ?? 0,
+                        'bonus_note'       => $item['bonus_note'] ?? null,
                         'refill_volume_ml' => $item['refill_volume_ml'] ?? null,
+                        'is_bonus_item'    => !empty($item['is_bonus_item']),
+                        'bonus_ml'         => !empty($item['is_bonus_item']) ? (float)($item['bonus_ml'] ?? 20) : null,
                     ]);
 
                     if ($product->track_inventory) {
+                        // Semua produk kurangi bulk_stock_ml (sistem ml)
                         if ($isRefill) {
-                            $this->adjustRefillStock($product->id, $branchId, $item['refill_volume_ml'], 'deduct');
+                            // Isi ulang: volume custom
+                            $this->adjustRefillStock($product->id, $branchId, (float)$item['refill_volume_ml'], 'deduct');
+                        } elseif (!empty($item['is_bonus_item'])) {
+                            // Bonus gratis: botol 20ml kualitas sedang = 10ml bibit
+                            // (proporsional dari sedang 30ml=15ml → 20ml=10ml)
+                            $bonusMl = 10.0 * (int)$item['quantity'];
+                            $this->adjustRefillStock($product->id, $branchId, $bonusMl, 'deduct');
                         } else {
-                            $this->adjustStock($product->id, $branchId, $quantity, 'deduct');
+                            // Produk reguler: kurangi stok bibit sesuai standar racikan per tier
+                            // Premium: 30ml=20ml, 50ml=33ml, 100ml=65ml
+                            // Sedang:  30ml=15ml, 50ml=25ml, 100ml=50ml
+                            // Biasa:   30ml=10ml, 50ml=17ml, 100ml=33ml
+                            $rawSize = strtolower(preg_replace('/\s+/', '', $product->size ?? '30ml'));
+                            $tier    = $item['tier'] ?? 'biasa';
+                            $porsiMl = match(true) {
+                                str_contains($rawSize, '100') => match($tier) {
+                                    'premium' => 65.0, 'sedang' => 50.0, default => 33.0
+                                },
+                                str_contains($rawSize, '50') => match($tier) {
+                                    'premium' => 33.0, 'sedang' => 25.0, default => 17.0
+                                },
+                                default => match($tier) {
+                                    'premium' => 20.0, 'sedang' => 15.0, default => 10.0
+                                },
+                            };
+                            $this->adjustRefillStock($product->id, $branchId, $porsiMl * $quantity, 'deduct');
                         }
 
                         if (($item['bonus_quantity'] ?? 0) > 0) {
@@ -224,7 +282,7 @@ class TransactionController extends Controller
      *   and Str::random(4) has only ~1.7M combinations (birthday paradox).
      *
      * AFTER (COLLISION-FREE):
-     *   Uses UUID v4 (122 bits of randomness) — collision probability is negligible.
+     *   Uses UUID v4 (122 bits of randomness) â€” collision probability is negligible.
      *   Format: INV-YYYYMMDD-<8 chars of UUID> for readability + uniqueness.
      */
     private function generateInvoiceNumber(): string
@@ -259,20 +317,19 @@ class TransactionController extends Controller
     private function adjustStock(int $productId, ?int $branchId, int $quantity, string $type): void
     {
         $inventory = Inventory::where('product_id', $productId)
-            ->where('branch_id', $branchId)
+            ->when(is_null($branchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $branchId))
             ->lockForUpdate()
             ->first();
 
         if (!$inventory) {
             if ($type === 'deduct') {
-                $inventory = Inventory::create([
-                    'product_id'    => $productId,
-                    'branch_id'     => $branchId,
-                    'current_stock' => 0,
-                    'minimum_stock' => 0,
-                    'stock_in'      => 0,
-                    'stock_out'     => 0,
-                ]);
+                // Do NOT silently create a zero-stock record and then deduct from it —
+                // that would immediately produce negative stock. Throw instead so the
+                // transaction rolls back with a clear message.
+                throw new \RuntimeException(
+                    "Inventory record not found for product_id={$productId} at branch_id={$branchId}. " .
+                    "Please initialise stock before selling."
+                );
             } else {
                 Log::warning("Stock restore skipped: no inventory for product_id={$productId} at branch_id={$branchId}");
                 return;
@@ -345,9 +402,17 @@ class TransactionController extends Controller
     private function adjustRefillStock(int $productId, ?int $branchId, float $volumeMl, string $type): void
     {
         $inventory = Inventory::where('product_id', $productId)
-            ->where('branch_id', $branchId)
+            ->when(is_null($branchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $branchId))
             ->lockForUpdate()
             ->first();
+
+        // Fallback ke stok global (branch_id = null) jika stok cabang tidak ada
+        if (!$inventory && $branchId) {
+            $inventory = Inventory::where('product_id', $productId)
+                ->whereNull('branch_id')
+                ->lockForUpdate()
+                ->first();
+        }
 
         if (!$inventory) {
             if ($type === 'deduct') {
@@ -366,18 +431,21 @@ class TransactionController extends Controller
             }
         }
 
-        $stockBefore = (float) ($inventory->bulk_stock_ml ?? 0);
+        $stockBefore = (float) ($inventory->current_stock ?? 0);
 
         if ($type === 'deduct' && $stockBefore < $volumeMl) {
-            throw new \RuntimeException("Insufficient bulk stock for product: " . ($inventory->product?->name ?? "Product #{$productId}"));
+            throw new \RuntimeException("Stok tidak cukup untuk produk: " . ($inventory->product?->name ?? "Product #{$productId}") . ". Tersedia: {$stockBefore}ml, Dibutuhkan: {$volumeMl}ml");
         }
 
-        $newBulkStock = $type === 'deduct'
+        $newStock = $type === 'deduct'
             ? $stockBefore - $volumeMl
             : $stockBefore + $volumeMl;
 
         $inventory->update([
-            'bulk_stock_ml' => $newBulkStock,
+            'current_stock' => $newStock,
+            'stock_out'     => $type === 'deduct'
+                ? $inventory->stock_out + (int) $volumeMl
+                : max(0, $inventory->stock_out - (int) $volumeMl),
         ]);
 
         InventoryMovement::record(
@@ -386,11 +454,11 @@ class TransactionController extends Controller
             type:        $type === 'deduct' ? 'sale' : 'void',
             quantity:    $type === 'deduct' ? -(int)$volumeMl : (int)$volumeMl,
             stockBefore: (int)$stockBefore,
-            stockAfter:  (int)$newBulkStock,
+            stockAfter:  (int)$newStock,
             refType:     'refill_transaction',
         );
 
-        event(new StockUpdated($productId, $inventory->product?->name ?? "Product #{$productId}", (int)$newBulkStock));
+        event(new StockUpdated($productId, $inventory->product?->name ?? "Product #{$productId}", (int)$newStock));
     }
 
     /**
@@ -446,6 +514,9 @@ class TransactionController extends Controller
             foreach ($transaction->details as $detail) {
                 if (!empty($detail->refill_volume_ml)) {
                     $this->adjustRefillStock($detail->product_id, $transaction->branch_id, $detail->refill_volume_ml, 'restore');
+                } elseif (!empty($detail->is_bonus_item)) {
+                    // Restore bonus 20ml â€” kembalikan bulk_stock_ml sebesar 20ml
+                    $this->adjustRefillStock($detail->product_id, $transaction->branch_id, 20.0, 'restore');
                 } else {
                     $this->adjustStock($detail->product_id, $transaction->branch_id, $detail->quantity, 'restore');
                 }
@@ -481,18 +552,26 @@ class TransactionController extends Controller
         $branchId = auth()->user()->branch_id;
 
         $product = Product::with(['inventories' => function ($q) use ($branchId) {
-            if ($branchId) $q->where('branch_id', $branchId);
+            if (is_null($branchId)) {
+                $q->whereNull('branch_id');
+            } else {
+                $q->where('branch_id', $branchId);
+            }
         }])->find($id);
 
         if (!$product) {
             return response()->json(['error' => 'Product not found'], 404);
         }
 
+        // Only expose purchase_price to users with manage_products permission.
+        // The field is excluded from the safe fields list by default and only
+        // added when the Gate check passes — prevents data leak to cashiers.
+        $safeFields = ['id', 'name', 'barcode', 'selling_price', 'wholesale_price', 'image', 'is_refill', 'refill_price_per_ml', 'brand', 'size', 'unit', 'minimum_stock', 'inventories'];
         if (Gate::allows('manage_products')) {
-            $product->makeVisible('purchase_price');
+            $safeFields[] = 'purchase_price';
         }
 
-        return response()->json($product->only(['id', 'name', 'barcode', 'selling_price', 'wholesale_price', 'image', 'is_refill', 'refill_price_per_ml', 'purchase_price', 'brand', 'size', 'unit', 'minimum_stock', 'inventories']));
+        return response()->json($product->only($safeFields));
     }
 
     /**
@@ -510,7 +589,7 @@ class TransactionController extends Controller
         }
 
         // Restrict by branch for cabang users
-        if (!$user->isOwner() && !$user->isAdminPusat()) {
+        if (!$user->isOwner() && !$user->isAdmin()) {
             if ($customer->branch_id && $customer->branch_id !== $user->branch_id) {
                 return response()->json(['error' => 'Customer not found'], 404);
             }
@@ -541,3 +620,4 @@ class TransactionController extends Controller
     }
 
 }
+

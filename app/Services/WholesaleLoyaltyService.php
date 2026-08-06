@@ -9,8 +9,9 @@ use App\Models\WholesaleCustomerRedemption;
 
 class WholesaleLoyaltyService
 {
-    // 1 credit per 3.333 IDR → 300.000 credits at 1M
-    const CREDIT_PER_RUPIAH = 3333;
+    // 1 credit per 3,333 IDR spent → roughly 300 credits per Rp 1,000,000.
+    // This is a DIVISOR: credits = amount / RUPIAH_PER_CREDIT.
+    const RUPIAH_PER_CREDIT = 3333;
 
     // Rank thresholds — kelipatan 2x, tanpa batas atas
     const RANK_NAMES = [
@@ -61,7 +62,7 @@ class WholesaleLoyaltyService
      */
     public function calculateCredits(float $amount): int
     {
-        return (int)($amount / self::CREDIT_PER_RUPIAH);
+        return (int)($amount / self::RUPIAH_PER_CREDIT);
     }
 
     /**

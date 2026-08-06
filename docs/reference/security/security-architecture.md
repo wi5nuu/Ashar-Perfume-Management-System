@@ -49,28 +49,56 @@ flowchart TD
 
 ## Current Controls
 
-| Control | Implementation |
+| Control | Implementation | Status |
+|---|---|---|
+| HTTPS enforcement | `SecurityHeadersMiddleware` — HSTS header | ✅ Active |
+| CSP | `SecurityHeadersMiddleware` — nonce-based CSP | ✅ Active (note: `unsafe-inline` di `style-src`) |
+| XSS protection | `InputSanitizerMiddleware` — strip tags + pattern detection | ✅ Active |
+| CSRF | Laravel CSRF token on all state-changing requests | ✅ Active |
+| SQL injection | Eloquent ORM (parameterized queries); semua `DB::raw()` pakai nilai hardcoded | ✅ Active |
+| Session hijacking | `SessionSecurityMiddleware` — IP change logging, locked account check, 2FA enforcement | ✅ Active |
+| Brute force | `LoginThrottleMiddleware` via `ActivityMonitor` | ✅ Active |
+| Idle timeout | `IdleTimeoutMiddleware` — sesuai `session.lifetime` config | ✅ Active |
+| IP allow/block | `IpSecurityMiddleware` — rate limit 200 req/min, auto-block | ✅ Active |
+| Rate limiting | `throttle` middleware pada routes + API (60/min general, 120/min admin) | ✅ Active |
+| Password hashing | bcrypt (Laravel default cost 10) | ✅ Active |
+| Encryption at rest | AES-256-CBC (Laravel APP_KEY) | ✅ Active |
+| Session security | `encrypt=true`, `expire_on_close=true`, `httponly=true`, `secure=true` | ✅ Active |
+| Wholesale isolation | `RedirectWholesaleCustomer` middleware — isolasi route `wholesale_customer` | ✅ Active |
+| Force password change | `SessionSecurityMiddleware` — redirect ke change password jika flag aktif | ✅ Active |
+| Authorization | Gate-based (30+ gates di `AppServiceProvider`) + Policy-based + RBAC permissions | ✅ Active |
+| WAF / DDoS | Tidak ada di level aplikasi — bergantung pada cPanel/hosting provider | ⚠️ Hosting-dependent |
+
+## Known Gaps & Notes
+
+| Item | Detail |
 |---|---|
-| HTTPS enforcement | Middleware `HttpsProtocol` |
-| HSTS | `Strict-Transport-Security` header |
-| CSP | `Content-Security-Policy` header |
-| XSS protection | `InputSanitizer` middleware |
-| CSRF | Laravel CSRF token on all state-changing requests |
-| SQL injection | Eloquent ORM (parameterized queries) |
-| Session hijacking | `SessionSecurity` middleware (IP + user-agent check) |
-| Brute force | `LoginThrottle` middleware (5 attempts/15min) |
-| Idle timeout | `IdleTimeout` middleware (configurable) |
-| IP allow/block | `IpSecurity` middleware |
-| Rate limiting | `throttle` middleware on routes |
-| Password hashing | bcrypt (cost 12) |
-| Encryption at rest | AES-256-CBC (Laravel APP_KEY) |
+| `unsafe-inline` di `style-src` CSP | Minor XSS risk; perlu refactor inline styles ke stylesheet terpisah |
+| `IdleTimeoutMiddleware` | `session()->flush()` tanpa regenerate token — minor race condition |
+| WAF / DDoS protection | Tidak diimplementasi di level aplikasi; bergantung hosting |
+| Redis session | Optional — fallback ke file session di cPanel shared hosting |
+
+## Deployment Context
+
+- **Hosting:** cPanel shared hosting (Apache + MySQL)
+- **Session driver:** file (Redis opsional)
+- **TLS:** via cPanel/hosting provider (Let's Encrypt atau SSL panel)
+- **Broadcast:** Laravel Reverb
+
+## Role System
+
+Sistem ini menggunakan **dua layer** authorization:
+1. **`users.role` column** — 8 nilai valid: `owner`, `admin`, `manager`, `supervisor`, `cashier`, `warehouse`, `employee`, `wholesale_customer`
+2. **RBAC `roles` table** — sistem permission terpisah dengan slug seperti `admin_pusat`, `admin`, dst. Dikelola via `RbacService` dan `RbacController`
+
+> Penting: `admin_pusat` **hanya ada di tabel `roles`** (RBAC), **bukan** di `users.role`. Gate definitions dan middleware harus selalu menggunakan nilai dari `users.role`.
 
 ## Compliance Mapping
 
 | Requirement | Control | Standard |
 |---|---|---|
-| Access control | Role/permission system | OWASP AC |
-| Input validation | Form requests + sanitizer | OWASP IV |
-| Cryptography | TLS 1.3 + bcrypt + AES-256 | OWASP CR |
-| Logging | Activity logger | OWASP LT |
-| Session management | Secure cookie + Redis | OWASP SM |
+| Access control | Gate + Policy + RBAC | OWASP AC |
+| Input validation | Form requests + `InputSanitizerMiddleware` | OWASP IV |
+| Cryptography | TLS (hosting) + bcrypt + AES-256-CBC | OWASP CR |
+| Logging | `ActivityMonitor` + audit log | OWASP LT |
+| Session management | Encrypted session, secure cookie, idle timeout | OWASP SM |

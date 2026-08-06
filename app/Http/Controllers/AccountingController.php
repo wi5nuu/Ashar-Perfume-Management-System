@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 
 class AccountingController extends Controller
 {
-    public function __construct() { $this->middleware('auth'); }
+    // Auth enforced via routes/accounting.php middleware — no constructor needed.
 
     public function index()
     {
@@ -187,10 +187,19 @@ class AccountingController extends Controller
     public function cashFlow(Request $request)
     {
         $startDate = $request->start_date ?? now()->subMonth()->toDateString();
-        $endDate = $request->end_date ?? now()->toDateString();
-        $revenue = ChartOfAccount::where('code', '4-101')->first();
-        $cashIn = $revenue ? $revenue->balance() : 0;
-        $cashOut = ChartOfAccount::byType('expense')->active()->get()->sum(fn($a) => $a->balance());
+        $endDate   = $request->end_date   ?? now()->toDateString();
+
+        // Resolve the primary revenue account from config, fall back to any income account.
+        $revenueCode = config('accounting.revenue_account_code', '4-101');
+        $revenue     = ChartOfAccount::where('code', $revenueCode)->first()
+                    ?? ChartOfAccount::byType('income')->active()->orderBy('code')->first();
+
+        $cashIn  = $revenue
+            ? $revenue->balanceBetween($startDate, $endDate)
+            : 0;
+        $cashOut = ChartOfAccount::byType('expense')->active()->get()
+            ->sum(fn($a) => $a->balanceBetween($startDate, $endDate));
+
         return view('accounting.cash-flow.index', compact('cashIn', 'cashOut', 'startDate', 'endDate'));
     }
 }

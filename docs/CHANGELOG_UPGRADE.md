@@ -64,6 +64,51 @@ Complete enterprise upgrade covering 50 discrete commits across all 13 ERP audit
 - Wholesale order branch scoping
 - Dashboard COGS/avg_basket corrections
 
+---
+
+# Bug Fix Patch — v2.0.1
+
+**Tanggal:** August 5, 2026
+
+## Role & Authorization Fixes (Critical)
+
+- **AppServiceProvider** — Perbaiki 30 Gate definitions: `admin_pusat` → `admin` di semua gate (role string tidak valid di `users.role` column)
+- **AppServiceProvider** — Tambah 5 gate yang hilang: `transactions.view`, `transactions.create`, `stock_requests.create`, `stock_requests.approve`, `attendances.view`
+- **AppServiceProvider** — Gate `wholesale.view`: perbaiki role string `'wholesale'` → `'wholesale_customer'`
+- **AppServiceProvider** — Gate `manage_inventory`: tambah role `'warehouse'` yang terlewat
+- **AppServiceProvider** — Notification filter: scope data sensitif (login activity, audit log, reset request) hanya untuk `owner` dan `admin`
+- **routes/web.php** — Bersihkan 11 middleware `role:...,admin_pusat,...` di semua route group
+- **routes/channels.php** — Perbaiki broadcast channel `inventory` dan `notifications`: hapus `admin_pusat` dan `admin_cabang` yang tidak pernah cocok dengan nilai `users.role`
+- **WholesaleController** — Hapus referensi `admin_pusat`
+- **ShiftController** — Hapus referensi `admin_pusat`
+- **StockRequestController** — Hapus referensi `admin_pusat`
+- **ReportController** — Hapus referensi `admin_pusat`
+- **CashReconciliationController** — Hapus referensi `admin_pusat`
+- **CustomerController** — Hapus referensi `admin_pusat`
+- **TransactionController** — Hapus referensi `admin_pusat`
+- **EmployeeController** — Hapus referensi `admin_pusat`
+- **ExpensePolicy** — Hapus referensi `admin_pusat`
+- **WholesaleOrderPolicy** — Hapus referensi `admin_pusat`
+- **employees/create.blade.php**, **edit.blade.php**, **index.blade.php** — Hapus referensi `admin_pusat`
+- **stock-requests/show.blade.php** — Hapus referensi `admin_pusat`
+
+## Inventory / Stock Fixes
+
+- **TransactionController**, **StoreTransactionRequest**, **SalesReturnController**, **StockAuditController**, **StockValuationController**, **PurchaseOrderController**, **ProductController**, **GoodsReceiptController** — Perbaiki `whereNull('branch_id')` untuk stok terpusat (branch_id = null)
+- **transaction_details** — Tambah kolom `is_bonus_item` dan `bonus_ml` via migration `2026_08_05_014200`
+- **SalesReturnController** / void logic — Bonus 20ml tersimpan dan di-restore dengan benar saat void transaksi
+
+## Security
+
+- **AI-INTEGRATION-GUIDE.md** — Hapus API key yang ter-expose dari dokumentasi, ganti dengan placeholder `YOUR_YUNWU_API_KEY_HERE`
+
+## Docs Cleanup
+
+- Hapus `docs/prompt-lengkap-nerva.md` (file tidak terkait APMS)
+- Hapus `docs/documentation-metrics.md` (stale, tidak diupdate)
+- Update `docs/ERP_SYSTEM_AUDIT.md` — reflect status bug fix
+- Update `docs/reference/security/security-architecture.md` — sesuaikan dengan deployment aktual
+
 ## Running After Upgrade
 ```bash
 php artisan migrate

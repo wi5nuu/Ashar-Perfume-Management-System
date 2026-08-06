@@ -84,9 +84,8 @@
                                     <option value="cashier" {{ $employee->role == 'cashier' ? 'selected' : '' }}>Kasir</option>
                                     <option value="manager" {{ $employee->role == 'manager' ? 'selected' : '' }}>Manager</option>
                                     <option value="supervisor" {{ $employee->role == 'supervisor' ? 'selected' : '' }}>Supervisor</option>
-                                    <option value="admin" {{ $employee->role == 'admin' ? 'selected' : '' }}>Admin Cabang</option>
-                                    <option value="admin_pusat" {{ $employee->role == 'admin_pusat' ? 'selected' : '' }}>Admin Pusat</option>
-                                    <option value="packing" {{ $employee->role == 'packing' ? 'selected' : '' }}>Packing</option>
+                                    <option value="warehouse" {{ $employee->role == 'warehouse' ? 'selected' : '' }}>Gudang</option>
+                                    <option value="admin" {{ $employee->role == 'admin' ? 'selected' : '' }}>Admin</option>
                                 </select>
                             </div>
                             <div class="col-md-3 form-group">

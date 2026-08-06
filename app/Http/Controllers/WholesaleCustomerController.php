@@ -65,6 +65,7 @@ class WholesaleCustomerController extends Controller
             return redirect()->intended(route('wholesale.customer.dashboard'));
         }
 
+        // Increment attempt counter on failure — was missing before
         \Illuminate\Support\Facades\Cache::put($key, $attempts + 1, now()->addMinutes(15));
         return back()->withErrors(['email' => 'Email atau password salah.'])->onlyInput('email');
     }
@@ -216,10 +217,20 @@ class WholesaleCustomerController extends Controller
     public function trackOrder(Request $request)
     {
         $request->validate(['invoice_number' => 'required|string']);
-        $order = WholesaleOrder::where('invoice_number', $request->invoice_number)->with(['details', 'handler'])->first();
-        if (!$order) return back()->with('error', 'Pesanan dengan kode tersebut tidak ditemukan.');
-
         $user = Auth::user();
+
+        // IDOR fix: pastikan order milik user yang sedang login
+        $order = WholesaleOrder::where('invoice_number', $request->invoice_number)
+            ->where(function ($q) use ($user) {
+                $q->where('recipient_phone', $user->phone)
+                  ->orWhereHas('customer', function ($cq) use ($user) {
+                      $cq->where('email', $user->email);
+                  });
+            })
+            ->with(['details', 'handler'])
+            ->first();
+
+        if (!$order) return back()->with('error', 'Pesanan dengan kode tersebut tidak ditemukan atau bukan milik akun Anda.');
         $qq = $this->userOrdersQuery($user);
         $totalOrders = (clone $qq)->count();
         $activeOrders = (clone $qq)->whereNotIn('status', ['completed', 'cancelled'])->count();

@@ -18,17 +18,19 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (!Auth::check()) {
-            return redirect('login');
+            return redirect()->route('login');
         }
 
         $user = Auth::user();
 
-        // If no roles specified, or user has one of the allowed roles
+        // If no roles specified, pass through — but only authenticated (checked above).
+        // NOTE: empty($roles) means "allow any authenticated user", which is intentional
+        // for middleware like 'role' applied without arguments. Remove this branch if you
+        // want to require at least one role to always be specified.
         if (empty($roles) || in_array($user->role, $roles)) {
             return $next($request);
         }
 
-        // Professional unauthorized response
         if ($request->expectsJson()) {
             return response()->json([
                 'status' => 'error',

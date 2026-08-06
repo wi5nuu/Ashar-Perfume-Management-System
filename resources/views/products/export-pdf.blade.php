@@ -42,8 +42,8 @@
                 <td>{{ $product->internal_id ?? $product->barcode }}</td>
                 <td>{{ $product->name }}</td>
                 <td>{{ $product->category->name ?? '-' }}</td>
-                <td class="text-center">{{ $product->size }} {{ $product->unit }}</td>
-                <td class="text-center">{{ $product->inventories->first()->current_stock ?? 0 }}</td>
+                <td class="text-center">{{ $product->size }}</td>
+                <td class="text-center">{{ \App\Helpers\PerformanceHelper::formatMl((float)$product->inventories->sum('current_stock')) }}</td>
                 <td class="text-right">Rp {{ number_format($product->selling_price, 0, ',', '.') }}</td>
             </tr>
             @endforeach

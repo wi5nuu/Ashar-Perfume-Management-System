@@ -1,50 +1,52 @@
 <?php
 
+use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\PosController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\SecurityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// Authenticated user info
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('v1')->name('api.')->group(function () {
-    Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
-    Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+// Public health check — no auth required
+Route::get('/health', HealthController::class)->name('api.health');
 
-    Route::post('/pos/validate-cart', [PosController::class, 'validateCart'])->name('pos.validate-cart');
-    Route::post('/pos/calculate-change', [PosController::class, 'calculateChange'])->name('pos.calculate-change');
-    Route::get('/pos/check-stock/{product}', [PosController::class, 'checkStock'])->name('pos.check-stock');
+// ── General authenticated endpoints ─────────────────────────────────────
+Route::middleware(['auth:sanctum', 'throttle:60,1'])
+    ->prefix('v1')
+    ->name('api.')
+    ->group(function () {
 
-    Route::get('/inventory/low-stock', function () {
-        return \App\Models\Inventory::with('product')
-            ->whereColumn('current_stock', '<=', 'minimum_stock')
-            ->where('branch_id', auth()->user()->branch_id)
-            ->limit(20)
-            ->get();
-    })->name('inventory.low-stock');
-});
+        // Products
+        Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
+        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
-Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('v1/admin')->name('api.admin.')->group(function () {
-    Route::post('/security/force-unlock/{user}', function (\App\Models\User $user) {
-        if (!in_array(request()->user()->role, ['owner', 'admin'])) {
-            abort(403, 'Unauthorized');
-        }
-        $user->unlock();
-        return response()->json(['message' => 'User unlocked successfully']);
-    })->name('security.unlock');
+        // POS
+        Route::post('/pos/validate-cart', [PosController::class, 'validateCart'])->name('pos.validate-cart');
+        Route::post('/pos/calculate-change', [PosController::class, 'calculateChange'])->name('pos.calculate-change');
+        Route::get('/pos/check-stock/{product}', [PosController::class, 'checkStock'])->name('pos.check-stock');
 
-    Route::get('/security/active-sessions', function () {
-        if (!in_array(request()->user()->role, ['owner', 'admin'])) {
-            abort(403, 'Unauthorized');
-        }
-        return \App\Models\LoginActivity::with('user')
-            ->whereDate('created_at', today())
-            ->distinct('user_id')
-            ->count();
-    })->name('security.active-sessions');
-});
+        // Inventory
+        Route::get('/inventory/low-stock', [InventoryController::class, 'lowStock'])->name('inventory.low-stock');
+    });
 
-// Health Check
-Route::get('health', App\Http\Controllers\Api\HealthController::class);
+// ── Admin-only endpoints ─────────────────────────────────────────────────
+Route::middleware(['auth:sanctum', 'throttle:120,1', 'role:owner,admin'])
+    ->prefix('v1/admin')
+    ->name('api.admin.')
+    ->group(function () {
+
+        Route::post('/security/force-unlock/{user}', [SecurityController::class, 'forceUnlock'])->name('security.unlock');
+        Route::get('/security/active-sessions', [SecurityController::class, 'activeSessions'])->name('security.active-sessions');
+    });

@@ -4,7 +4,6 @@ use App\Http\Controllers\Admin\MonitoringController;
 use App\Http\Controllers\Admin\RbacController;
 use App\Http\Controllers\Admin\SecurityController;
 use App\Http\Controllers\Admin\TwoFactorController;
-use App\Services\Security\ActivityMonitor;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'throttle:60,1'])->prefix('admin')->name('admin.')->group(function () {
@@ -49,6 +48,8 @@ Route::middleware(['auth', 'throttle:60,1'])->prefix('admin')->name('admin.')->g
     Route::middleware(['can:manage_settings'])->prefix('monitoring')->name('monitoring.')->group(function () {
         Route::get('/backup', [MonitoringController::class, 'backupIndex'])->name('backup');
         Route::post('/backup/create', [MonitoringController::class, 'backupCreate'])->name('backup.create');
+        Route::post('/backup/create-csv', [MonitoringController::class, 'backupCsv'])->name('backup.create-csv');
+        Route::post('/backup/create-xlsx', [MonitoringController::class, 'backupXlsx'])->name('backup.create-xlsx');
         Route::delete('/backup/{filename}', [MonitoringController::class, 'backupDelete'])->name('backup.delete');
         Route::get('/backup/{filename}/download', [MonitoringController::class, 'backupDownload'])->name('backup.download');
         Route::get('/logs', [MonitoringController::class, 'logViewer'])->name('logs');
@@ -62,9 +63,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/password/change', [SecurityController::class, 'passwordChange'])->name('password.change');
 });
 
-// Cron-style route for audit cleanup (admin only, should be replaced by scheduler)
-Route::middleware(['auth', 'can:manage_settings'])->post('/admin/security/cleanup-logs', function () {
-    $deleted = app(ActivityMonitor::class)->cleanOldLogs();
-    return redirect()->route('admin.security.overview')
-        ->with('success', "{$deleted} log lama berhasil dibersihkan.");
-})->name('admin.security.cleanup-logs');
+// Manual audit-log cleanup — triggers the same job the scheduler runs weekly
+Route::middleware(['auth', 'can:manage_settings'])
+    ->post('/admin/security/cleanup-logs', [SecurityController::class, 'cleanupLogs'])
+    ->name('admin.security.cleanup-logs');

@@ -31,6 +31,9 @@ class StoreTransactionRequest extends FormRequest
             'items.*.bonus_quantity' => 'nullable|integer|min:0',
             'items.*.bonus_note'   => 'nullable|string|max:255',
             'items.*.refill_volume_ml' => 'nullable|numeric|min:0',
+            'items.*.is_bonus_item' => 'nullable|boolean',
+            'items.*.bonus_ml'     => 'nullable|numeric|min:0',
+            'items.*.tier'         => 'nullable|in:premium,sedang,biasa',
             'discount_amount'      => 'nullable|numeric|min:0',
             'discount_type'        => 'nullable|in:fixed,percent',
             'discount_percent'     => 'nullable|numeric|min:0|max:100',
@@ -55,25 +58,46 @@ class StoreTransactionRequest extends FormRequest
                 $branchId = $user->branch_id;
                 $items = $this->input('items', []);
 
-                // Aggregate quantity per product (menangani produk duplikat)
-                $aggregated = [];
-                $refillVolumes = [];
+                // Semua item (reguler, bonus, refill) pakai bulk_stock_ml
+                // Aggregate ml yang dibutuhkan per produk
+                $bulkMlNeeded = [];
                 foreach ($items as $item) {
                     $pid = $item['product_id'];
                     if (!empty($item['refill_volume_ml'])) {
-                        $refillVolumes[$pid] = ($refillVolumes[$pid] ?? 0) + $item['refill_volume_ml'];
+                        // Isi ulang: volume custom dari user
+                        $bulkMlNeeded[$pid] = ($bulkMlNeeded[$pid] ?? 0) + (float)$item['refill_volume_ml'];
+                    } elseif (!empty($item['is_bonus_item'])) {
+                        // Bonus gratis: 20ml per unit
+                        $bonusMl = (float)($item['bonus_ml'] ?? 20);
+                        $bulkMlNeeded[$pid] = ($bulkMlNeeded[$pid] ?? 0) + ($bonusMl * (int)$item['quantity']);
                     } else {
-                        $aggregated[$pid] = ($aggregated[$pid] ?? 0) + $item['quantity'];
+                        // Produk reguler: validasi stok bibit sesuai standar racikan per tier
+                        // Premium: 30ml=20ml, 50ml=33ml, 100ml=65ml
+                        // Sedang:  30ml=15ml, 50ml=25ml, 100ml=50ml
+                        // Biasa:   30ml=10ml, 50ml=17ml, 100ml=33ml
+                        $product = \App\Models\Product::find($pid);
+                        $rawSize = strtolower(preg_replace('/\s+/', '', $product->size ?? '30ml'));
+                        $tier    = $item['tier'] ?? 'biasa';
+                        $porsiMl = match(true) {
+                            str_contains($rawSize, '100') => match($tier) {
+                                'premium' => 65, 'sedang' => 50, default => 33
+                            },
+                            str_contains($rawSize, '50') => match($tier) {
+                                'premium' => 33, 'sedang' => 25, default => 17
+                            },
+                            default => match($tier) {
+                                'premium' => 20, 'sedang' => 15, default => 10
+                            },
+                        };
+                        $bulkMlNeeded[$pid] = ($bulkMlNeeded[$pid] ?? 0) + ($porsiMl * (int)$item['quantity']);
                     }
                 }
 
-                foreach ($aggregated as $productId => $totalQty) {
-                    $query = \App\Models\Inventory::with('product')
-                        ->where('product_id', $productId);
-                    if ($branchId) {
-                        $query->where('branch_id', $branchId);
-                    }
-                    $inventory = $query->first();
+                foreach ($bulkMlNeeded as $productId => $totalMl) {
+                    $inventory = \App\Models\Inventory::with('product')
+                        ->where('product_id', $productId)
+                        ->when(is_null($branchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $branchId))
+                        ->first();
 
                     if (!$inventory) {
                         $validator->errors()->add(
@@ -83,39 +107,18 @@ class StoreTransactionRequest extends FormRequest
                         continue;
                     }
 
-                    if ($inventory->current_stock < $totalQty) {
+                    // Controller (adjustRefillStock) membaca current_stock, bukan bulk_stock_ml
+                    $available = (float)($inventory->current_stock ?? 0);
+                    if ($available < $totalMl) {
+                        $name = $inventory->product->name ?? "Produk #{$productId}";
                         $validator->errors()->add(
                             'items',
-                            "Stok produk '{$inventory->product->name}' tidak mencukupi. Diminta: {$totalQty}, Tersedia: {$inventory->current_stock}."
+                            "Stok '{$name}' tidak mencukupi. Dibutuhkan: {$totalMl}ml, Tersedia: {$available}ml."
                         );
                     }
                 }
 
-                // Validate refill stock
-                foreach ($refillVolumes as $productId => $totalMl) {
-                    $query = \App\Models\Inventory::with('product')
-                        ->where('product_id', $productId);
-                    if ($branchId) {
-                        $query->where('branch_id', $branchId);
-                    }
-                    $inventory = $query->first();
 
-                    if (!$inventory) {
-                        $validator->errors()->add(
-                            'items',
-                            "Inventory tidak ditemukan untuk product ID: {$productId}" . ($branchId ? " di cabang ini." : ".")
-                        );
-                        continue;
-                    }
-
-                    $bulkStock = (float) ($inventory->bulk_stock_ml ?? 0);
-                    if ($bulkStock < $totalMl) {
-                        $validator->errors()->add(
-                            'items',
-                            "Stok isi ulang '{$inventory->product->name}' tidak mencukupi. Diminta: {$totalMl}ml, Tersedia: {$bulkStock}ml."
-                        );
-                    }
-                }
             }
         ];
     }

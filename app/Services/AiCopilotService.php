@@ -25,7 +25,7 @@ use App\Services\Contracts\CopilotEngineInterface;
 class AiCopilotService implements CopilotEngineInterface
 {
     private const API_URL = 'https://api.anthropic.com/v1/messages';
-    private const MODEL = 'claude-haiku-4-5-20251001';
+    private const MODEL = 'claude-haiku-4-5';
     private const MAX_TOKENS = 1024;
     private const MAX_TOOL_ROUNDS = 5;
     private const SESSION_MESSAGES = 'ai_copilot_messages';

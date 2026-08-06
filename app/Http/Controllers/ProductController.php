@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Inventory;
+use App\Models\Accessory;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -18,19 +20,62 @@ class ProductController extends Controller
     /**
      * Menampilkan daftar produk.
      */
-    public function index()
+    public function index(Request $request)
     {
         if (! Gate::allows('manage_products') && ! auth()->user()->can('products.view')) {
             abort(403);
         }
-        // Eager loading untuk category dan inventory agar query lebih efisien
+
         $products = Product::with(['category', 'inventories', 'supplier'])
             ->latest()
             ->paginate(20);
-            
+
         $categories = ProductCategory::all();
-        
-        return view('products.index', compact('products', 'categories'));
+
+        // Analytics: total terjual per produk (qty + bonus_quantity)
+        $salesData = DB::table('transaction_details')
+            ->select(
+                'product_id',
+                DB::raw('SUM(quantity) as total_qty'),
+                DB::raw('SUM(bonus_quantity) as total_bonus'),
+                DB::raw('SUM(subtotal) as total_revenue'),
+                DB::raw('COUNT(DISTINCT transaction_id) as total_transaksi')
+            )
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
+
+        // Analytics: berapa kali jadi free 20ml bonus
+        $bonusUsageData = DB::table('transaction_details')
+            ->where('bonus_quantity', '>', 0)
+            ->select('product_id', DB::raw('SUM(bonus_quantity) as total_free'))
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
+
+        // Aksesori — tab kedua
+        $accessoryQuery = Accessory::with('supplier')->latest();
+        if ($request->filled('acc_search')) {
+            $q = $request->acc_search;
+            $accessoryQuery->where(function ($qb) use ($q) {
+                $qb->where('name', 'like', "%{$q}%")
+                   ->orWhere('sku', 'like', "%{$q}%");
+            });
+        }
+        if ($request->filled('acc_category')) {
+            $accessoryQuery->where('category', $request->acc_category);
+        }
+        $accessories        = $accessoryQuery->paginate(20, ['*'], 'acc_page')->withQueryString();
+        $accessoryCategories = Accessory::$categories;
+        $suppliers          = Supplier::orderBy('name')->get();
+
+        // Tab aktif (parfum | accessories)
+        $activeTab = $request->get('tab', 'parfum');
+
+        return view('products.index', compact(
+            'products', 'categories', 'salesData', 'bonusUsageData',
+            'accessories', 'accessoryCategories', 'suppliers', 'activeTab'
+        ));
     }
 
     /**
@@ -54,8 +99,8 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'barcode' => 'nullable|string|unique:products,barcode',
             'product_category_id' => 'required|exists:product_categories,id',
-            'purchase_price' => 'required|numeric',
-            'selling_price' => 'required|numeric',
+            'purchase_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
             'image' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
             'size' => 'required',
             'unit' => 'required',
@@ -143,6 +188,7 @@ class ProductController extends Controller
     {
         Gate::authorize('manage_products');
         $categories = ProductCategory::all();
+        $product->load('inventories');
         return view('products.edit', compact('product', 'categories'));
     }
 
@@ -155,9 +201,9 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'product_category_id' => 'required|exists:product_categories,id',
-            'purchase_price' => 'required|numeric',
-            'selling_price' => 'required|numeric',
-            'wholesale_price' => 'nullable|numeric',
+            'purchase_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'wholesale_price' => 'nullable|numeric|min:0',
             'minimum_stock' => 'nullable|integer|min:0',
             'image' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
             'size' => 'required',
@@ -165,6 +211,7 @@ class ProductController extends Controller
             'brand' => 'nullable|string|max:255',
             'description' => 'nullable|string|max:5000',
             'track_inventory' => 'nullable|boolean',
+            'current_stock_global' => 'nullable|integer|min:0',
         ]);
 
         try {
@@ -197,13 +244,30 @@ class ProductController extends Controller
 
                 // Update inventory jika ada dan track_stock aktif
                 if ($product->track_inventory) {
+                    $branchId = auth()->user()->branch_id;
                     $inventory = $product->inventories()
-                        ->where('branch_id', auth()->user()->branch_id)
+                        ->when(is_null($branchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $branchId))
                         ->first();
                     if ($inventory) {
-                        $inventory->update([
+                        $updateData = [
                             'cost_per_unit' => $request->purchase_price,
                             'minimum_stock' => $request->minimum_stock ?? 10,
+                        ];
+                        // Update current_stock jika diisi dari form
+                        if ($request->filled('current_stock_global') && $request->current_stock_global !== null) {
+                            $updateData['current_stock'] = (int) $request->current_stock_global;
+                            $updateData['stock_in']      = (int) $request->current_stock_global;
+                        }
+                        $inventory->update($updateData);
+                    } else if ($request->filled('current_stock_global')) {
+                        // Buat inventory global baru jika belum ada
+                        $product->inventories()->create([
+                            'branch_id'     => null,
+                            'current_stock' => (int) $request->current_stock_global,
+                            'stock_in'      => (int) $request->current_stock_global,
+                            'stock_out'     => 0,
+                            'minimum_stock' => $request->minimum_stock ?? 10,
+                            'date_received' => now(),
                         ]);
                     }
                 }
@@ -223,12 +287,22 @@ class ProductController extends Controller
     public function search(Request $request)
     {
         Gate::authorize('manage_products');
-        $query = $request->input('q');
-        $products = Product::with(['inventories' => function ($q) {
-                $q->select('product_id', 'current_stock');
+        $searchTerm = $request->input('q', '');
+        $branchId   = auth()->user()->branch_id;
+
+        $products = Product::with(['inventories' => function ($q) use ($branchId) {
+                // Only load inventory for the current branch so stock is accurate
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                } else {
+                    $q->whereNull('branch_id');
+                }
+                $q->select('product_id', 'branch_id', 'current_stock');
             }])
-            ->where('name', 'like', "%{$query}%")
-            ->orWhere('barcode', 'like', "%{$query}%")
+            ->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                  ->orWhere('barcode', 'like', "%{$searchTerm}%");
+            })
             ->limit(20)
             ->get(['id', 'name', 'barcode', 'selling_price', 'image'])
             ->each(function ($p) {
@@ -336,17 +410,19 @@ class ProductController extends Controller
         $products = $query->get();
 
         $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
         ];
 
         $columns = ['Kode Internal', 'Barcode', 'Nama Produk', 'Kategori', 'Ukuran', 'Stok', 'Harga Beli', 'Harga Jual', 'Harga Grosir'];
 
         $callback = function() use($products, $columns) {
             $file = fopen('php://output', 'w');
+            // UTF-8 BOM so Excel opens the file with correct encoding
+            fputs($file, "\xEF\xBB\xBF");
             fputcsv($file, $columns);
             $safe = fn($v) => is_string($v) && strlen($v) > 0 && in_array($v[0], ['=', '+', '-', '@']) ? "'" . $v : $v;
 

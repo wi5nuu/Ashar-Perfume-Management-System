@@ -3,16 +3,30 @@
 @section('title', 'Audit Stok Mendadak')
 
 @section('content')
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="page-header-apms">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h1><i class="fas fa-search mr-2"></i>Audit Stok</h1>
+                    <ol class="breadcrumb mt-1">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                        <li class="breadcrumb-item active">Audit Stok</li>
+                    </ol>
+                </div>
+                <button type="button" class="btn btn-primary-apms" data-toggle="modal" data-target="#newAuditModal">
+                    <i class="fas fa-plus mr-1"></i> Mulai Audit Acak
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid">
+    <x-alert />
     <div class="row">
         <div class="col-md-12">
             <div class="card card-apms">
-                <div class="card-header d-flex align-items-center">
-                    <h3 class="card-title mb-0">Riwayat Audit Stok</h3>
-                    <button type="button" class="btn btn-primary-apms btn-sm ml-auto" data-toggle="modal" data-target="#newAuditModal">
-                        <i class="fas fa-plus"></i> Mulai Audit Acak
-                    </button>
-                </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped">

@@ -14,13 +14,13 @@ class CustomerController extends Controller
         Gate::authorize('manage_customers');
         $user = auth()->user();
         $query = Customer::query();
-        if (!$user->isOwner() && !$user->isAdminPusat()) {
+        if (!$user->isOwner() && !$user->isAdmin()) {
             $query->where('branch_id', $user->branch_id);
         }
         $customers = $query->paginate(10);
         $activeCustomers = (clone $query)->where('is_active', true)->count();
         $wholesaleCustomers = (clone $query)->where('type', 'wholesale')->count();
-        $averageSpent = (clone $query)->where('is_active', true)
+        $averageSpent = (clone $query)->where('customers.is_active', true)
             ->join('transactions', 'customers.id', '=', 'transactions.customer_id')
             ->avg('transactions.total_amount') ?? 0;
         return view('customers.index', compact('customers', 'activeCustomers', 'wholesaleCustomers', 'averageSpent'));
@@ -54,7 +54,7 @@ class CustomerController extends Controller
     {
         Gate::authorize('manage_customers');
         $user = auth()->user();
-        if (!$user->isOwner() && !$user->isAdminPusat() && $customer->branch_id !== $user->branch_id) {
+        if (!$user->isOwner() && !$user->isAdmin() && $customer->branch_id !== $user->branch_id) {
             abort(403, 'Pelanggan ini bukan dari cabang Anda.');
         }
         $customer->load(['transactions' => fn($q) => $q->latest()->limit(50)]);
@@ -117,7 +117,7 @@ class CustomerController extends Controller
                   ->orWhere('email', 'like', '%' . $query . '%');
             });
         
-        if (!$user->isOwner() && !$user->isAdminPusat()) {
+        if (!$user->isOwner() && !$user->isAdmin()) {
             $customers->where('branch_id', $user->branch_id);
         }
         
@@ -145,14 +145,14 @@ class CustomerController extends Controller
     }
 
     /**
-     * Customer statement — all transactions + debt payments, running balance.
+     * Customer statement â€” all transactions + debt payments, running balance.
      */
     public function export()
     {
         Gate::authorize('manage_customers');
         $user = auth()->user();
         $query = Customer::where('is_active', true);
-        if (!$user->isOwner() && !$user->isAdminPusat()) {
+        if (!$user->isOwner() && !$user->isAdmin()) {
             $query->where('branch_id', $user->branch_id);
         }
         $customers = $query->orderBy('name')->get();
@@ -174,6 +174,30 @@ class CustomerController extends Controller
         ]);
     }
 
+    public function bulkDelete(Request $request)
+    {
+        Gate::authorize('manage_customers');
+
+        $validated = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'required|integer|exists:customers,id',
+        ]);
+
+        $user = auth()->user();
+
+        $query = Customer::whereIn('id', $validated['ids']);
+
+        // Branch scoping — non-owner/admin can only delete from their own branch
+        if (!$user->isOwner() && !$user->isAdmin()) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        $count = $query->count();
+        $query->delete();
+
+        return response()->json(['message' => "{$count} pelanggan berhasil dihapus."]);
+    }
+
     public function statement(Customer $customer)
     {
         Gate::authorize('manage_customers');
@@ -190,3 +214,4 @@ class CustomerController extends Controller
         return view('customers.statement', compact('customer', 'transactions', 'payments'));
     }
 }
+

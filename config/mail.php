@@ -115,4 +115,15 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Alert Email
+    |--------------------------------------------------------------------------
+    |
+    | The email address that receives critical security alerts from the
+    | SecurityAlertService. Set ADMIN_ALERT_EMAIL in your .env file.
+    |
+    */
+    'admin_alert_email' => env('ADMIN_ALERT_EMAIL', 'admin@asharparfum.com'),
+
 ];

@@ -30,10 +30,17 @@ class IpSecurityMiddleware
             }
         }
 
+        // Use increment so the TTL is set only on first touch (sliding window bug fix):
+        // Cache::remember resets the TTL every request, meaning the key never expires
+        // under sustained traffic. Instead, set the key once with a fixed 1-minute TTL
+        // and increment atomically so the window is truly fixed.
         $cacheKey = "request_count:{$ip}";
-        $count = (int) Cache::remember($cacheKey, now()->addMinute(), fn () => 0);
-        $count++;
-        Cache::put($cacheKey, $count, now()->addMinute());
+        if (!Cache::has($cacheKey)) {
+            Cache::put($cacheKey, 1, now()->addMinute());
+            $count = 1;
+        } else {
+            $count = (int) Cache::increment($cacheKey);
+        }
 
         if ($count > self::MAX_ANONYMOUS_REQUESTS) {
             IpBlacklist::block($ip, 'rate_limit_exceeded', self::BLOCK_MINUTES);

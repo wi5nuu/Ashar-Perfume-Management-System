@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @auth
     <meta name="user-role" content="{{ auth()->user()->role ?? '' }}">
+    <meta name="user-branch-id" content="{{ auth()->user()->branch_id ?? '' }}">
     @endauth
     <title>APMS - @yield('title')</title>
     
@@ -42,563 +43,15 @@
     <noscript><link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css"></noscript>
     
     <style>
+        /* APMS Pro - All styles in resources/css/ via Vite */
+        /* Legacy aliases for backward compatibility */
         :root {
-            --primary-color: #FF6B35;
-            --primary-light: #FF8B5C;
-            --primary-dark: #E55A2B;
-            --secondary-color: #2D3047;
-            --light-color: #F8F9FA;
-            --dark-color: #343A40;
-        }
-        
-        html, body {
-            max-width: 100vw;
-            overflow-x: hidden;
-        }
-        
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f5f7fa;
-            font-size: 14px;
-        }
-        
-        * {
-            box-sizing: border-box;
-        }
-        
-        .wrapper {
-            overflow-x: hidden;
-        }
-
-        /* Removed manual fixed sidebar & navbar adjustments because AdminLTE handles it perfectly via layout classes */
-        
-        .navbar-apms {
-            background: #ffffff !important;
-            border-bottom: 1px solid #e9ecef !important;
-            box-shadow: none !important;
-        }
-
-        .navbar-apms .nav-link {
-            color: #495057 !important;
-            transition: color 0.3s ease;
-            background: none !important; /* Ensure no background */
-        }
-
-        .navbar-apms .nav-link:hover {
-            color: var(--primary-color) !important;
-            background: none !important; /* Ensure no background on hover */
-        }
-
-        /* Ensure dropdowns also don't have conflicting styles */
-        .navbar-apms .dropdown-item {
-            background: none !important;
-        }
-
-        .navbar-apms .dropdown-item:hover {
-            background-color: #f8f9fa !important;
-            color: var(--primary-color) !important;
-        }
-        
-        .sidebar-apms {
-            background-color: white;
-            border-right: 1px solid #eaeaea;
-        }
-        /* Hide sidebar scrollbar */
-        .sidebar-apms .sidebar::-webkit-scrollbar { width: 0; }
-        .sidebar-apms .sidebar { scrollbar-width: none; -ms-overflow-style: none; }
-        
-        .sidebar-apms .nav-link {
-            color: var(--dark-color);
-            padding: 12px 20px;
-            margin: 2px 0;
-            border-radius: 8px;
-            transition: color 0.3s ease, background-color 0.3s ease;
-            white-space: nowrap;
-        }
-        .sidebar-apms .nav-link p {
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        /* Sidebar minimalist hover style */
-        .sidebar-apms .nav-sidebar > .nav-item > .nav-link {
-            background: transparent !important;
-            transition: color 0.3s ease;
-        }
-        
-        .sidebar-apms .nav-sidebar > .nav-item > .nav-link:hover {
-            background: transparent !important;
-            color: var(--primary-color) !important;
-        }
-        
-        .bg-orange { background-color: #FF6B35 !important; }
-        .text-orange { color: #FF6B35 !important; }
-        .bg-gradient-orange {
-            background: linear-gradient(135deg, #FF6B35 0%, #e85a2a 100%) !important;
-        }
-        .border-left-orange { border-left: 3px solid #FF6B35 !important; }
-
-        .sidebar-apms .nav-link.active {
-            background-color: rgba(255, 107, 53, 0.1) !important;
-            color: var(--primary-color) !important;
-            font-weight: 600;
-            border-right: 4px solid var(--primary-color);
-            border-radius: 8px 0 0 8px !important;
-        }
-        
-        .card-apms {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease;
-        }
-        
-        .card-apms:hover {
-            transform: translateY(-2px);
-        }
-        
-        .btn-primary-apms {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
-        }
-        
-        .btn-primary-apms:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-        
-        .badge-premium {
-            background: linear-gradient(45deg, #FFD700, #FFA500);
-            color: #000;
-        }
-        
-        .badge-wholesale {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-        }
-        
-        .stat-card {
-            border-left: 4px solid var(--primary-color);
-        }
-
-        /* --------------------------------------------------
-           COMPACT LAYOUT â€” tighter spacing for all screens
-        -------------------------------------------------- */
-        .compact .card-body {
-            padding: 0.75rem !important;
-        }
-        .compact .card-header {
-            padding: 0.5rem 0.75rem !important;
-        }
-        .compact .card {
-            margin-bottom: 0.5rem !important;
-        }
-        .compact .row {
-            margin-left: -6px;
-            margin-right: -6px;
-        }
-        .compact .row > [class*="col-"] {
-            padding-left: 6px;
-            padding-right: 6px;
-        }
-        .compact .info-box {
-            margin-bottom: 0.5rem !important;
-            min-height: 55px;
-        }
-        .compact .info-box-icon {
-            width: 45px;
-            font-size: 1rem;
-            line-height: 55px;
-        }
-        .compact .info-box-content {
-            padding: 5px 8px;
-        }
-        .compact .info-box-number {
-            font-size: 0.95rem;
-        }
-        .compact .form-group {
-            margin-bottom: 0.5rem;
-        }
-        .compact .mb-3 {
-            margin-bottom: 0.5rem !important;
-        }
-        .compact .mb-4 {
-            margin-bottom: 0.75rem !important;
-        }
-        .compact .pt-3, .compact .py-3 {
-            padding-top: 0.5rem !important;
-        }
-        .compact .pb-3, .compact .py-3 {
-            padding-bottom: 0.5rem !important;
-        }
-
-        /* =============================================
-           MOBILE COMPACT LAYOUT (< 768px)
-        ============================================= */
-        @media (max-width: 767.98px) {
-
-            /* Navbar */
-            .main-header .navbar-nav .nav-link {
-                padding: 0.3rem 0.5rem;
-                font-size: 0.8rem;
-            }
-            .main-header.navbar {
-                min-height: 44px;
-            }
-
-            /* Page Content Padding */
-            .content-wrapper {
-                padding: 0 !important;
-            }
-            .content {
-                padding: 8px !important;
-            }
-            .container-fluid {
-                padding-left: 8px !important;
-                padding-right: 8px !important;
-            }
-
-            /* Cards */
-            .card {
-                margin-bottom: 8px !important;
-                border-radius: 8px !important;
-            }
-            .card-apms {
-                margin-bottom: 8px;
-            }
-            .card-header {
-                padding: 8px 12px !important;
-            }
-            .card-header .card-title {
-                font-size: 0.85rem !important;
-                margin-bottom: 0 !important;
-            }
-            .card-body {
-                padding: 10px 12px !important;
-            }
-
-            /* Info Boxes (stat cards) */
-            .info-box {
-                min-height: 60px !important;
-                padding: 0 !important;
-                margin-bottom: 8px !important;
-            }
-            .info-box-icon {
-                width: 50px !important;
-                line-height: 60px !important;
-                font-size: 1.2rem !important;
-            }
-            .info-box-content {
-                padding: 6px 10px !important;
-            }
-            .info-box-text {
-                font-size: 0.7rem !important;
-                text-transform: uppercase;
-                letter-spacing: 0.03em;
-            }
-            .info-box-number {
-                font-size: 1rem !important;
-                font-weight: 700 !important;
-            }
-
-            /* Small Boxes (AdminLTE stat boxes) */
-            .small-box {
-                margin-bottom: 8px !important;
-            }
-            .small-box h3 {
-                font-size: 1.4rem !important;
-            }
-            .small-box p {
-                font-size: 0.75rem !important;
-            }
-            .small-box .icon {
-                font-size: 50px !important;
-                top: 5px !important;
-                right: 10px !important;
-            }
-
-            /* Headings */
-            h1, .h1 { font-size: 1.3rem !important; }
-            h2, .h2 { font-size: 1.15rem !important; }
-            h3, .h3 { font-size: 1rem !important; }
-            h4, .h4 { font-size: 0.9rem !important; }
-            h5, .h5 { font-size: 0.85rem !important; }
-
-            /* Tables - no nowrap to prevent overflow */
-            .table th, .table td {
-                font-size: 0.72rem !important;
-                padding: 4px 6px !important;
-                white-space: normal !important;
-                word-break: break-word;
-            }
-            .table-responsive {
-                border-radius: 6px;
-                max-width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            /* Buttons */
-            .btn {
-                font-size: 0.78rem !important;
-                padding: 5px 10px !important;
-            }
-            .btn-block {
-                padding: 8px 10px !important;
-            }
-
-            /* Form Controls */
-            .form-control, .form-group label {
-                font-size: 0.8rem !important;
-            }
-            .form-group {
-                margin-bottom: 8px !important;
-            }
-
-            /* Row gutters */
-            .row {
-                margin-left: -4px !important;
-                margin-right: -4px !important;
-            }
-            .row > [class*="col-"] {
-                padding-left: 4px !important;
-                padding-right: 4px !important;
-            }
-
-            /* Prevent any element from exceeding screen */
-            img, iframe, video, embed, canvas {
-                max-width: 100% !important;
-            }
-
-            /* Charts - smaller height */
-            canvas {
-                max-height: 180px !important;
-                width: 100% !important;
-            }
-
-            /* Charts - smaller height */
-            canvas {
-                max-height: 180px !important;
-                width: 100% !important;
-            }
-
-            /* Sidebar brand */
-            .brand-text {
-                font-size: 1.1rem !important;
-            }
-
-            /* Content header */
-            .content-header {
-                padding: 8px 12px !important;
-            }
-            .content-header h1 {
-                font-size: 1.1rem !important;
-            }
-            .content-header .breadcrumb {
-                font-size: 0.7rem !important;
-                padding: 2px 0 !important;
-                background: none;
-            }
-
-            /* Page-specific: Dashboard top stats */
-            .stat-card {
-                padding: 8px !important;
-            }
-
-            /* Badge */
-            .badge {
-                font-size: 0.65rem !important;
-            }
-        }
-
-        /* Tablet (768px - 991px) - slightly compact */
-        @media (min-width: 768px) and (max-width: 991.98px) {
-            .info-box-number {
-                font-size: 1.2rem !important;
-            }
-            .small-box h3 {
-                font-size: 1.8rem !important;
-            }
-            .card-body {
-                padding: 12px !important;
-            }
-        }
-
-        /* Mobile Bottom Nav Styles */
-        .mobile-bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-top: 1px solid #ddd;
-            z-index: 1040;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        .mobile-bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #888;
-            text-decoration: none;
-            flex: 1;
-            height: 100%;
-            transition: color 0.2s ease;
-        }
-
-        .mobile-bottom-nav .nav-item i {
-            font-size: 1.2rem;
-            margin-bottom: 2px;
-        }
-
-        .mobile-bottom-nav .nav-item span {
-            font-size: 0.65rem;
-            font-weight: 500;
-        }
-
-        .mobile-bottom-nav .nav-item.active {
-            color: var(--primary-color);
-        }
-
-        .mobile-bottom-nav .nav-item.active i {
-            transform: scale(1.1);
-        }
-
-        @media (max-width: 767.98px) {
-            body {
-                padding-bottom: 60px;
-            }
-            .main-footer {
-                display: none;
-            }
-
-            /* Touch-friendly targets (mobile) */
-            .btn, .nav-link, .dropdown-item, .form-control {
-                min-height: 44px;
-            }
-            .btn-sm, .btn-group-sm .btn {
-                min-height: 36px;
-            }
-            .btn-group-toggle .btn {
-                min-height: 44px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            /* Prevent modal overflow */
-            .modal-dialog {
-                margin: 0.5rem;
-                max-height: calc(100vh - 1rem);
-            }
-            .modal-body {
-                max-height: calc(100vh - 200px);
-                overflow-y: auto;
-            }
-
-            /* Better select inputs on mobile (prevents iOS zoom) */
-            select.form-control {
-                font-size: 16px !important;
-            }
-
-            /* Ensure proper tap targets */
-            .product-card {
-                min-height: 120px;
-            }
-            .product-card .card-body {
-                padding: 8px !important;
-            }
-        }
-
-        /* Tablet touch optimization */
-        @media (min-width: 768px) and (max-width: 1024px) {
-            .btn {
-                padding: 8px 16px !important;
-            }
-            .btn-lg {
-                padding: 10px 24px !important;
-            }
-        }
-
-        /* Smooth scrolling for the whole page */
-        html {
-            scroll-behavior: smooth;
-        }
-
-        /* --------------------------------------------------
-           SIDEBAR OVERLAY IMPROVEMENTS
-        -------------------------------------------------- */
-        .sidebar-open .main-sidebar {
-            z-index: 1050 !important;
-        }
-
-        @media (max-width: 767.98px) {
-            .sidebar-open .content-wrapper,
-            .sidebar-open .main-footer,
-            .sidebar-open .main-header {
-                margin-left: 0 !important;
-            }
-
-            .sidebar-open .main-sidebar {
-                transform: translateX(0) !important;
-                box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-            }
-
-            .main-sidebar {
-                transition: transform 0.3s ease;
-                z-index: 1050;
-            }
-
-            .sidebar-open .control-sidebar-bg {
-                background: rgba(0,0,0,0.4) !important;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                z-index: 1040;
-            }
-        }
-
-        /* --------------------------------------------------
-           BACK TO TOP - Mobile
-        -------------------------------------------------- */
-        .back-to-top {
-            position: fixed;
-            bottom: 70px;
-            right: 15px;
-            z-index: 1020;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-            opacity: 0.8;
-        }
-        .back-to-top:hover {
-            opacity: 1;
+            --primary-color: var(--primary, #FF6B35);
+            --primary-light: var(--primary-light, #FF8B5C);
+            --primary-dark: var(--primary-dark, #E55A2B);
+            --secondary-color: var(--secondary, #2D3047);
+            --light-color: var(--gray-50, #F8F9FA);
+            --dark-color: var(--gray-800, #1e293b);
         }
     </style>
 </head>
@@ -626,129 +79,113 @@
             {{-- Data provided by AppServiceProvider ViewComposer (cached 60s) --}}
             <li class="nav-item dropdown mr-2">
                 <a class="nav-link position-relative" data-toggle="dropdown" href="#" id="notifDropdownToggle">
-                    <i class="fas fa-bell" style="font-size:1.15rem"></i>
+                    <i class="fas fa-bell" style="font-size:1.1rem"></i>
                     @if($totalNotif > 0)
                     <span class="badge badge-danger position-absolute" id="notificationCount"
-                          style="top:2px;right:2px;font-size:0.6rem;padding:2px 5px;min-width:18px;border-radius:8px">
+                          style="top:1px;right:0;font-size:0.55rem;padding:2px 4px;min-width:16px;border-radius:99px;line-height:1.2">
                         {{ $totalNotif > 99 ? '99+' : $totalNotif }}
                     </span>
                     @endif
                 </a>
-                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right border-0 shadow-lg p-0" id="notificationList"
-                     style="width:380px;max-height:520px;overflow-y:auto;border-radius:12px">
-                    {{-- Header summary --}}
-                    <div class="px-3 py-2 d-flex justify-content-between align-items-center"
-                         style="background:linear-gradient(135deg,#2c3e50,#3498db);color:#fff;border-radius:12px 12px 0 0">
-                        <span class="font-weight-bold" style="font-size:0.85rem"><i class="fas fa-bell mr-1"></i> Pusat Notifikasi</span>
-                        <span style="font-size:0.7rem;opacity:0.85">{{ $totalNotif }} belum dibaca</span>
+                <div class="dropdown-menu dropdown-menu-right notif-dropdown" id="notificationList">
+
+                    {{-- Header --}}
+                    <div class="notif-header">
+                        <div class="notif-header-title">
+                            <i class="fas fa-bell"></i> Pusat Notifikasi
+                        </div>
+                        <span class="notif-header-count">{{ $totalNotif }} belum dibaca</span>
                     </div>
 
-                    {{-- Quick summary badges --}}
-                    <div class="d-flex px-2 py-2" style="background:#f8f9fa;gap:4px;border-bottom:1px solid #eee">
+                    {{-- Summary badges --}}
+                    @if($pendingGrosirCount > 0 || $loginTodayCount > 0 || $auditTodayCount > 0 || $pendingResetCount > 0 || $activeSessions > 0)
+                    <div class="notif-badges">
                         @if($pendingGrosirCount > 0)
-                        <a href="{{ route('wholesale.index', ['status' => 'pending']) }}"
-                           class="badge badge-warning px-2 py-1" style="font-size:0.68rem;text-decoration:none">
-                            <i class="fas fa-boxes mr-1"></i> {{ $pendingGrosirCount }} Pesanan
+                        <a href="{{ route('wholesale.index', ['status' => 'pending']) }}" class="notif-badge notif-badge-warning">
+                            <i class="fas fa-boxes"></i> {{ $pendingGrosirCount }} Pesanan
                         </a>
                         @endif
                         @if($loginTodayCount > 0)
-                        <span class="badge badge-info px-2 py-1" style="font-size:0.68rem">
-                            <i class="fas fa-sign-in-alt mr-1"></i> {{ $loginTodayCount }} Login
+                        <span class="notif-badge notif-badge-info">
+                            <i class="fas fa-sign-in-alt"></i> {{ $loginTodayCount }} Login
                         </span>
                         @endif
                         @if($auditTodayCount > 0)
-                        <span class="badge badge-secondary px-2 py-1" style="font-size:0.68rem">
-                            <i class="fas fa-history mr-1"></i> {{ $auditTodayCount }} Aktivitas
+                        <span class="notif-badge notif-badge-muted">
+                            <i class="fas fa-history"></i> {{ $auditTodayCount }} Aktivitas
                         </span>
                         @endif
                         @if($pendingResetCount > 0)
-                        <a href="{{ route('settings.password.reset-requests') }}"
-                           class="badge badge-danger px-2 py-1" style="font-size:0.68rem;text-decoration:none">
-                            <i class="fas fa-key mr-1"></i> {{ $pendingResetCount }} Reset
+                        <a href="{{ route('settings.password.reset-requests') }}" class="notif-badge notif-badge-danger">
+                            <i class="fas fa-key"></i> {{ $pendingResetCount }} Reset
                         </a>
                         @endif
                         @if($activeSessions > 0)
-                        <span class="badge badge-success px-2 py-1" style="font-size:0.68rem">
-                            <i class="fas fa-users mr-1"></i> {{ $activeSessions }} Online
+                        <span class="notif-badge notif-badge-success">
+                            <i class="fas fa-users"></i> {{ $activeSessions }} Online
                         </span>
                         @endif
                     </div>
+                    @endif
 
                     {{-- Section: Pesanan Grosir Pending --}}
                     @if($pendingGrosirCount > 0)
-                    <div class="px-3 pt-2 pb-1" style="border-bottom:1px solid #f0f0f0">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#e67e22">
-                                <i class="fas fa-boxes mr-1"></i> Pesanan Grosir Pending
-                            </span>
-                            <span class="badge badge-warning" style="font-size:0.6rem">{{ $pendingGrosirCount }}</span>
+                    <div class="notif-section">
+                        <div class="notif-section-header">
+                            <span class="notif-section-title orange"><i class="fas fa-boxes"></i> Pesanan Grosir</span>
+                            <span class="notif-badge notif-badge-warning">{{ $pendingGrosirCount }}</span>
                         </div>
                         @foreach($pendingGrosirOrders as $o)
-                        <a href="{{ route('wholesale.show', $o->id) }}" class="d-flex align-items-center py-1 text-decoration-none"
-                           style="border-bottom:1px solid #f8f8f8;font-size:0.78rem;color:#333">
-                            <div class="mr-2" style="width:28px;height:28px;border-radius:6px;background:#fff3e0;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                                <i class="fas fa-box text-warning" style="font-size:0.7rem"></i>
+                        <a href="{{ route('wholesale.show', $o->id) }}" class="notif-item" style="display:flex!important;align-items:center!important;gap:10px!important">
+                            <div class="notif-item-icon orange" style="display:flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important"><i class="fas fa-box"></i></div>
+                            <div class="notif-item-body" style="flex:1!important;min-width:0!important;overflow:hidden!important">
+                                <div class="notif-item-title">{{ $o->invoice_number }} — {{ $o->recipient_name }}</div>
+                                <div class="notif-item-sub">Rp {{ number_format($o->total_amount, 0, ',', '.') }}</div>
                             </div>
-                            <div style="flex:1;min-width:0">
-                                <div class="font-weight-500 text-truncate">{{ $o->invoice_number }} — {{ $o->recipient_name }}</div>
-                                <div style="font-size:0.65rem;color:#999">Rp {{ number_format($o->total_amount, 0, ',', '.') }}</div>
-                            </div>
-                            <span style="font-size:0.6rem;color:#aaa;white-space:nowrap">{{ $o->created_at->diffForHumans() }}</span>
+                            <span class="notif-item-time" style="flex-shrink:0!important">{{ $o->created_at->diffForHumans() }}</span>
                         </a>
                         @endforeach
-                        <a href="{{ route('wholesale.index', ['status' => 'pending']) }}"
-                           class="d-block text-center py-1 text-decoration-none" style="font-size:0.72rem;color:#3498db;font-weight:600">
-                            Lihat semua ({{ $pendingGrosirCount }})
+                        <a href="{{ route('wholesale.index', ['status' => 'pending']) }}" class="notif-view-all">
+                            Lihat semua ({{ $pendingGrosirCount }}) →
                         </a>
                     </div>
                     @endif
 
                     {{-- Section: Login Hari Ini --}}
                     @if($loginTodayCount > 0)
-                    <div class="px-3 pt-2 pb-1" style="border-bottom:1px solid #f0f0f0">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#2980b9">
-                                <i class="fas fa-sign-in-alt mr-1"></i> Login Hari Ini
-                            </span>
-                            <span class="badge badge-info" style="font-size:0.6rem">{{ $loginTodayCount }}</span>
+                    <div class="notif-section">
+                        <div class="notif-section-header">
+                            <span class="notif-section-title blue"><i class="fas fa-sign-in-alt"></i> Login Hari Ini</span>
+                            <span class="notif-badge notif-badge-info">{{ $loginTodayCount }}</span>
                         </div>
                         @foreach($loginToday as $l)
-                        <div class="d-flex align-items-center py-1" style="border-bottom:1px solid #fafafa;font-size:0.78rem;color:#333">
-                            <div class="mr-2" style="width:28px;height:28px;border-radius:50%;background:#e8f4fd;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                                <i class="fas fa-user text-info" style="font-size:0.7rem"></i>
+                        <div class="notif-item" style="display:flex!important;align-items:center!important;gap:10px!important">
+                            <div class="notif-item-icon blue round" style="display:flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important"><i class="fas fa-user"></i></div>
+                            <div class="notif-item-body" style="flex:1!important;min-width:0!important;overflow:hidden!important">
+                                <div class="notif-item-title">{{ $l->name }}</div>
+                                <div class="notif-item-sub">{{ $l->role }}</div>
                             </div>
-                            <div style="flex:1">
-                                <span class="font-weight-500">{{ $l->name }}</span>
-                                <span class="badge badge-light text-muted" style="font-size:0.6rem">{{ $l->role }}</span>
-                            </div>
-                            <span style="font-size:0.6rem;color:#aaa;white-space:nowrap">{{ \Carbon\Carbon::parse($l->created_at)->diffForHumans() }}</span>
+                            <span class="notif-item-time" style="flex-shrink:0!important">{{ \Carbon\Carbon::parse($l->created_at)->diffForHumans() }}</span>
                         </div>
                         @endforeach
                     </div>
                     @endif
 
-                    {{-- Section: Audit Logs Terbaru --}}
+                    {{-- Section: Aktivitas Sistem --}}
                     @if($auditTodayCount > 0)
-                    <div class="px-3 pt-2 pb-1" style="border-bottom:1px solid #f0f0f0">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#7f8c8d">
-                                <i class="fas fa-history mr-1"></i> Aktivitas Sistem
-                            </span>
-                            <span class="badge badge-secondary" style="font-size:0.6rem">{{ $auditTodayCount }}</span>
+                    <div class="notif-section">
+                        <div class="notif-section-header">
+                            <span class="notif-section-title gray"><i class="fas fa-history"></i> Aktivitas Sistem</span>
+                            <span class="notif-badge notif-badge-muted">{{ $auditTodayCount }}</span>
                         </div>
                         @foreach($auditToday as $a)
-                        <div class="d-flex align-items-center py-1" style="border-bottom:1px solid #fafafa;font-size:0.78rem;color:#333">
-                            <div class="mr-2" style="width:28px;height:28px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                                <i class="fas fa-pen text-muted" style="font-size:0.65rem"></i>
+                        <div class="notif-item" style="display:flex!important;align-items:center!important;gap:10px!important">
+                            <div class="notif-item-icon gray" style="display:flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important"><i class="fas fa-pen"></i></div>
+                            <div class="notif-item-body" style="flex:1!important;min-width:0!important;overflow:hidden!important">
+                                <div class="notif-item-title">{{ $a->user_name ?? 'System' }} · {{ \Illuminate\Support\Str::replace('App\Models\\', '', $a->target_model) }}</div>
+                                <div class="notif-item-sub">{{ $a->action }}</div>
                             </div>
-                            <div style="flex:1;min-width:0">
-                                <div class="text-truncate">
-                                    <span class="font-weight-500">{{ $a->user_name ?? 'System' }}</span>
-                                    <span class="text-muted">{{ \Illuminate\Support\Str::replace('App\\Models\\', '', $a->target_model) }}</span>
-                                </div>
-                                <div style="font-size:0.65rem;color:#999;text-transform:capitalize">{{ $a->action }}</div>
-                            </div>
-                            <span style="font-size:0.6rem;color:#aaa;white-space:nowrap">{{ \Carbon\Carbon::parse($a->created_at)->diffForHumans() }}</span>
+                            <span class="notif-item-time" style="flex-shrink:0!important">{{ \Carbon\Carbon::parse($a->created_at)->diffForHumans() }}</span>
                         </div>
                         @endforeach
                     </div>
@@ -756,47 +193,42 @@
 
                     {{-- Section: Database Notifications --}}
                     @if($dbNotifCount > 0)
-                    <div class="px-3 pt-2 pb-1" style="border-bottom:1px solid #f0f0f0">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#e74c3c">
-                                <i class="fas fa-bell mr-1"></i> Notifikasi
-                            </span>
-                            <span class="badge badge-danger" style="font-size:0.6rem">{{ $dbNotifCount }}</span>
+                    <div class="notif-section">
+                        <div class="notif-section-header">
+                            <span class="notif-section-title red"><i class="fas fa-bell"></i> Notifikasi</span>
+                            <span class="notif-badge notif-badge-danger">{{ $dbNotifCount }}</span>
                         </div>
                         @foreach($dbNotifs as $n)
                             @php $nd = json_decode($n->data, true); @endphp
-                            <div class="d-flex align-items-center py-1" style="border-bottom:1px solid #fafafa;font-size:0.78rem;color:#333">
-                                <div class="mr-2" style="width:28px;height:28px;border-radius:50%;background:#fce4ec;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                                    <i class="fas fa-info text-danger" style="font-size:0.65rem"></i>
+                            <div class="notif-item" style="display:flex!important;align-items:center!important;gap:10px!important">
+                                <div class="notif-item-icon red round" style="display:flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important"><i class="fas fa-info"></i></div>
+                                <div class="notif-item-body" style="flex:1!important;min-width:0!important;overflow:hidden!important">
+                                    <div class="notif-item-title">{{ $nd['message'] ?? $nd['title'] ?? 'Notifikasi' }}</div>
+                                    <div class="notif-item-sub">{{ \Illuminate\Support\Str::after(basename($n->type), 'Notifications\\') }}</div>
                                 </div>
-                                <div style="flex:1;min-width:0">
-                                    <div class="text-truncate font-weight-500">{{ $nd['message'] ?? $nd['title'] ?? 'Notifikasi' }}</div>
-                                    <div style="font-size:0.65rem;color:#999">{{ \Illuminate\Support\Str::after(basename($n->type), 'Notifications\\') }}</div>
-                                </div>
-                                <span style="font-size:0.6rem;color:#aaa;white-space:nowrap">{{ \Carbon\Carbon::parse($n->created_at)->diffForHumans() }}</span>
+                                <span class="notif-item-time" style="flex-shrink:0!important">{{ \Carbon\Carbon::parse($n->created_at)->diffForHumans() }}</span>
                             </div>
                         @endforeach
-                            @can('owner')
-                            <form method="POST" action="{{ route('owner.notifications.read-all') }}" class="d-block text-center py-1">
-                                @csrf
-                                <button type="submit" class="btn btn-link p-0 text-decoration-none" style="font-size:0.72rem;color:#3498db;font-weight:600">
-                                    Tandai semua sudah dibaca
-                                </button>
-                            </form>
-                            @endcan
+                        @can('owner')
+                        <form method="POST" action="{{ route('owner.notifications.read-all') }}">
+                            @csrf
+                            <button type="submit" class="notif-view-all" style="background:none;border:none;width:100%;cursor:pointer;">
+                                Tandai semua sudah dibaca ✓
+                            </button>
+                        </form>
+                        @endcan
                     </div>
                     @endif
 
                     {{-- Empty state --}}
                     @if($totalNotif === 0)
-                    <div class="text-center py-4 px-3">
-                        <div style="width:60px;height:60px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
-                            <i class="fas fa-check-circle text-success" style="font-size:1.5rem"></i>
-                        </div>
-                        <div class="font-weight-bold" style="font-size:0.9rem;color:#333">Semua aman!</div>
-                        <div style="font-size:0.75rem;color:#999">Tidak ada notifikasi baru.</div>
+                    <div class="notif-empty">
+                        <div class="notif-empty-icon"><i class="fas fa-check"></i></div>
+                        <div class="notif-empty-title">Semua aman!</div>
+                        <div class="notif-empty-sub">Tidak ada notifikasi baru.</div>
                     </div>
                     @endif
+
                 </div>
             </li>
 
@@ -829,11 +261,11 @@
     </nav>
 
     <!-- Sidebar -->
-    <aside class="main-sidebar sidebar-light-primary elevation-4 sidebar-apms">
+    <aside class="main-sidebar sidebar-light-primary elevation-0 sidebar-apms">
         <!-- Brand Logo -->
-        <a href="{{ route('dashboard') }}" class="brand-link border-0 d-flex align-items-center py-3 px-3">
-            <img src="{{ asset('favicon-64x64.png') }}" alt="APMS Logo" class="brand-image" width="40" height="40" style="opacity: 1;">
-            <span class="brand-text font-weight-bold ml-2" style="color: var(--primary-color); font-size: 1.4rem; letter-spacing: -0.5px;">APMS</span>
+        <a href="{{ route('dashboard') }}" class="brand-link">
+            <img src="{{ asset('favicon-64x64.png') }}" alt="APMS Logo" class="brand-image" width="36" height="36">
+            <span class="brand-text font-weight-bold ml-2" style="color:var(--primary);font-size:1.25rem;letter-spacing:-0.5px;">APMS</span>
         </a>
 
         <!-- Sidebar -->
@@ -850,15 +282,15 @@
                         </a>
                     </li>
 
-                    {{-- TRANSAKSI --}}
+                    {{-- ECERAN --}}
                     @canany(['manage_transactions', 'transactions.view'])
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd;">Transaksi</li>
+                    <li class="nav-header">Eceran</li>
                     @endcanany
                     @can('manage_transactions')
                     <li class="nav-item">
                         <a href="{{ route('transactions.create') }}" class="nav-link {{ request()->routeIs('transactions.create') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-cash-register"></i>
-                            <p>Kasir</p>
+                            <p>Kasir Eceran</p>
                         </a>
                     </li>
                     @endcan
@@ -873,12 +305,12 @@
 
                     {{-- GROSIR --}}
                     @canany(['wholesale.view', 'wholesale.manage'])
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd;">Grosir</li>
+                    <li class="nav-header">Grosir</li>
                     @endcanany
                     @can('wholesale.manage')
                     <li class="nav-item">
                         <a href="{{ route('wholesale.create') }}" class="nav-link {{ request()->routeIs('wholesale.create') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-cash-register"></i>
+                            <i class="nav-icon fas fa-store-alt"></i>
                             <p>Kasir Grosir</p>
                         </a>
                     </li>
@@ -886,7 +318,7 @@
                     @can('wholesale.view')
                     <li class="nav-item">
                         <a href="{{ route('wholesale.index') }}" class="nav-link {{ request()->routeIs('wholesale.index') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-boxes-packing"></i>
+                            <i class="nav-icon fas fa-boxes"></i>
                             <p>Pesanan Grosir</p>
                             @if(($pendingGrosirCount ?? 0) > 0)
                             <span class="badge badge-warning right">{{ $pendingGrosirCount }}</span>
@@ -894,31 +326,23 @@
                         </a>
                     </li>
                     @endcan
-                    @can('wholesale.manage')
-                    <li class="nav-item">
-                        <a href="{{ route('wholesale.products.index') }}" class="nav-link {{ request()->routeIs('wholesale.products.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-boxes"></i>
-                            <p>Produk Grosir</p>
-                        </a>
-                    </li>
-                    @endcan
 
                     {{-- PRODUK & INVENTARIS --}}
                     @canany(['products.view', 'inventory.view', 'stock_requests.view', 'goods_receipts.view', 'expenses.view'])
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd;">Produk & Inventaris</li>
+                    <li class="nav-header">Produk & Inventaris</li>
                     @endcanany
                     @can('products.view')
                     <li class="nav-item">
                         <a href="{{ route('products.index') }}" class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-spray-can"></i>
-                            <p>Produk</p>
+                            <i class="nav-icon fas fa-database"></i>
+                            <p>Produk <small class="text-muted">(Pusat Data)</small></p>
                         </a>
                     </li>
                     @endcan
                     @can('manage_products')
                     <li class="nav-item">
                         <a href="{{ route('bulk-price.index') }}" class="nav-link {{ request()->routeIs('bulk-price.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-tags"></i>
+                            <i class="nav-icon fas fa-tag"></i>
                             <p>Update Harga Massal</p>
                         </a>
                     </li>
@@ -926,7 +350,7 @@
                     @can('inventory.view')
                     <li class="nav-item">
                         <a href="{{ route('inventory.index') }}" class="nav-link {{ request()->routeIs('inventory.index', 'inventory.adjust', 'inventory.audit', 'stock_audits.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-boxes"></i>
+                            <i class="nav-icon fas fa-cubes"></i>
                             <p>Inventory</p>
                         </a>
                     </li>
@@ -997,7 +421,7 @@
 
                     {{-- CRM & LAPORAN --}}
                     @canany(['manage_customers', 'manage_coupons', 'view_reports'])
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd;">CRM & Laporan</li>
+                    <li class="nav-header">CRM & Laporan</li>
                     @endcanany
 
                     @can('manage_customers')
@@ -1033,14 +457,14 @@
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('commissions.index') }}" class="nav-link {{ request()->routeIs('commissions.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-hand-holding-usd"></i>
+                            <i class="nav-icon fas fa-percentage"></i>
                             <p>Komisi Karyawan</p>
                         </a>
                     </li>
                     @endcan
                     
                     @canany(['manage_employees', 'manage_settings'])
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd; margin-top: 10px;">Manajemen</li>
+                    <li class="nav-header">Manajemen</li>
                     @endcanany
 
                     @can('manage_employees')
@@ -1078,14 +502,15 @@
 
                     {{-- Owner Section --}}
                     @can('owner')
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd; margin-top: 10px;">Owner</li>
+                    <li class="nav-header">Owner</li>
                     <li class="nav-item">
                         <a href="{{ route('owner.monitoring') }}" class="nav-link {{ request()->routeIs('owner.monitoring') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-chart-pie"></i>
-                            <p>Monitoring</p>
+                            <p>Pantau Bisnis
                             @if($ownerPendingResetCount > 0)
                             <span class="badge badge-danger right">{{ $ownerPendingResetCount }}</span>
                             @endif
+                            </p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -1114,8 +539,10 @@
                     </li>
                     @endcan
 
+                    @canany(['audit.view', 'roles.manage'])
+                    <li class="nav-header">Keamanan</li>
+                    @endcanany
                     @can('audit.view')
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd; margin-top: 10px;">Keamanan</li>
                     <li class="nav-item">
                         <a href="{{ route('admin.security.overview') }}" class="nav-link {{ request()->routeIs('admin.security.overview') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-shield-alt"></i>
@@ -1124,8 +551,8 @@
                     </li>
                     <li class="nav-item {{ request()->routeIs('admin.security.audit-logs', 'admin.security.login-activities', 'admin.security.locked-accounts', 'admin.security.blocked-ips', 'admin.security.integrity') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('admin.security.audit-logs', 'admin.security.login-activities', 'admin.security.locked-accounts', 'admin.security.blocked-ips', 'admin.security.integrity') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-clipboard-list"></i>
-                            <p>Monitoring<i class="right fas fa-angle-left"></i></p>
+                            <i class="nav-icon fas fa-history"></i>
+                            <p>Log Keamanan<i class="right fas fa-angle-left"></i></p>
                         </a>
                         <ul class="nav nav-treeview ml-3">
                             <li class="nav-item"><a href="{{ route('admin.security.audit-logs') }}" class="nav-link {{ request()->routeIs('admin.security.audit-logs') ? 'active' : '' }}"><i class="fas fa-circle nav-icon" style="font-size:8px;"></i><p>Log Audit</p></a></li>
@@ -1149,7 +576,9 @@
                             <p>Role & Izin</p>
                         </a>
                     </li>
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd; margin-top: 10px;">Monitoring</li>
+                    @endcan
+                    @canany(['roles.manage', 'audit.view'])
+                    <li class="nav-header">Log & Sistem</li>
                     <li class="nav-item">
                         <a href="{{ route('admin.monitoring.logs') }}" class="nav-link {{ request()->routeIs('admin.monitoring.logs') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-file-alt"></i>
@@ -1162,11 +591,11 @@
                             <p>Backup Database</p>
                         </a>
                     </li>
-                    @endcan
+                    @endcanany
 
                     @auth
                     @if(auth()->user()->isOwner())
-                    <li class="nav-header text-uppercase font-weight-bold" style="font-size: 0.7rem; color: #adb5bd; margin-top: 10px;">Manajemen Cabang</li>
+                    <li class="nav-header">Manajemen Cabang</li>
                     <li class="nav-item">
                         <a href="{{ route('branches.index') }}" class="nav-link {{ request()->routeIs('branches.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-store"></i>
@@ -1342,7 +771,6 @@
             if (href && href !== '#' && !hasTreeview) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[Nav] Force ->', href);
                 location.assign(href);
             }
         });

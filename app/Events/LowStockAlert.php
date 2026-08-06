@@ -16,18 +16,23 @@ class LowStockAlert implements ShouldBroadcast
     public $productName;
     public $currentStock;
     public $minimumStock;
+    public $branchId;
 
-    public function __construct($productId, $productName, $currentStock, $minimumStock)
+    public function __construct($productId, $productName, $currentStock, $minimumStock, $branchId = null)
     {
-        $this->productId = $productId;
-        $this->productName = $productName;
+        $this->productId    = $productId;
+        $this->productName  = $productName;
         $this->currentStock = $currentStock;
         $this->minimumStock = $minimumStock;
+        $this->branchId     = $branchId;
     }
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('notifications')];
+        // Broadcast on the branch-scoped channel so only relevant staff receive
+        // the alert. Fall back to a wildcard branch 0 if branch_id is unknown.
+        $branch = $this->branchId ?? 0;
+        return [new PrivateChannel("notifications.{$branch}")];
     }
 
     public function broadcastAs(): string

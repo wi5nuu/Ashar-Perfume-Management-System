@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function () {
             require __DIR__.'/../routes/auth.php';
+            require __DIR__.'/../routes/accounting.php';
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\IpSecurityMiddleware::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\IdleTimeoutMiddleware::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\InputSanitizerMiddleware::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\AuditLogMiddleware::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\RedirectWholesaleCustomer::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

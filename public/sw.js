@@ -1,6 +1,37 @@
-const CACHE = 'apms-v1';
-const URLS = ['/','/css/app.css','/js/app.js','/offline'];
+// Service Worker for APMS PWA
+const CACHE_NAME = 'apms-v1.0.3';
+const urlsToCache = [
+  '/',
+  '/css/app.css',
+  '/js/app.js',
+  '/favicon-32x32.png',
+  '/favicon-512x512.png',
+];
 
-self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS))); });
-self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r||fetch(e.request).catch(()=>caches.match('/offline')))); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))); });
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});

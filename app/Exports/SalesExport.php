@@ -23,8 +23,14 @@ class SalesExport implements FromCollection, WithHeadings, WithMapping, WithStyl
 
     public function collection()
     {
+        // Use end-of-day time so transactions on the last day are included.
+        // Without ' 23:59:59', MySQL compares against midnight and misses
+        // all transactions that occurred after 00:00:00 on the end date.
         return Transaction::with(['customer', 'user', 'details'])
-            ->whereBetween('created_at', [$this->startDate, $this->endDate])
+            ->whereBetween('created_at', [
+                $this->startDate . ' 00:00:00',
+                $this->endDate   . ' 23:59:59',
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
     }

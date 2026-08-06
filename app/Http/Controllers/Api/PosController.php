@@ -62,31 +62,32 @@ class PosController extends Controller
         ]);
     }
 
-    public function checkStock(int $product): JsonResponse
+    public function checkStock(Product $product): JsonResponse
     {
         $branchId = auth()->user()->branch_id;
-        if (!$branchId) {
-            return response()->json(['error' => 'Branch not assigned'], 403);
+
+        if (! $branchId) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Branch not assigned.',
+            ], 403);
         }
 
-        $stock = Cache::remember("inventory_stock_{$product}_{$branchId}", 60, function () use ($product, $branchId) {
-            return \App\Models\Inventory::where('product_id', $product)
+        $stock = Cache::remember(
+            "inventory_stock_{$product->id}_{$branchId}",
+            60,
+            fn () => \App\Models\Inventory::where('product_id', $product->id)
                 ->where('branch_id', $branchId)
-                ->value('current_stock') ?? 0;
-        });
-
-        $productData = Product::select('id', 'name', 'selling_price')->find($product);
-
-        if (!$productData) {
-            return response()->json(['error' => 'Product not found'], 404);
-        }
+                ->value('current_stock') ?? 0
+        );
 
         return response()->json([
-            'product_id' => $product,
-            'name' => $productData->name ?? 'Unknown',
-            'stock' => (int) $stock,
-            'price' => (float) ($productData->selling_price ?? 0),
-            'price_formatted' => 'Rp ' . number_format($productData->selling_price ?? 0, 0, ',', '.'),
+            'status'          => 'success',
+            'product_id'      => $product->id,
+            'name'            => $product->name,
+            'stock'           => (int) $stock,
+            'price'           => (float) $product->selling_price,
+            'price_formatted' => 'Rp ' . number_format($product->selling_price, 0, ',', '.'),
         ]);
     }
 }

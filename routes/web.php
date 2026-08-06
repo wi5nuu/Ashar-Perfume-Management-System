@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
@@ -23,8 +23,8 @@ use App\Http\Controllers\StockRequestController;
 use App\Http\Controllers\OwnerController;
 
 Route::middleware(['auth', 'throttle:100,1'])->group(function () {
-    // 👑 COMMON: Staff-only routes (excludes wholesale_customer)
-    Route::middleware(['verified', 'role:owner,admin,admin_pusat,manager,cashier,supervisor,warehouse'])->group(function () {
+    // ðŸ‘‘ COMMON: Staff-only routes (excludes wholesale_customer)
+    Route::middleware(['verified', 'role:owner,admin,manager,cashier,supervisor,warehouse'])->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
@@ -39,8 +39,8 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::post('/settings/password/reset-requests/{resetRequest}/reject', [SettingController::class, 'rejectReset'])->middleware('throttle:10,1')->name('settings.password.reset-reject');
     });
 
-    // 💰 POS & SHIFT: Cashier, Admin, Manager, Owner, Supervisor (attendance)
-    Route::middleware(['verified', 'role:owner,admin,admin_pusat,manager,cashier,supervisor'])->group(function () {
+    // ðŸ’° POS & SHIFT: Cashier, Admin, Manager, Owner, Supervisor (attendance)
+    Route::middleware(['verified', 'role:owner,admin,manager,cashier,supervisor'])->group(function () {
         Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/transactions', [TransactionController::class, 'store'])->middleware('throttle:20,1')->name('transactions.store');
         Route::get('/api/products/{id}', [TransactionController::class, 'getProductInfo']);
@@ -49,6 +49,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         // Attendances
         Route::post('attendances', [\App\Http\Controllers\AttendanceController::class, 'store'])->middleware('throttle:10,1')->name('attendances.store');
         Route::post('attendances/{attendance}/checkout', [\App\Http\Controllers\AttendanceController::class, 'checkout'])->middleware('throttle:10,1')->name('attendances.checkout');
+        Route::delete('attendances/{attendance}', [\App\Http\Controllers\AttendanceController::class, 'destroy'])->name('attendances.destroy');
         Route::get('attendances', [\App\Http\Controllers\AttendanceController::class, 'index'])->name('attendances.index');
 
         // Shift Management
@@ -60,8 +61,8 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::post('/shifts/{shift}/reconciliation/review', [CashReconciliationController::class, 'review'])->name('shifts.reconciliation.review');
     });
 
-    // 📦 CATALOG & OPERATIONS: Admin, Manager, Owner, Warehouse
-    Route::middleware(['verified', 'role:owner,admin,admin_pusat,manager,warehouse'])->group(function () {
+    // ðŸ“¦ CATALOG & OPERATIONS: Admin, Manager, Owner, Warehouse
+    Route::middleware(['verified', 'role:owner,admin,manager,warehouse'])->group(function () {
         // Products
         Route::get('/products/export/pdf', [ProductController::class, 'exportPDF'])->name('products.export.pdf');
         Route::get('/products/export/csv', [ProductController::class, 'exportCSV'])->name('products.export.csv');
@@ -69,6 +70,10 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::post('/products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk-delete');
         Route::get('/products/{product}/barcode', [ProductController::class, 'printBarcode'])->name('products.barcode');
         Route::get('/products/{product}/barcode-image', [ProductController::class, 'renderBarcode'])->name('products.barcode-image');
+
+        // Accessories (tab kedua di halaman /products)
+        Route::get('/accessories/search', [\App\Http\Controllers\AccessoryController::class, 'search'])->name('accessories.search');
+        Route::resource('accessories', \App\Http\Controllers\AccessoryController::class)->except(['create', 'show', 'edit']);
 
         // Bulk Price Update
         Route::get('/bulk-price', [BulkPriceController::class, 'index'])->name('bulk-price.index');
@@ -78,6 +83,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::post('/inventory/adjust', [InventoryController::class, 'adjust'])->middleware('throttle:10,1')->name('inventory.adjust');
         Route::post('/inventory/audit', [InventoryController::class, 'audit'])->middleware('throttle:5,1')->name('inventory.audit');
+        Route::get('/inventory/{inventory}/history', [InventoryController::class, 'history'])->name('inventory.history');
 
         // Expiry Alerts
         Route::get('/inventory/expiry-alerts', [\App\Http\Controllers\ExpiryAlertController::class, 'index'])->name('inventory.expiry-alerts');
@@ -100,15 +106,20 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->middleware('throttle:10,1')->name('purchase-orders.cancel');
         Route::resource('purchase-orders', PurchaseOrderController::class)->parameters(['purchase-orders' => 'purchaseOrder']);
 
+        // Suppliers (full CRUD)
+        Route::resource('suppliers', \App\Http\Controllers\SupplierController::class);
+        Route::get('/suppliers/search', [\App\Http\Controllers\SupplierController::class, 'search'])->name('suppliers.search');
+        Route::post('/suppliers/quick-store', [\App\Http\Controllers\SupplierController::class, 'quickStore'])->middleware('throttle:20,1')->name('suppliers.quick-store');
+
         // Supplier Prices
         Route::resource('supplier-prices', SupplierPriceController::class)->only(['index', 'store', 'destroy'])->parameters(['supplier-prices' => 'supplierPrice']);
-        Route::delete('/supplier-prices/{supplierPrice}', [SupplierPriceController::class, 'destroy'])->name('supplier-prices.destroy');
         
         // Customers & Coupons
         Route::get('/customers/search', [CustomerController::class, 'search'])->name('customers.search');
         Route::get('/customers/export', [CustomerController::class, 'export'])->name('customers.export');
         Route::get('/customers/{customer}/statement', [CustomerController::class, 'statement'])->name('customers.statement');
         Route::post('/customers/{customer}/portal-token', [CustomerPortalController::class, 'generateToken'])->name('customers.portal-token');
+        Route::delete('/customers/bulk-delete', [CustomerController::class, 'bulkDelete'])->name('customers.bulk-delete');
         Route::resource('customers', CustomerController::class);
         Route::resource('coupons', CouponController::class);
         Route::post('/coupons/{coupon}/redeem', [CouponController::class, 'redeem'])->middleware('throttle:10,1')->name('coupons.redeem');
@@ -168,8 +179,8 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::post('/ai/chat', [\App\Http\Controllers\OfflineAiController::class, 'chat'])->name('ai.chat')->middleware('throttle:30,1');
     });
 
-    // 👑 OWNER, ADMIN, & MANAGER: Reports & Settings
-    Route::middleware(['verified', 'role:owner,admin,admin_pusat,manager'])->group(function () {
+    // ðŸ‘‘ OWNER, ADMIN, & MANAGER: Reports & Settings
+    Route::middleware(['verified', 'role:owner,admin,manager'])->group(function () {
         // Reports
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
@@ -211,8 +222,8 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::post('/shifts/{shift}/review-photo', [\App\Http\Controllers\ShiftController::class, 'reviewPhoto'])->middleware('throttle:10,1')->name('shifts.review-photo');
     });
 
-    // 📦 STOCK REQUESTS: Owner, Admin, Manager, Supervisor (view), Warehouse
-    Route::middleware(['verified', 'role:owner,admin,admin_pusat,manager,supervisor,warehouse'])->group(function () {
+    // ðŸ“¦ STOCK REQUESTS: Owner, Admin, Manager, Supervisor (view), Warehouse
+    Route::middleware(['verified', 'role:owner,admin,manager,supervisor,warehouse'])->group(function () {
         Route::get('/stock-requests', [StockRequestController::class, 'index'])->name('stock-requests.index');
         Route::get('/stock-requests/create', [StockRequestController::class, 'create'])->name('stock-requests.create');
         Route::get('/stock-requests/{stockRequest}', [StockRequestController::class, 'show'])->name('stock-requests.show');
@@ -224,7 +235,7 @@ Route::middleware(['auth', 'throttle:100,1'])->group(function () {
         Route::patch('stock-requests/{stockRequest}/cancel', [StockRequestController::class, 'cancel'])->name('stock-requests.cancel');
     });
 
-    // 👑 OWNER ONLY: Monitoring, Branch Management, Wholesale Customer Management
+    // ðŸ‘‘ OWNER ONLY: Monitoring, Branch Management, Wholesale Customer Management
     Route::middleware(['verified', 'role:owner'])->group(function () {
         // Owner Monitoring
         Route::get('/owner/monitoring', [OwnerController::class, 'monitoring'])->name('owner.monitoring');
@@ -268,7 +279,7 @@ Route::prefix('api')->middleware(['auth', 'throttle:60,1'])->group(function () {
 
 require __DIR__.'/auth.php';
 
-// ── Customer Portal (public, token-authenticated) ──
+// â”€â”€ Customer Portal (public, token-authenticated) â”€â”€
 Route::prefix('portal')->middleware('throttle:30,1')->group(function () {
     Route::get('/{token}', [CustomerPortalController::class, 'dashboard'])->name('portal.dashboard');
     Route::get('/{token}/orders', [CustomerPortalController::class, 'orders'])->name('portal.orders');
@@ -280,7 +291,7 @@ Route::get('/view-invoice/{invoice_number}', [TransactionController::class, 'pub
     ->middleware('throttle:10,1')
     ->name('transactions.public_invoice');
 
-// ── Wholesale Customer Portal (login disediakan owner, tanpa registrasi mandiri) ──
+// â”€â”€ Wholesale Customer Portal (login disediakan owner, tanpa registrasi mandiri) â”€â”€
 Route::prefix('wholesale-customer')->name('wholesale.customer.')->group(function () {
     Route::get('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [\App\Http\Controllers\WholesaleCustomerController::class, 'login'])->middleware('throttle:5,1');
@@ -299,24 +310,35 @@ Route::prefix('wholesale-customer')->name('wholesale.customer.')->group(function
         Route::post('/logout', [\App\Http\Controllers\WholesaleCustomerController::class, 'logout'])->name('logout');
     });
 });
-// Customer Deposits
-Route::resource('customer-deposits', App\Http\Controllers\CustomerDepositController::class);
-Route::post('customer-deposits/{account}/transaction', [App\Http\Controllers\CustomerDepositController::class, 'transaction'])->name('customer-deposits.transaction');
+Route::middleware(['auth', 'verified', 'throttle:100,1'])->group(function () {
+    // Customer Deposits â€” owner/manager only
+    Route::middleware('role:owner,admin,manager')->group(function () {
+        Route::resource('customer-deposits', App\Http\Controllers\CustomerDepositController::class);
+        Route::post('customer-deposits/{account}/transaction', [App\Http\Controllers\CustomerDepositController::class, 'transaction'])->name('customer-deposits.transaction');
+    });
 
-// Expense Approvals
-Route::get('expense-approvals', [App\Http\Controllers\ExpenseApprovalController::class, 'index'])->name('expense-approvals.index');
-Route::post('expense-approvals/{approval}/approve', [App\Http\Controllers\ExpenseApprovalController::class, 'approve'])->name('expense-approvals.approve');
-Route::post('expense-approvals/{approval}/reject', [App\Http\Controllers\ExpenseApprovalController::class, 'reject'])->name('expense-approvals.reject');
+    // Expense Approvals â€” owner/manager only
+    Route::middleware('role:owner,admin,manager')->group(function () {
+        Route::get('expense-approvals', [App\Http\Controllers\ExpenseApprovalController::class, 'index'])->name('expense-approvals.index');
+        Route::post('expense-approvals/{approval}/approve', [App\Http\Controllers\ExpenseApprovalController::class, 'approve'])->name('expense-approvals.approve');
+        Route::post('expense-approvals/{approval}/reject', [App\Http\Controllers\ExpenseApprovalController::class, 'reject'])->name('expense-approvals.reject');
+    });
 
-// Reports
-Route::get('reports/daily-sales', App\Http\Controllers\DailySalesController::class)->name('reports.daily-sales');
-Route::get('reports/stock-valuation', [App\Http\Controllers\StockValuationController::class, 'index'])->name('reports.stock-valuation');
+    // Reports â€” owner/manager only
+    Route::middleware('role:owner,admin,manager')->group(function () {
+        Route::get('reports/daily-sales', App\Http\Controllers\DailySalesController::class)->name('reports.daily-sales');
+        Route::get('reports/stock-valuation', [App\Http\Controllers\StockValuationController::class, 'index'])->name('reports.stock-valuation');
+    });
 
-// Admin
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('activity-logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
-    Route::get('activity-logs/{log}', [App\Http\Controllers\Admin\ActivityLogController::class, 'show'])->name('activity-logs.show');
+    // Admin â€” owner/admin only
+    Route::prefix('admin')->name('admin.')->middleware('role:owner,admin')->group(function () {
+        Route::get('activity-logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
+        Route::get('activity-logs/{log}', [App\Http\Controllers\Admin\ActivityLogController::class, 'show'])->name('activity-logs.show');
+    });
+
+    // Sales Targets â€” owner/manager only
+    Route::middleware('role:owner,admin,manager')->group(function () {
+        Route::resource('sales-targets', App\Http\Controllers\SalesTargetController::class)->only(['index', 'create', 'store', 'show']);
+    });
 });
 
-// Sales Targets
-Route::resource('sales-targets', App\Http\Controllers\SalesTargetController::class);

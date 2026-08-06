@@ -11,6 +11,7 @@ class Product extends Model
 
 protected $fillable = [
     'name',
+    'sku',
     'barcode',
     'product_category_id',
     'brand',
@@ -70,5 +71,10 @@ public function inventories()
 public function supplier()
 {
     return $this->belongsTo(Supplier::class);
+}
+
+public function transactionDetails()
+{
+    return $this->hasMany(TransactionDetail::class);
 }
 }

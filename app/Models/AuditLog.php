@@ -30,7 +30,7 @@ class AuditLog extends Model
     protected $casts = [
         'old_data' => 'array',
         'new_data' => 'array',
-        'tags' => 'string',
+        'tags' => 'array',
     ];
 
     public function user()

@@ -1,348 +1,539 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Detail Pesanan Grosir')
 
 @section('content')
 <style>
-    .status-timeline-modern { display: flex; gap: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
-    .status-timeline-modern .step { flex: 1; text-align: center; padding: 12px 6px; font-size: 0.72rem; font-weight: 500; min-width: 70px; position: relative; transition: all 0.2s; }
-    .status-timeline-modern .step.done { background: #e8f5e9; color: #2e7d32; }
-    .status-timeline-modern .step.done i { color: #43a047; }
-    .status-timeline-modern .step.active { background: #fff3e0; color: #e65100; }
-    .status-timeline-modern .step.active i { color: #ff6d00; }
-    .status-timeline-modern .step.active::after { content: ''; position: absolute; bottom: 0; left: 20%; right: 20%; height: 3px; background: #ff6d00; border-radius: 3px 3px 0 0; }
-    .status-timeline-modern .step.pending { background: #f5f5f5; color: #9e9e9e; }
-    .status-timeline-modern .step.cancelled { background: #ffebee; color: #c62828; }
-    .status-timeline-modern .step.cancelled i { color: #e53935; }
-    .status-timeline-modern .step i { display: block; font-size: 1.3rem; margin-bottom: 4px; }
-    @media (max-width: 575.98px) { .status-timeline-modern .step { font-size: 0.6rem; padding: 10px 4px; min-width: 54px; } .status-timeline-modern .step i { font-size: 1rem; } }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .info-grid .item { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-    .info-grid .item .label { font-size: 0.68rem; color: #888; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
-    .info-grid .item .value { font-size: 0.88rem; color: #222; font-weight: 500; }
-    .info-grid .item.full { grid-column: 1 / -1; }
-    .terms-list { padding: 0; margin: 0; list-style: none; }
-    .terms-list li { padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 0.8rem; color: #444; display: flex; gap: 8px; align-items: flex-start; }
-    .terms-list li:last-child { border-bottom: none; }
-    .terms-list li::before { content: '✓'; font-weight: 700; color: #28a745; }
-    .btn-action-flow { font-size: 0.82rem; padding: 0.55rem 1.2rem; font-weight: 600; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
-    .timestamp-row { display: flex; flex-wrap: wrap; gap: 10px; }
-    .timestamp-row .ts-item { background: #f8f9fa; border-radius: 6px; padding: 6px 10px; font-size: 0.72rem; display: flex; align-items: center; gap: 5px; }
-    .section-title-sm { font-size: 0.82rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+    :root { --primary: #FF6B35; --primary-dark: #E55A2B; --secondary: #2D3047; }
+
+    /* PAGE HEADER */
+    .page-header-apms { background: linear-gradient(135deg, var(--secondary) 0%, #3d4266 100%); border-radius: 16px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; color: #fff; }
+    .page-header-apms h1 { font-size: 1.4rem; font-weight: 700; margin: 0 0 4px; color: #fff; }
+    .page-header-apms .breadcrumb { background: transparent; margin: 0; padding: 0; font-size: 0.8rem; }
+    .page-header-apms .breadcrumb-item a { color: rgba(255,255,255,0.7); text-decoration: none; }
+    .page-header-apms .breadcrumb-item.active { color: rgba(255,255,255,0.5); }
+    .page-header-apms .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.4); }
+
+    /* TIMELINE */
+    .order-timeline { display: flex; align-items: flex-start; position: relative; padding: 1.5rem 1rem; overflow-x: auto; }
+    .order-timeline::before { content: ''; position: absolute; top: 2.15rem; left: 2rem; right: 2rem; height: 2px; background: #e4e8f0; z-index: 0; }
+    .tl-step { flex: 1; text-align: center; position: relative; z-index: 1; min-width: 80px; }
+    .tl-step .tl-dot {
+        width: 36px; height: 36px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 8px;
+        font-size: 0.88rem;
+        border: 2px solid #e4e8f0;
+        background: #fff;
+        color: #c0c8d8;
+        transition: all 0.2s;
+    }
+    .tl-step.done .tl-dot { background: #43a047; border-color: #43a047; color: #fff; }
+    .tl-step.active .tl-dot { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 0 0 4px rgba(255,107,53,0.2); }
+    .tl-step.cancelled .tl-dot { background: #ef5350; border-color: #ef5350; color: #fff; }
+    .tl-step .tl-label { font-size: 0.72rem; font-weight: 600; color: #b0b8c9; line-height: 1.3; }
+    .tl-step.done .tl-label { color: #43a047; }
+    .tl-step.active .tl-label { color: var(--primary); }
+    .tl-step.cancelled .tl-label { color: #ef5350; }
+    .tl-step .tl-date { font-size: 0.65rem; color: #b0b8c9; margin-top: 2px; }
+    .tl-connector { flex: 1; height: 2px; background: #e4e8f0; margin-top: 17px; min-width: 20px; }
+    .tl-connector.done { background: #43a047; }
+
+    /* CARDS */
+    .detail-card { background: #fff; border-radius: 14px; border: 1px solid #eef0f8; box-shadow: 0 2px 12px rgba(45,48,71,0.06); margin-bottom: 1.25rem; overflow: hidden; }
+    .detail-card .dc-header { padding: 0.9rem 1.25rem; border-bottom: 1px solid #f0f2f8; display: flex; align-items: center; gap: 8px; }
+    .detail-card .dc-header h5 { font-size: 0.88rem; font-weight: 700; color: var(--secondary); margin: 0; }
+    .detail-card .dc-header .dc-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+    .detail-card .dc-body { padding: 1.25rem; }
+
+    /* INFO GRID */
+    .info-dl { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    .info-dl .dl-item { padding: 0.65rem 0; border-bottom: 1px solid #f5f6fb; }
+    .info-dl .dl-item:nth-last-child(-n+2) { border-bottom: none; }
+    .info-dl .dl-item.full { grid-column: 1 / -1; }
+    .info-dl .dl-label { font-size: 0.7rem; color: #8892a4; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; font-weight: 600; }
+    .info-dl .dl-value { font-size: 0.87rem; color: var(--secondary); font-weight: 500; }
+
+    /* PRODUCT TABLE */
+    .prod-table { width: 100%; font-size: 0.84rem; }
+    .prod-table thead th { background: #f8f9ff; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #8892a4; padding: 0.7rem 1rem; border-bottom: 2px solid #eef0f8; border-top: none; }
+    .prod-table tbody td { padding: 0.85rem 1rem; border-top: 1px solid #f5f6fb; vertical-align: middle; }
+    .prod-table tbody tr:last-child td { border-bottom: none; }
+    .prod-table tbody tr:hover { background: #fafbff; }
+
+    /* SUMMARY */
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0; border-bottom: 1px solid #f5f6fb; font-size: 0.85rem; color: #667; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row.total { padding-top: 0.8rem; font-size: 1rem; font-weight: 800; color: var(--secondary); }
+    .summary-row .label { color: #8892a4; }
+    .summary-row.discount .amount { color: #d32f2f; }
+    .summary-row.total .amount { color: var(--primary); font-size: 1.1rem; }
+
+    /* ACTION BUTTONS */
+    .action-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .btn-action { display: inline-flex; align-items: center; gap: 6px; padding: 0.55rem 1.2rem; border-radius: 9px; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; text-decoration: none; }
+    .btn-action:hover { transform: translateY(-1px); text-decoration: none; }
+    .btn-action.approve { background: linear-gradient(135deg,#43a047,#388e3c); color: #fff; box-shadow: 0 3px 10px rgba(67,160,71,0.3); }
+    .btn-action.approve:hover { box-shadow: 0 5px 16px rgba(67,160,71,0.4); color:#fff; }
+    .btn-action.process { background: linear-gradient(135deg,#1976d2,#1565c0); color: #fff; box-shadow: 0 3px 10px rgba(25,118,210,0.3); }
+    .btn-action.process:hover { box-shadow: 0 5px 16px rgba(25,118,210,0.4); color:#fff; }
+    .btn-action.ship { background: linear-gradient(135deg,#00897b,#00695c); color: #fff; box-shadow: 0 3px 10px rgba(0,137,123,0.3); }
+    .btn-action.ship:hover { box-shadow: 0 5px 16px rgba(0,137,123,0.4); color:#fff; }
+    .btn-action.deliver { background: linear-gradient(135deg,var(--primary),var(--primary-dark)); color: #fff; box-shadow: 0 3px 10px rgba(255,107,53,0.3); }
+    .btn-action.deliver:hover { box-shadow: 0 5px 16px rgba(255,107,53,0.4); color:#fff; }
+    .btn-action.cancel { background: #fff; color: #d32f2f; border: 1.5px solid #ef9a9a; }
+    .btn-action.cancel:hover { background: #fce4ec; color: #d32f2f; }
+    .btn-action.back { background: #f5f6fb; color: var(--secondary); border: 1.5px solid #e4e8f0; }
+    .btn-action.back:hover { background: #eef0f8; color:var(--secondary); }
+    .btn-action.confirm { background: linear-gradient(135deg,#7b1fa2,#6a1b9a); color: #fff; box-shadow: 0 3px 10px rgba(123,31,162,0.3); }
+    .btn-action.confirm:hover { box-shadow: 0 5px 16px rgba(123,31,162,0.4); color:#fff; }
+
+    /* STATUS BADGE */
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .status-badge.pending    { background:#fff3e0; color:#e65100; }
+    .status-badge.reviewed   { background:#e3f2fd; color:#1565c0; }
+    .status-badge.on_progress { background:#e8eaf6; color:#283593; }
+    .status-badge.packed     { background:#f3e5f5; color:#6a1b9a; }
+    .status-badge.shipped    { background:#e0f2f1; color:#00695c; }
+    .status-badge.delivered  { background:#e8f5e9; color:#2e7d32; }
+    .status-badge.completed  { background:#e8f5e9; color:#1b5e20; }
+    .status-badge.cancelled  { background:#fce4ec; color:#880e4f; }
+
+    /* MODAL */
+    .modal-apms .modal-content { border: none; border-radius: 16px; box-shadow: 0 16px 48px rgba(45,48,71,0.2); }
+    .modal-apms .modal-header { border-bottom: 1px solid #f0f2f8; padding: 1rem 1.5rem; }
+    .modal-apms .modal-body { padding: 1.5rem; }
+    .modal-apms .modal-footer { border-top: 1px solid #f0f2f8; padding: 1rem 1.5rem; }
+
+    @media(max-width:575px) {
+        .info-dl { grid-template-columns: 1fr; }
+        .info-dl .dl-item.full { grid-column: 1; }
+        .info-dl .dl-item:nth-last-child(-n+2) { border-bottom: 1px solid #f5f6fb; }
+        .info-dl .dl-item:last-child { border-bottom: none; }
+        .order-timeline { padding: 1rem 0.5rem; }
+        .tl-step { min-width: 60px; }
+    }
+
+    /* compat keep old class */
+    .status-timeline-modern { display: flex; gap: 0; border-radius: 10px; overflow: hidden; }
+    .btn-primary-apms { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff !important; border: none; border-radius: 9px; font-weight: 600; font-size: 0.85rem; padding: 0.55rem 1.2rem; box-shadow: 0 3px 10px rgba(255,107,53,0.3); transition: transform 0.15s, box-shadow 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary-apms:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(255,107,53,0.4); }
+    .form-control { border-radius: 8px; border: 1.5px solid #e4e8f0; font-size: 0.85rem; color: var(--secondary); }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,107,53,0.1); }
+    .form-control-sm { border-radius: 7px; }
 </style>
+<div class="container-fluid pb-4">
 
-<div class="container-fluid px-3 px-md-4">
-    {{-- Header --}}
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
-        <div>
-            <a href="{{ route('wholesale.index') }}" class="btn btn-sm btn-outline-secondary mr-2"><i class="fas fa-arrow-left"></i></a>
-            <span class="font-weight-bold" style="font-size:1.15rem;color:#333">{{ $order->invoice_number }}</span>
-            @php
-                $badgeMap = ['pending'=>'warning','reviewed'=>'primary','on_progress'=>'info','packed'=>'dark','shipped'=>'secondary','delivered'=>'success','completed'=>'success','cancelled'=>'danger'];
-                $labelMap = ['pending'=>'Pending','reviewed'=>'Ditinjau','on_progress'=>'Diproses','packed'=>'Dibungkus','shipped'=>'Dikirim','delivered'=>'Diterima','completed'=>'Selesai','cancelled'=>'Dibatalkan'];
-            @endphp
-            <span class="badge badge-{{ $badgeMap[$order->status] ?? 'secondary' }} ml-2 px-3 py-1" style="font-size:0.75rem">{{ $labelMap[$order->status] ?? strtoupper($order->status) }}</span>
-        </div>
-        <div class="mt-2 mt-md-0">
-            <a href="{{ $whatsappUrl }}" target="_blank" class="btn btn-sm btn-success mr-1"><i class="fab fa-whatsapp mr-1"></i> WhatsApp</a>
-            <a href="{{ route('wholesale.print', $order->id) }}" target="_blank" class="btn btn-sm btn-outline-dark"><i class="fas fa-print mr-1"></i> Cetak</a>
-        </div>
-    </div>
-
-    {{-- Timeline --}}
     @php
         $statusFlow = ['pending','reviewed','on_progress','packed','shipped','delivered','completed'];
         $flowIndex = array_search($order->status, $statusFlow);
-        $flowLabels = ['pending'=>'PENDING','reviewed'=>'DITINJAU','on_progress'=>'DIPROSES','packed'=>'DIKEMAS','shipped'=>'DIKIRIM','delivered'=>'DITERIMA','completed'=>'SELESAI'];
-        $flowIcons = ['pending'=>'fa-clock','reviewed'=>'fa-check-double','on_progress'=>'fa-spinner','packed'=>'fa-box','shipped'=>'fa-truck','delivered'=>'fa-handshake','completed'=>'fa-check-circle'];
+        $labelMap = ['pending'=>'Pending','reviewed'=>'Ditinjau','on_progress'=>'Diproses','packed'=>'Dikemas','shipped'=>'Dikirim','delivered'=>'Diterima','completed'=>'Selesai','cancelled'=>'Dibatalkan'];
+        $flowLabels = ['pending'=>'Pending','reviewed'=>'Ditinjau','on_progress'=>'Diproses','packed'=>'Dikemas','shipped'=>'Dikirim','delivered'=>'Diterima','completed'=>'Selesai'];
+        $flowIcons = ['pending'=>'fa-clock','reviewed'=>'fa-check-double','on_progress'=>'fa-cog','packed'=>'fa-box','shipped'=>'fa-truck','delivered'=>'fa-handshake','completed'=>'fa-check-circle'];
     @endphp
-    <div class="status-timeline-modern mb-4">
-        @foreach($statusFlow as $i => $step)
-            @php
-                $cls = 'pending';
-                if ($order->status === 'cancelled') {
-                    $cls = $i <= $flowIndex ? 'cancelled' : 'pending';
-                } elseif ($flowIndex !== false && $i <= $flowIndex) {
-                    $cls = ($i === $flowIndex) ? 'active' : 'done';
-                }
-            @endphp
-            <div class="step {{ $cls }}">
-                <i class="fas {{ $flowIcons[$step] }}"></i>
-                {{ $flowLabels[$step] }}
+
+    {{-- Page Header + Status Timeline side by side --}}
+    <div class="page-header-apms mb-4">
+        <div class="row align-items-center" style="gap:0">
+
+            {{-- Left: Title & Breadcrumb & Buttons --}}
+            <div class="col-lg-4 col-md-12 mb-3 mb-lg-0">
+                <h1 style="font-size:1.25rem;font-weight:700;margin:0 0 4px;color:#fff;">
+                    <i class="fas fa-file-invoice mr-2" style="color:var(--primary)"></i>Detail Pesanan Grosir
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb" style="background:transparent;margin:0;padding:0;font-size:0.78rem;">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}" style="color:rgba(255,255,255,0.65);text-decoration:none;"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('wholesale.index') }}" style="color:rgba(255,255,255,0.65);text-decoration:none;">Grosir</a></li>
+                        <li class="breadcrumb-item active" style="color:rgba(255,255,255,0.45);">{{ $order->invoice_number }}</li>
+                    </ol>
+                </nav>
+                <div class="d-flex flex-wrap mt-3" style="gap:0.4rem;">
+                    <a href="{{ $whatsappUrl }}" target="_blank" class="btn btn-sm" style="background:#25d366;color:#fff;border-radius:8px;font-weight:600;font-size:0.8rem;padding:0.4rem 0.85rem;">
+                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                    </a>
+                    <a href="{{ route('wholesale.print', $order->id) }}" target="_blank" class="btn btn-outline-light btn-sm" style="border-radius:8px;font-weight:600;font-size:0.8rem;">
+                        <i class="fas fa-print mr-1"></i> Cetak
+                    </a>
+                    <a href="{{ route('wholesale.index') }}" class="btn btn-outline-light btn-sm" style="border-radius:8px;font-weight:600;font-size:0.8rem;">
+                        <i class="fas fa-arrow-left mr-1"></i> Kembali
+                    </a>
+                </div>
             </div>
-        @endforeach
+
+            {{-- Right: Status Timeline --}}
+            <div class="col-lg-8 col-md-12">
+                <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:0.75rem 1rem 0.5rem;">
+                    <div class="d-flex align-items-center justify-content-between mb-2" style="gap:8px;">
+                        <span style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.5px;">
+                            <i class="fas fa-route mr-1"></i>Status Pesanan
+                        </span>
+                        <span class="status-badge {{ $order->status }}">
+                            {{ $labelMap[$order->status] ?? ucfirst($order->status) }}
+                        </span>
+                    </div>
+
+                    @if($order->status === 'cancelled')
+                        <div style="background:rgba(239,83,80,0.15);border:1px solid rgba(239,83,80,0.3);border-radius:8px;padding:0.5rem 0.85rem;font-size:0.8rem;color:#ffcdd2;font-weight:600;">
+                            <i class="fas fa-ban mr-2"></i>Pesanan dibatalkan
+                            @if($order->cancellation_reason) — {{ $order->cancellation_reason }} @endif
+                        </div>
+                    @else
+                        {{-- Timeline steps --}}
+                        <div class="order-timeline px-2" style="padding-top:0.5rem;padding-bottom:0.25rem;">
+                            @foreach($statusFlow as $i => $step)
+                                @php
+                                    $cls = 'upcoming';
+                                    if ($flowIndex !== false) {
+                                        if ($i < $flowIndex) $cls = 'done';
+                                        elseif ($i === $flowIndex) $cls = 'active';
+                                    }
+                                @endphp
+                                @if($i > 0)
+                                <div class="tl-connector {{ $i <= $flowIndex ? 'done' : '' }}"></div>
+                                @endif
+                                <div class="tl-step {{ $cls }}">
+                                    <div class="tl-dot">
+                                        @if($cls === 'done')<i class="fas fa-check"></i>
+                                        @else<i class="fas {{ $flowIcons[$step] }}"></i>@endif
+                                    </div>
+                                    <div class="tl-label">{{ $flowLabels[$step] }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Timestamp strip --}}
+                        <div class="d-flex flex-wrap mt-1" style="gap:5px;">
+                            @if($order->confirmed_at)<span style="background:rgba(255,255,255,0.1);border-radius:5px;padding:2px 8px;font-size:0.67rem;color:rgba(255,255,255,0.65);display:inline-flex;align-items:center;gap:3px;"><i class="fas fa-check" style="font-size:0.6rem;color:var(--primary)"></i>Konfirmasi {{ $order->confirmed_at->format('d/m H:i') }}</span>@endif
+                            @if($order->packed_at)<span style="background:rgba(255,255,255,0.1);border-radius:5px;padding:2px 8px;font-size:0.67rem;color:rgba(255,255,255,0.65);display:inline-flex;align-items:center;gap:3px;"><i class="fas fa-box" style="font-size:0.6rem;color:#ce93d8;"></i>Kemas {{ $order->packed_at->format('d/m H:i') }}</span>@endif
+                            @if($order->shipped_at)<span style="background:rgba(255,255,255,0.1);border-radius:5px;padding:2px 8px;font-size:0.67rem;color:rgba(255,255,255,0.65);display:inline-flex;align-items:center;gap:3px;"><i class="fas fa-truck" style="font-size:0.6rem;color:#80cbc4;"></i>Kirim {{ $order->shipped_at->format('d/m H:i') }}</span>@endif
+                            @if($order->delivered_at)<span style="background:rgba(255,255,255,0.1);border-radius:5px;padding:2px 8px;font-size:0.67rem;color:rgba(255,255,255,0.65);display:inline-flex;align-items:center;gap:3px;"><i class="fas fa-handshake" style="font-size:0.6rem;color:#a5d6a7;"></i>Terima {{ $order->delivered_at->format('d/m H:i') }}</span>@endif
+                            @if($order->completed_at)<span style="background:rgba(67,160,71,0.2);border-radius:5px;padding:2px 8px;font-size:0.67rem;color:#a5d6a7;display:inline-flex;align-items:center;gap:3px;"><i class="fas fa-check-circle" style="font-size:0.6rem;"></i>Selesai {{ $order->completed_at->format('d/m H:i') }}</span>@endif
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <div class="row">
-        {{-- LEFT: Order Items --}}
-        <div class="col-lg-8 mb-4">
-            <div class="card border-0 shadow-sm" style="border-radius:10px;overflow:hidden">
-                <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center" style="border-bottom:1px solid #f0f0f0">
-                    <span class="font-weight-bold" style="font-size:0.95rem;color:#333"><i class="fas fa-shopping-cart mr-2 text-primary"></i> Item Pesanan</span>
-                    <span class="text-muted" style="font-size:0.78rem">{{ $order->details->count() }} item</span>
+        {{-- LEFT: Items + Summary --}}
+        <div class="col-lg-8">
+            {{-- Order Items --}}
+            <div class="detail-card">
+                <div class="dc-header">
+                    <div class="dc-icon" style="background:rgba(25,118,210,0.1);color:#1976d2"><i class="fas fa-shopping-cart"></i></div>
+                    <h5>Item Pesanan</h5>
+                    <span class="ml-auto" style="font-size:0.78rem;color:#8892a4;background:#f5f6fb;border-radius:6px;padding:2px 8px;">{{ $order->details->count() }} produk</span>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-borderless mb-0" style="font-size:0.85rem">
-                            <thead class="text-muted" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.3px;background:#fafafa">
-                                <tr><th class="pl-4 py-2">Produk</th><th class="py-2 text-center">Qty</th><th class="py-2 text-center">Volume</th><th class="py-2 text-right">Harga</th><th class="pr-4 py-2 text-right">Subtotal</th></tr>
-                            </thead>
-                            <tbody>
-                                @foreach($order->details as $detail)
-                                <tr style="border-bottom:1px solid #f8f8f8">
-                                    <td class="pl-4 py-2">
-                                        <span class="font-weight-500">{{ $detail->product_name }}</span>
-                                        @if($detail->unit && $detail->unit !== 'pcs')
-                                            <br><small class="text-muted">{{ $detail->unit }}</small>
-                                        @endif
-                                    </td>
-                                    <td class="py-2 text-center font-weight-500">{{ $detail->quantity }}</td>
-                                    <td class="py-2 text-center text-muted">{{ $detail->volume_ml ? $detail->volume_ml . ' ml' : '-' }}</td>
-                                    <td class="py-2 text-right">
-                                        Rp {{ number_format($detail->price, 0, ',', '.') }}
-                                        @if($detail->price_per_ml)
-                                            <br><small class="text-muted">{{ number_format($detail->price_per_ml, 0) }}/ml</small>
-                                        @endif
-                                    </td>
-                                    <td class="pr-4 py-2 text-right font-weight-bold">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="table-responsive">
+                    <table class="prod-table">
+                        <thead>
+                            <tr>
+                                <th style="width:40%">Produk</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-center">Volume</th>
+                                <th class="text-right">Harga/pcs</th>
+                                <th class="text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($order->details as $detail)
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;color:var(--secondary)">{{ $detail->product_name }}</div>
+                                    @if($detail->unit && $detail->unit !== 'pcs')
+                                    <div style="font-size:0.72rem;color:#8892a4">{{ $detail->unit }}</div>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <span style="font-weight:700;color:var(--secondary)">{{ $detail->quantity }}</span>
+                                </td>
+                                <td class="text-center" style="color:#8892a4">
+                                    {{ $detail->volume_ml ? $detail->volume_ml . ' ml' : '-' }}
+                                </td>
+                                <td class="text-right">
+                                    <div style="font-weight:500">Rp {{ number_format($detail->price, 0, ',', '.') }}</div>
+                                    @if($detail->price_per_ml)
+                                    <div style="font-size:0.7rem;color:#8892a4">{{ number_format($detail->price_per_ml,0) }}/ml</div>
+                                    @endif
+                                </td>
+                                <td class="text-right">
+                                    <span style="font-weight:700;color:var(--secondary)">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</span>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-                <div class="card-footer bg-white px-4 py-3" style="border-top:1px solid #f0f0f0">
+
+                {{-- Summary --}}
+                <div class="dc-body" style="border-top:2px solid #f0f2f8">
                     <div class="row">
-                        <div class="col-6">
-                            @if($order->package_target_amount > 0)
-                            <small class="text-muted">Target Paket: <strong class="text-dark">Rp {{ number_format($order->package_target_amount, 0, ',', '.') }}</strong></small>
+                        <div class="col-md-5 offset-md-7">
+                            @php
+                                $subtotal = $order->details->sum('subtotal');
+                                $discount = $order->discount_amount ?? 0;
+                                $shipping = $order->shipping_cost ?? 0;
+                                $total = $order->total_amount ?? ($subtotal - $discount + $shipping);
+                            @endphp
+                            <div class="summary-row">
+                                <span class="label">Subtotal</span>
+                                <span>Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                            </div>
+                            @if($discount > 0)
+                            <div class="summary-row discount">
+                                <span class="label">Diskon Grosir</span>
+                                <span class="amount">- Rp {{ number_format($discount, 0, ',', '.') }}</span>
+                            </div>
                             @endif
-                        </div>
-                        <div class="col-6 text-right">
-                            <div><span class="text-muted" style="font-size:0.8rem">Total Pesanan</span></div>
-                            <div class="font-weight-bold" style="font-size:1.2rem;color:#e65100">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</div>
-                            @if($order->shipping_cost > 0)
-                                <small class="text-muted">+ Ongkir Rp {{ number_format($order->shipping_cost, 0, ',', '.') }}</small>
+                            @if($shipping > 0)
+                            <div class="summary-row">
+                                <span class="label">Ongkos Kirim</span>
+                                <span>Rp {{ number_format($shipping, 0, ',', '.') }}</span>
+                            </div>
                             @endif
+                            <div class="summary-row total">
+                                <span>Total</span>
+                                <span class="amount">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- RIGHT: Info + Terms + Workflow --}}
-        <div class="col-lg-4 mb-4">
-            {{-- Shipping Info --}}
-            <div class="card border-0 shadow-sm mb-3" style="border-radius:10px;overflow:hidden">
-                <div class="card-header bg-white py-2 px-3" style="border-bottom:1px solid #f0f0f0">
-                    <span class="section-title-sm"><i class="fas fa-truck mr-1 text-info"></i> Informasi Pengiriman</span>
+        {{-- RIGHT: Info + Actions --}}
+        <div class="col-lg-4">
+
+            {{-- Customer Info --}}
+            <div class="detail-card">
+                <div class="dc-header">
+                    <div class="dc-icon" style="background:rgba(0,137,123,0.1);color:#00897b"><i class="fas fa-user"></i></div>
+                    <h5>Informasi Pelanggan</h5>
                 </div>
-                <div class="card-body px-3 py-2">
-                    <div class="info-grid">
-                        <div class="item full"><div class="label">Penerima</div><div class="value">{{ $order->recipient_name }}</div></div>
-                        <div class="item"><div class="label">Telepon</div><div class="value">{{ $order->recipient_phone }}</div></div>
-                        <div class="item"><div class="label">Kurir</div><div class="value">{{ $order->shipping_courier ?? '-' }}</div></div>
-                        <div class="item full"><div class="label">Alamat</div><div class="value" style="font-size:0.82rem">{{ $order->shipping_address }}</div></div>
-                        <div class="item"><div class="label">Biaya Kirim</div><div class="value">Rp {{ number_format($order->shipping_cost, 0, ',', '.') }}</div></div>
-                        <div class="item"><div class="label">Estimasi Packing</div><div class="value">{{ $order->packing_days ?? 1 }} Hari</div></div>
-                        @if($order->customer)
-                        <div class="item"><div class="label">Pelanggan</div><div class="value">{{ $order->customer?->name ?? '-' }}</div></div>
-                        @endif
-                        <div class="item"><div class="label">P. Jawab</div><div class="value">{{ $order->handler->name ?? $order->delivery_handler ?? '-' }}</div></div>
-                        @if($order->tracking_number)
-                        <div class="item full"><div class="label">No. Resi</div><div class="value"><span class="text-primary font-weight-bold" style="font-size:0.95rem">{{ $order->tracking_number }}</span></div></div>
-                        @endif
-                        @if($order->notes)
-                        <div class="item full"><div class="label">Catatan</div><div class="value" style="font-size:0.82rem">{{ $order->notes }}</div></div>
-                        @endif
-                        <div class="item"><div class="label">Dibuat Oleh</div><div class="value">{{ $order->user->name ?? 'System' }}</div></div>
-                        <div class="item"><div class="label">Tanggal</div><div class="value">{{ $order->created_at->format('d/m/Y H:i') }}</div></div>
-                    </div>
-                    @if($order->barcode || $order->tracking_number)
-                    <div class="mt-2 pt-2 d-flex justify-content-center align-items-center" style="gap:1rem;border-top:1px solid #f0f0f0">
-                        @if($order->barcode)
-                        <div class="text-center"><i class="fas fa-barcode fa-lg text-muted"></i><div class="small font-weight-bold mt-1">{{ $order->barcode }}</div></div>
-                        @endif
-                        @if($order->tracking_number)
-                        <div class="text-center">
-                            <div id="wholesaleShowQr" style="display:inline-block"></div>
-                            <div class="small text-muted mt-1">Scan lacak</div>
+                <div class="dc-body">
+                    <div class="info-dl">
+                        <div class="dl-item full">
+                            <div class="dl-label">Penerima</div>
+                            <div class="dl-value" style="font-size:1rem;font-weight:700">{{ $order->recipient_name }}</div>
                         </div>
-                        @php $qrUrl = url('/wholesale-customer/track?invoice_number=' . $order->invoice_number); @endphp
-                        <script>new QRCode(document.getElementById('wholesaleShowQr'),{text:'{{ $qrUrl }}',width:70,height:70});</script>
+                        <div class="dl-item">
+                            <div class="dl-label">Telepon</div>
+                            <div class="dl-value">{{ $order->recipient_phone }}</div>
+                        </div>
+                        <div class="dl-item">
+                            <div class="dl-label">Kurir</div>
+                            <div class="dl-value">{{ $order->shipping_courier ?? '-' }}</div>
+                        </div>
+                        <div class="dl-item full">
+                            <div class="dl-label">Alamat Pengiriman</div>
+                            <div class="dl-value" style="font-size:0.82rem;line-height:1.5">{{ $order->shipping_address }}</div>
+                        </div>
+                        @if($order->tracking_number)
+                        <div class="dl-item full">
+                            <div class="dl-label">No. Resi</div>
+                            <div class="dl-value" style="font-weight:700;color:var(--primary);font-size:0.95rem">{{ $order->tracking_number }}</div>
+                        </div>
+                        @endif
+                        <div class="dl-item">
+                            <div class="dl-label">Dibuat</div>
+                            <div class="dl-value">{{ $order->created_at->format('d/m/Y') }}</div>
+                        </div>
+                        <div class="dl-item">
+                            <div class="dl-label">Oleh</div>
+                            <div class="dl-value">{{ $order->user->name ?? 'System' }}</div>
+                        </div>
+                        @if($order->notes)
+                        <div class="dl-item full">
+                            <div class="dl-label">Catatan</div>
+                            <div class="dl-value" style="font-size:0.82rem;color:#667">{{ $order->notes }}</div>
+                        </div>
                         @endif
                     </div>
-                    @endif
                 </div>
             </div>
 
-            {{-- Terms --}}
-            <div class="card border-0 shadow-sm mb-3" style="border-radius:10px;overflow:hidden">
-                <div class="card-header bg-white py-2 px-3" style="border-bottom:1px solid #f0f0f0">
-                    <span class="section-title-sm"><i class="fas fa-file-contract mr-1 text-muted"></i> Ketentuan Grosir</span>
+            {{-- Action Card --}}
+            <div class="detail-card">
+                <div class="dc-header">
+                    <div class="dc-icon" style="background:rgba(255,107,53,0.1);color:var(--primary)"><i class="fas fa-tasks"></i></div>
+                    <h5>Tindakan</h5>
                 </div>
-                <div class="card-body px-3 py-2">
-                    <ul class="terms-list">
-                        <li>Pesanan ini <strong>kesepakatan grosir</strong> mengikat secara hukum.</li>
-                        <li>Pembayaran sesuai ketentuan sebelum barang dikirim.</li>
-                        <li>Resiko kirim ditanggung pembeli setelah diserahkan ke kurir.</li>
-                        <li>Barang grosir <strong>tidak dapat ditukar/dikembalikan</strong> kecuali cacat produksi (claim maksimal 1×24 jam).</li>
-                        <li>Ketidaksesuaian lapor maksimal 2×24 jam disertai foto/bukti.</li>
-                        <li>Pembatalan sebelum diproses, dikenakan biaya administrasi.</li>
-                        <li>Pembeli menyetujui seluruh ketentuan AL'ASHAR PARFUM.</li>
-                    </ul>
-                </div>
-            </div>
-
-            {{-- Workflow --}}
-            <div class="card border-0 shadow-sm mb-3" style="border-radius:10px;overflow:hidden">
-                <div class="card-header bg-white py-2 px-3" style="border-bottom:1px solid #f0f0f0">
-                    <span class="section-title-sm"><i class="fas fa-tasks mr-1 text-primary"></i> Alur Kerja</span>
-                </div>
-                <div class="card-body px-3 py-2">
-                    @if($order->status == 'pending')
-                        <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:0.8rem;border-radius:6px"><i class="fas fa-clock mr-1"></i> Menunggu review admin untuk dikonfirmasi.</div>
-                        <button type="button" class="btn btn-primary-apms btn-action-flow w-100 mb-2" data-toggle="modal" data-target="#confirmModal">
-                            <i class="fas fa-check-double mr-2"></i> KONFIRMASI PESANAN
-                        </button>
-                        @can('wholesale.manage')
-                        <a href="{{ route('wholesale.edit', $order->id) }}" class="btn btn-outline-warning btn-sm w-100 mb-2"><i class="fas fa-edit mr-1"></i> Edit Pesanan</a>
-                        @endcan
-                        <form action="{{ route('wholesale.cancel', $order->id) }}" method="POST">
-                            @csrf
-                            <div class="input-group input-group-sm">
-                                <input type="text" name="cancellation_reason" class="form-control" placeholder="Alasan batal" required>
-                                <div class="input-group-append">
-                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Batalkan pesanan?')"><i class="fas fa-times"></i></button>
+                <div class="dc-body">
+                    @if($order->status === 'pending')
+                        <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.82rem;color:#e65100;margin-bottom:1rem;">
+                            <i class="fas fa-clock mr-1"></i> Menunggu konfirmasi admin
+                        </div>
+                        <div class="action-bar">
+                            <button type="button" class="btn-action confirm" data-toggle="modal" data-target="#confirmModal">
+                                <i class="fas fa-check-double"></i> Konfirmasi Pesanan
+                            </button>
+                            @can('wholesale.manage')
+                            <a href="{{ route('wholesale.edit', $order->id) }}" class="btn-action" style="background:#fff8e1;color:#f57f17;border-color:#ffe082;">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            @endcan
+                        </div>
+                        <div class="mt-3">
+                            <form action="{{ route('wholesale.cancel', $order->id) }}" method="POST">
+                                @csrf
+                                <div class="input-group input-group-sm">
+                                    <input type="text" name="cancellation_reason" class="form-control" placeholder="Alasan pembatalan..." required>
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Batalkan pesanan ini?')">
+                                            <i class="fas fa-times"></i> Batal
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
 
-                    @elseif($order->status == 'reviewed')
-                        <div class="alert alert-primary py-2 px-3 mb-2" style="font-size:0.8rem;border-radius:6px"><i class="fas fa-check-circle mr-1"></i> Pesanan sudah dikonfirmasi. Proses sekarang?</div>
+                    @elseif($order->status === 'reviewed')
+                        <div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.82rem;color:#1565c0;margin-bottom:1rem;">
+                            <i class="fas fa-check-circle mr-1"></i> Pesanan sudah dikonfirmasi, siap diproses
+                        </div>
                         <form action="{{ route('wholesale.process', $order->id) }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn btn-info btn-action-flow w-100 text-white"><i class="fas fa-play mr-2"></i> MULAI PROSES</button>
+                            <button type="submit" class="btn-action process w-100">
+                                <i class="fas fa-play"></i> Mulai Proses
+                            </button>
                         </form>
 
-                    @elseif($order->status == 'on_progress')
-                        <div class="alert alert-info py-2 px-3 mb-2" style="font-size:0.8rem;border-radius:6px"><i class="fas fa-spinner mr-1"></i> Pesanan sedang dikerjakan.</div>
+                    @elseif($order->status === 'on_progress')
+                        <div style="background:#e8eaf6;border:1px solid #9fa8da;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.82rem;color:#283593;margin-bottom:1rem;">
+                            <i class="fas fa-cog fa-spin mr-1"></i> Sedang diproses
+                        </div>
                         <form action="{{ route('wholesale.pack', $order->id) }}" method="POST">
                             @csrf
-                            <div class="form-group mb-2">
-                                <label style="font-size:0.75rem;color:#888">Penanggung Jawab Packing</label>
+                            <div class="form-group">
+                                <label style="font-size:0.75rem;font-weight:600;color:#8892a4;text-transform:uppercase">Penanggung Jawab</label>
                                 <select name="handler_id" class="form-control form-control-sm">
-                                    <option value="">Pilih</option>
+                                    <option value="">Pilih Staff</option>
                                     @foreach($handlers as $h)
-                                    <option value="{{ $h->id }}" {{ $order->handler_id == $h->id ? 'selected' : '' }}>{{ $h->name }} ({{ $h->role }})</option>
+                                    <option value="{{ $h->id }}" {{ $order->handler_id == $h->id ? 'selected' : '' }}>{{ $h->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-dark btn-action-flow w-100"><i class="fas fa-box mr-2"></i> SELESAI PACKING</button>
+                            <button type="submit" class="btn-action w-100" style="background:linear-gradient(135deg,#7b1fa2,#6a1b9a);color:#fff;justify-content:center;">
+                                <i class="fas fa-box"></i> Selesai Packing
+                            </button>
                         </form>
 
-                    @elseif($order->status == 'packed')
-                        <div class="alert alert-dark py-2 px-3 mb-2" style="font-size:0.8rem;border-radius:6px"><i class="fas fa-box mr-1"></i> Barang sudah di-packing. Kirim sekarang?</div>
+                    @elseif($order->status === 'packed')
+                        <div style="background:#f3e5f5;border:1px solid #ce93d8;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.82rem;color:#6a1b9a;margin-bottom:1rem;">
+                            <i class="fas fa-box mr-1"></i> Barang sudah dikemas, siap dikirim
+                        </div>
                         <form action="{{ route('wholesale.ship', $order->id) }}" method="POST">
                             @csrf
-                            <div class="form-group mb-2">
-                                <label style="font-size:0.75rem;color:#888">Kurir</label>
+                            <div class="form-group">
+                                <label style="font-size:0.75rem;font-weight:600;color:#8892a4;text-transform:uppercase">Kurir</label>
                                 <input type="text" name="shipping_courier" class="form-control form-control-sm" value="{{ $order->shipping_courier }}" placeholder="J&T, Sicepat, dll">
                             </div>
-                            <div class="form-group mb-2">
-                                <label style="font-size:0.75rem;color:#888">Biaya Kirim (Rp)</label>
+                            <div class="form-group">
+                                <label style="font-size:0.75rem;font-weight:600;color:#8892a4;text-transform:uppercase">Biaya Kirim (Rp)</label>
                                 <input type="number" name="shipping_cost" class="form-control form-control-sm" value="{{ $order->shipping_cost }}" min="0">
                             </div>
-                            <div class="form-group mb-2">
-                                <label style="font-size:0.75rem;color:#888">No. Resi Pengiriman</label>
+                            <div class="form-group">
+                                <label style="font-size:0.75rem;font-weight:600;color:#8892a4;text-transform:uppercase">No. Resi</label>
                                 <input type="text" name="tracking_number" class="form-control form-control-sm" value="{{ $order->tracking_number }}" placeholder="JP0000123456">
-                                <small class="text-muted" style="font-size:0.65rem">Nomor resi dari kurir</small>
                             </div>
-                            <button type="submit" class="btn btn-secondary btn-action-flow w-100"><i class="fas fa-truck mr-2"></i> TANDAI DIKIRIM</button>
+                            <button type="submit" class="btn-action ship w-100" style="justify-content:center;">
+                                <i class="fas fa-truck"></i> Tandai Dikirim
+                            </button>
                         </form>
 
-                    @elseif($order->status == 'shipped')
-                        <div class="alert alert-secondary py-2 px-3 mb-2" style="font-size:0.8rem;border-radius:6px">
-                            <i class="fas fa-truck mr-1"></i> Pesanan dalam perjalanan.
-                            @if($order->shipping_courier) <br><small>Kurir: {{ $order->shipping_courier }}</small>@endif
+                    @elseif($order->status === 'shipped')
+                        <div style="background:#e0f2f1;border:1px solid #80cbc4;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.82rem;color:#00695c;margin-bottom:1rem;">
+                            <i class="fas fa-truck mr-1"></i> Dalam perjalanan{{ $order->shipping_courier ? ' via ' . $order->shipping_courier : '' }}
                         </div>
                         <form action="{{ route('wholesale.deliver', $order->id) }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn btn-success btn-action-flow w-100"><i class="fas fa-handshake mr-2"></i> TANDAI DITERIMA</button>
+                            <button type="submit" class="btn-action deliver w-100" style="justify-content:center;">
+                                <i class="fas fa-handshake"></i> Tandai Diterima
+                            </button>
                         </form>
 
-                    @elseif($order->status == 'delivered')
-                        <div class="alert alert-success py-2 px-3 mb-2" style="font-size:0.8rem;border-radius:6px"><i class="fas fa-check-circle mr-1"></i> Pesanan sudah diterima pelanggan.</div>
+                    @elseif($order->status === 'delivered')
+                        <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:0.65rem 0.9rem;font-size:0.82rem;color:#2e7d32;margin-bottom:1rem;">
+                            <i class="fas fa-check-circle mr-1"></i> Sudah diterima pelanggan
+                        </div>
                         <form action="{{ route('wholesale.complete', $order->id) }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn btn-success btn-action-flow w-100"><i class="fas fa-check-double mr-2"></i> SELESAIKAN PESANAN</button>
+                            <button type="submit" class="btn-action approve w-100" style="justify-content:center;">
+                                <i class="fas fa-check-double"></i> Selesaikan Pesanan
+                            </button>
                         </form>
 
-                    @elseif($order->status == 'completed')
+                    @elseif($order->status === 'completed')
                         <div class="text-center py-3">
-                            <i class="fas fa-check-circle" style="font-size:3rem;color:#28a745"></i>
-                            <h5 class="font-weight-bold mt-2">Pesanan Selesai</h5>
-                            <p class="text-muted mb-0" style="font-size:0.82rem">Selesai: {{ $order->completed_at ? $order->completed_at->format('d/m/Y H:i') : '-' }}</p>
+                            <div style="width:56px;height:56px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;font-size:1.5rem;color:#43a047">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div style="font-weight:700;color:#2e7d32;font-size:1rem">Pesanan Selesai</div>
+                            <div style="font-size:0.78rem;color:#8892a4;margin-top:4px">
+                                {{ $order->completed_at ? $order->completed_at->format('d M Y, H:i') : '-' }}
+                            </div>
                         </div>
 
-                    @elseif($order->status == 'cancelled')
+                    @elseif($order->status === 'cancelled')
                         <div class="text-center py-3">
-                            <i class="fas fa-times-circle" style="font-size:3rem;color:#dc3545"></i>
-                            <h5 class="font-weight-bold mt-2">Pesanan Dibatalkan</h5>
+                            <div style="width:56px;height:56px;border-radius:50%;background:#fce4ec;display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;font-size:1.5rem;color:#e53935">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div style="font-weight:700;color:#c62828;font-size:1rem">Dibatalkan</div>
                             @if($order->cancellation_reason)
-                            <p class="text-muted mb-0" style="font-size:0.82rem">Alasan: {{ $order->cancellation_reason }}</p>
+                            <div style="font-size:0.78rem;color:#8892a4;margin-top:4px">{{ $order->cancellation_reason }}</div>
                             @endif
                         </div>
                     @endif
 
-                    {{-- Timestamps --}}
-                    <hr class="my-2">
-                    <div class="section-title-sm mb-2" style="font-size:0.72rem"><i class="fas fa-history mr-1"></i> Riwayat Status</div>
-                    <div class="timestamp-row">
-                        @if($order->confirmed_at)<span class="ts-item"><i class="fas fa-check text-primary"></i> Konfirmasi {{ $order->confirmed_at->format('d/m H:i') }}</span>@endif
-                        @if($order->reviewed_at)<span class="ts-item"><i class="fas fa-check text-info"></i> Review {{ $order->reviewed_at->format('d/m H:i') }}</span>@endif
-                        @if($order->packed_at)<span class="ts-item"><i class="fas fa-box text-dark"></i> Packing {{ $order->packed_at->format('d/m H:i') }}</span>@endif
-                        @if($order->shipped_at)<span class="ts-item"><i class="fas fa-truck text-secondary"></i> Kirim {{ $order->shipped_at->format('d/m H:i') }}</span>@endif
-                        @if($order->delivered_at)<span class="ts-item"><i class="fas fa-handshake text-success"></i> Terima {{ $order->delivered_at->format('d/m H:i') }}</span>@endif
-                        @if($order->completed_at)<span class="ts-item"><i class="fas fa-check-circle text-success"></i> Selesai {{ $order->completed_at->format('d/m H:i') }}</span>@endif
-                        @if($order->cancelled_at)<span class="ts-item"><i class="fas fa-times-circle text-danger"></i> Batal {{ $order->cancelled_at->format('d/m H:i') }}</span>@endif
-                    </div>
-
-                    {{-- Cancel for active orders --}}
-                    @if(in_array($order->status, ['reviewed', 'on_progress', 'packed']))
-                    <hr class="my-2">
-                    <form action="{{ route('wholesale.cancel', $order->id) }}" method="POST">
-                        @csrf
-                        <div class="input-group input-group-sm">
-                            <input type="text" name="cancellation_reason" class="form-control" placeholder="Alasan batal" required>
-                            <div class="input-group-append">
-                                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Yakin batalkan pesanan?')"><i class="fas fa-times"></i></button>
+                    {{-- Cancel for in-progress orders --}}
+                    @if(in_array($order->status, ['reviewed','on_progress','packed']))
+                    <div class="mt-3 pt-3" style="border-top:1px dashed #f0f2f8">
+                        <form action="{{ route('wholesale.cancel', $order->id) }}" method="POST">
+                            @csrf
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="cancellation_reason" class="form-control" placeholder="Alasan pembatalan..." required>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin batalkan pesanan?')">
+                                        <i class="fas fa-times"></i> Batal
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                     @endif
                 </div>
             </div>
-        </div>
-    </div>
+
+        </div>{{-- /RIGHT --}}
+    </div>{{-- /row --}}
 </div>
 
 {{-- Confirm Modal --}}
-<div class="modal fade" id="confirmModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="{{ route('wholesale.confirm', $order->id) }}" method="POST" class="modal-content" style="border-radius:12px;border:none">
+<div class="modal fade modal-apms" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ route('wholesale.confirm', $order->id) }}" method="POST" class="modal-content">
             @csrf
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-check-double text-primary mr-2"></i>Konfirmasi Pesanan</h5>
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-check-double mr-2" style="color:var(--primary)"></i>Konfirmasi Pesanan
+                </h5>
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
-            <div class="modal-body text-center py-3">
-                <div class="mb-2"><i class="fas fa-exclamation-triangle text-warning" style="font-size:2.2rem"></i></div>
-                <p class="mb-1 font-weight-bold" style="font-size:1rem">Konfirmasi pesanan ini?</p>
-                <p class="mb-0 text-muted" style="font-size:0.85rem">Stok gudang akan terpotong sesuai jumlah pesanan.</p>
+            <div class="modal-body text-center py-4">
+                <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,107,53,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;color:var(--primary)">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h6 style="font-weight:700;color:var(--secondary);margin-bottom:6px">Konfirmasi pesanan ini?</h6>
+                <p style="font-size:0.84rem;color:#8892a4;margin:0">Stok gudang akan terpotong sesuai jumlah pesanan.</p>
             </div>
-            <div class="modal-footer border-0 justify-content-center pt-0">
-                <button type="button" class="btn btn-outline-secondary px-3" data-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary-apms px-4"><i class="fas fa-check mr-1"></i> Ya, Konfirmasi</button>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn-action back" data-dismiss="modal">Batal</button>
+                <button type="submit" class="btn-action confirm">
+                    <i class="fas fa-check"></i> Ya, Konfirmasi
+                </button>
             </div>
         </form>
     </div>

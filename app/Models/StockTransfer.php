@@ -30,4 +30,13 @@ class StockTransfer extends Model
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
-}
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function approval()
+    {
+        return $this->hasOne(StockTransferApproval::class);
+    }

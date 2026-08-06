@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AccountingController;
 
-Route::middleware(['auth'])->prefix('accounting')->name('accounting.')->group(function () {
+// Cashier role intentionally excluded — accounting data is owner/admin/manager only.
+Route::middleware(['auth', 'role:owner,admin,manager'])->prefix('accounting')->name('accounting.')->group(function () {
     Route::get('/', [AccountingController::class, 'index'])->name('index');
     Route::get('/coa', [AccountingController::class, 'coaIndex'])->name('coa.index');
     Route::post('/coa', [AccountingController::class, 'coaStore'])->name('coa.store');

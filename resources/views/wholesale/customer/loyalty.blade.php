@@ -193,7 +193,10 @@
             const fd = new FormData(f);
             fd.append('redemption_id', id);
             fetch(f.action, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
                 .then(d => {
                     if (d.success) { toast(d.message); setTimeout(() => location.reload(), 1500); }
                     else toast(d.message || 'Gagal menukar kredit.', true);

@@ -30,15 +30,23 @@ class AiAssistantController extends Controller
     {
         $this->strategicService = $strategicService;
         $this->copilotService = $copilotService;
-        $user = auth()->user();
-        if ($user && !$user->isOwner() && $user->branch_id) {
-            $this->scopeBranchId = $user->branch_id;
-        }
+        // scopeBranchId is resolved lazily in scope() to avoid auth() being called
+        // before session middleware has run (constructor fires before middleware in some cases)
     }
 
     private function scope($query): mixed
     {
-        return $this->scopeBranchId ? $query->where('branch_id', $this->scopeBranchId) : $query;
+        if ($this->scopeBranchId === null) {
+            $user = auth()->user();
+            if ($user && !$user->isOwner() && $user->branch_id) {
+                $this->scopeBranchId = $user->branch_id;
+            } else {
+                $this->scopeBranchId = 0; // 0 = no branch scope needed
+            }
+        }
+        return $this->scopeBranchId > 0
+            ? $query->where('branch_id', $this->scopeBranchId)
+            : $query;
     }
 
     public function ask(Request $request)

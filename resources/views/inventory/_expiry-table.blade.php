@@ -17,7 +17,7 @@
                 <td>{{ $item->product->name ?? '-' }}</td>
                 <td>{{ $item->branch->name ?? '-' }}</td>
                 <td><code>{{ $item->batch_number ?? '-' }}</code></td>
-                <td>{{ $item->current_stock }}</td>
+                <td>{{ \App\Helpers\PerformanceHelper::formatMl((float)($item->current_stock ?? 0)) }}</td>
                 <td>{{ $item->expiration_date ? $item->expiration_date->format('d/m/Y') : '-' }}</td>
                 <td class="text-center">
                     @if($item->days_left < 0)

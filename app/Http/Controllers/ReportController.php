@@ -30,11 +30,11 @@ class ReportController extends Controller
         $endDate = Carbon::now()->endOfMonth();
         
         // Combined Revenue: RetailTransactions + WholesaleOrders
-        $retailRevenue = $this->scopeBranch(Transaction::whereMonth('created_at', now()->month))->sum('total_amount') ?? 0;
+        $retailRevenue = $this->scopeBranch(Transaction::whereMonth('created_at', now()->month))->sum('total_amount');
         $wholesaleRevenue = \App\Models\WholesaleOrder::whereMonth('created_at', now()->month)
             ->where('status', '!=', 'cancelled')
-            ->when(!auth()->user()->isOwner() && !auth()->user()->isAdminPusat(), fn($q) => $q->where('branch_id', auth()->user()->branch_id))
-            ->sum('total_amount') ?? 0;
+            ->when(!auth()->user()->isOwner() && !auth()->user()->isAdmin(), fn($q) => $q->where('branch_id', auth()->user()->branch_id))
+            ->sum('total_amount');
         $totalCombinedRevenue = $retailRevenue + $wholesaleRevenue;
 
         // Housing Stats (New)
@@ -122,7 +122,7 @@ class ReportController extends Controller
             $revWholesale = \App\Models\WholesaleOrder::whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->where('status', '!=', 'cancelled')
-                ->when(!$user->isOwner() && !$user->isAdminPusat(), fn($q) => $q->where('branch_id', $user->branch_id))
+                ->when(!$user->isOwner() && !$user->isAdmin(), fn($q) => $q->where('branch_id', $user->branch_id))
                 ->sum('total_amount') ?? 0;
             $rev = $revRetail + $revWholesale;
 
@@ -142,8 +142,9 @@ class ReportController extends Controller
     public function sales(Request $request)
     {
         Gate::authorize('view_reports');
-        $startDate = $request->get('start_date', Carbon::now()->startOfMonth());
-        $endDate = $request->get('end_date', Carbon::now()->endOfMonth());
+        // Selalu pakai Carbon agar whereBetween konsisten, baik dari request string maupun default
+        $startDate = Carbon::parse($request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d')))->startOfDay();
+        $endDate   = Carbon::parse($request->get('end_date',   Carbon::now()->endOfMonth()->format('Y-m-d')))->endOfDay();
         $type = $request->get('type', 'daily');
         
         $query = $this->scopeBranch(Transaction::whereBetween('created_at', [$startDate, $endDate]));
@@ -234,7 +235,7 @@ class ReportController extends Controller
         $wholesaleRevenue = \App\Models\WholesaleOrder::whereMonth('created_at', $month)
             ->whereYear('created_at', $year)
             ->where('status', 'completed')
-            ->when(!auth()->user()->isOwner() && !auth()->user()->isAdminPusat(), fn($q) => $q->where('branch_id', auth()->user()->branch_id))
+            ->when(!auth()->user()->isOwner() && !auth()->user()->isAdmin(), fn($q) => $q->where('branch_id', auth()->user()->branch_id))
             ->sum('total_amount');
 
         $totalRevenue = $retailRevenue + $wholesaleRevenue;
@@ -333,7 +334,7 @@ class ReportController extends Controller
         $totalSales = $sales->sum('total_amount');
         
         $pdf = Pdf::loadView('reports.exports.sales-pdf', compact('sales', 'startDate', 'endDate', 'period', 'totalSales'));
-        return $pdf->stream('sales-report-' . $period . '-' . date('Y-m-d') . '.pdf');
+        return $pdf->download('sales-report-' . $period . '-' . date('Y-m-d') . '.pdf');
     }
     
     public function customerAnalytics()
@@ -374,7 +375,7 @@ class ReportController extends Controller
             'title' => 'Laporan Stok Rendah',
             'type' => 'low_stock'
         ]);
-        return $pdf->stream('low-stock-report-' . date('Y-m-d') . '.pdf');
+        return $pdf->download('low-stock-report-' . date('Y-m-d') . '.pdf');
     }
 
     public function exportExpiry()
@@ -394,10 +395,10 @@ class ReportController extends Controller
             'title' => 'Laporan Produk Akan Kadaluarsa',
             'type' => 'expiry'
         ]);
-        return $pdf->stream('expiry-report-' . date('Y-m-d') . '.pdf');
+        return $pdf->download('expiry-report-' . date('Y-m-d') . '.pdf');
     }
 
-    // ─── Export CSV: Transaksi ────────────────────────────────────────────────
+    // â”€â”€â”€ Export CSV: Transaksi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public function exportCsvTransactions(Request $request)
     {
         Gate::authorize('view_reports');
@@ -413,9 +414,9 @@ class ReportController extends Controller
 
         $headers = [
             'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
             'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
             'Expires'             => '0',
         ];
 
@@ -446,7 +447,7 @@ class ReportController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    // ─── Export CSV: Inventory ────────────────────────────────────────────────
+    // â”€â”€â”€ Export CSV: Inventory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public function exportCsvInventory()
     {
         Gate::authorize('view_reports');
@@ -471,7 +472,8 @@ class ReportController extends Controller
         $filename = 'laporan-inventory-' . date('Y-m-d') . '.csv';
         $headers = [
             'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
             'Pragma'              => 'no-cache',
             'Expires'             => '0',
         ];

@@ -13,7 +13,7 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         Gate::authorize('manage_employees');
-        $query = User::with(['branch', 'attendances'])->where('role', '!=', 'owner');
+        $query = User::with(['branch', 'attendances' => fn($q) => $q->latest()->limit(30)])->where('role', '!=', 'owner');
 
         // Filter: all / login / store
         $filter = $request->get('filter', 'all');
@@ -75,7 +75,8 @@ class EmployeeController extends Controller
             $rules['name'] = 'required|string|max:255';
         } else {
             $rules['email'] = 'required|email|unique:users';
-            $rules['role'] = 'required|in:cashier,manager,supervisor,packing,admin,admin_pusat';
+            // 'owner' is intentionally excluded — role escalation prevention.
+            $rules['role'] = 'required|in:cashier,manager,supervisor,warehouse,admin';
             $rules['password'] = ['required', new StrongPassword];
         }
 
@@ -166,7 +167,8 @@ class EmployeeController extends Controller
         ];
 
         if (!$isStoreEmp) {
-            $rules['role'] = 'required|in:cashier,manager,supervisor,packing,admin,admin_pusat';
+            // 'owner' is intentionally excluded — role escalation prevention.
+            $rules['role'] = 'required|in:cashier,manager,supervisor,warehouse,admin';
         }
 
         $validated = $request->validate($rules);
@@ -177,6 +179,12 @@ class EmployeeController extends Controller
             if (!$employee->can_login) {
                 unset($validated['email']);
             }
+        }
+
+        // Extra safety: never allow role to be set to 'owner' via this form,
+        // regardless of who submitted it.
+        if (isset($validated['role']) && $validated['role'] === 'owner') {
+            abort(403, 'Role owner tidak dapat ditetapkan melalui formulir ini.');
         }
 
         if (!empty($validated['password'])) {
@@ -210,19 +218,29 @@ class EmployeeController extends Controller
         Gate::authorize('manage_employees');
 
         $validated = $request->validate([
-            'check_in' => 'nullable|date_format:Y-m-d H:i:s',
+            'check_in'  => 'nullable|date_format:Y-m-d H:i:s',
             'check_out' => 'nullable|date_format:Y-m-d H:i:s',
-            'date' => 'required|date',
+            'date'      => 'required|date',
+            'status'    => 'nullable|in:present,absent,late,sick,leave',
         ]);
 
+        // Prevent duplicate attendance record for the same employee+date
+        $existing = \App\Models\Attendance::where('user_id', $employee->id)
+            ->where('date', $validated['date'])
+            ->first();
+
+        if ($existing) {
+            return response()->json(['message' => 'Absensi untuk tanggal ini sudah ada.'], 422);
+        }
+
         \App\Models\Attendance::create([
-            'user_id' => $employee->id,
-            'branch_id' => $employee->branch_id,
+            'user_id'       => $employee->id,
+            'branch_id'     => $employee->branch_id,
             'employee_name' => $employee->name,
-            'date' => $validated['date'],
-            'time_in' => $validated['check_in'] ?? null,
-            'time_out' => $validated['check_out'] ?? null,
-            'status' => 'present',
+            'date'          => $validated['date'],
+            'time_in'       => $validated['check_in'] ?? null,
+            'time_out'      => $validated['check_out'] ?? null,
+            'status'        => $validated['status'] ?? 'present',
         ]);
 
         return response()->json(['message' => 'Absensi berhasil dicatat']);
