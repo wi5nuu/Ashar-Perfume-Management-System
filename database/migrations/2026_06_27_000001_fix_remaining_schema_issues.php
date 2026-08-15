@@ -16,7 +16,7 @@ return new class extends Migration
             Schema::table('products', function (Blueprint $table) {
                 $table->unique('barcode', 'products_barcode_unique');
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // May already exist
         }
 
@@ -25,7 +25,7 @@ return new class extends Migration
             Schema::table('shifts', function (Blueprint $table) {
                 $table->foreign('reviewed_by')->references('id')->on('users')->nullOnDelete();
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // May already exist
         }
 
@@ -34,7 +34,7 @@ return new class extends Migration
             Schema::table('sales_returns', function (Blueprint $table) {
                 $table->foreign('approved_by')->references('id')->on('users')->nullOnDelete();
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // May already exist
         }
 
@@ -69,10 +69,12 @@ return new class extends Migration
     private function safeCreateIndex(string $table, string $name, array $columns): void
     {
         try {
-            Schema::table($table, function (Blueprint $t) use ($name, $columns) {
-                $t->index($columns, $name);
-            });
-        } catch (\Exception $e) {
+            if (collect($columns)->every(fn ($col) => Schema::hasColumn($table, $col))) {
+                Schema::table($table, function (Blueprint $t) use ($name, $columns) {
+                    $t->index($columns, $name);
+                });
+            }
+        } catch (Exception $e) {
         }
     }
 
@@ -82,7 +84,7 @@ return new class extends Migration
             Schema::table($table, function (Blueprint $t) use ($column) {
                 $t->dropForeign([$column]);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // FK may not exist
         }
 
@@ -90,7 +92,7 @@ return new class extends Migration
             Schema::table($table, function (Blueprint $t) use ($column, $references, $onDelete) {
                 $t->foreign($column)->references('id')->on($references)->onDelete($onDelete);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // May already have the desired constraint
         }
     }
@@ -101,21 +103,21 @@ return new class extends Migration
             Schema::table('products', function (Blueprint $table) {
                 $table->dropUnique('products_barcode_unique');
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
         }
 
         try {
             Schema::table('shifts', function (Blueprint $table) {
                 $table->dropForeign(['reviewed_by']);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
         }
 
         try {
             Schema::table('sales_returns', function (Blueprint $table) {
                 $table->dropForeign(['approved_by']);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
         }
 
         $this->safeChangeForeignKey('goods_receipts', 'product_id', 'products', 'cascade');
@@ -143,7 +145,7 @@ return new class extends Migration
                         }
                     }
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
             }
         }
     }
