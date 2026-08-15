@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GoodsReceipt;
-use App\Models\Product;
 use App\Models\Branch;
+use App\Models\GoodsReceipt;
 use App\Models\Inventory;
+use App\Models\InventoryMovement;
+use App\Models\Product;
+use App\Services\Accounting\AutoPostingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -21,7 +23,7 @@ class GoodsReceiptController extends Controller
             ->latest('received_date')
             ->latest('id');
 
-        if (!$user->isOwner()) {
+        if (! $user->isOwner()) {
             $query->where('branch_id', $user->branch_id);
         }
 
@@ -79,37 +81,40 @@ class GoodsReceiptController extends Controller
         Gate::authorize('goods_receipts.create');
 
         $validated = $request->validate([
-            'product_id'      => 'required|exists:products,id',
-            'quantity'        => 'required|integer|min:1',
-            'supplier_name'   => 'nullable|string|max:255',
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+            'supplier_name' => 'nullable|string|max:255',
             'delivery_person' => 'nullable|string|max:255',
-            'origin'          => 'nullable|string|max:255',
-            'received_date'   => 'required|date',
+            'origin' => 'nullable|string|max:255',
+            'received_date' => 'required|date',
             'expiration_date' => 'nullable|date|after:received_date',
-            'unit_cost'       => 'required|numeric|min:0',
-            'notes'           => 'nullable|string',
-            'branch_id'       => 'nullable|exists:branches,id',
+            'unit_cost' => 'required|numeric|min:0',
+            'notes' => 'nullable|string',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
 
         $user = auth()->user();
-        if (!$user->isOwner() && !empty($validated['branch_id']) && $user->branch_id != $validated['branch_id']) {
+        if (! $user->isOwner() && ! empty($validated['branch_id']) && $user->branch_id != $validated['branch_id']) {
             abort(403, 'Anda hanya dapat mencatat penerimaan untuk cabang sendiri.');
         }
 
         DB::transaction(function () use ($validated, $user) {
-            GoodsReceipt::create([
-                'product_id'      => $validated['product_id'],
-                'quantity'        => $validated['quantity'],
-                'supplier_name'   => $validated['supplier_name'] ?? null,
+            $receipt = GoodsReceipt::create([
+                'product_id' => $validated['product_id'],
+                'quantity' => $validated['quantity'],
+                'supplier_name' => $validated['supplier_name'] ?? null,
                 'delivery_person' => $validated['delivery_person'] ?? null,
-                'origin'          => $validated['origin'] ?? null,
-                'received_date'   => $validated['received_date'],
+                'origin' => $validated['origin'] ?? null,
+                'received_date' => $validated['received_date'],
                 'expiration_date' => $validated['expiration_date'] ?? null,
-                'unit_cost'       => $validated['unit_cost'],
-                'notes'           => $validated['notes'] ?? null,
-                'recorded_by'     => $user->id,
-                'branch_id'       => $validated['branch_id'] ?? null,
+                'unit_cost' => $validated['unit_cost'],
+                'notes' => $validated['notes'] ?? null,
+                'recorded_by' => $user->id,
+                'branch_id' => $validated['branch_id'] ?? null,
             ]);
+
+            // Enterprise double-entry posting (fail-safe, idempotent).
+            app(AutoPostingService::class)->postGoodsReceipt($receipt);
 
             // Cari inventory: utamakan branch_id=null (stok terpusat)
             $inventory = Inventory::where('product_id', $validated['product_id'])
@@ -117,24 +122,24 @@ class GoodsReceiptController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (!$inventory) {
+            if (! $inventory) {
                 $inventory = Inventory::create([
-                    'product_id'    => $validated['product_id'],
-                    'branch_id'     => null,
+                    'product_id' => $validated['product_id'],
+                    'branch_id' => null,
                     'current_stock' => 0,
-                    'stock_in'      => 0,
-                    'stock_out'     => 0,
+                    'stock_in' => 0,
+                    'stock_out' => 0,
                     'minimum_stock' => 10,
                 ]);
             }
 
-            $product = \App\Models\Product::find($validated['product_id']);
-            if (!$product) {
+            $product = Product::find($validated['product_id']);
+            if (! $product) {
                 return response()->json(['message' => 'Produk tidak ditemukan.'], 404);
             }
 
             $stockBefore = (int) $inventory->current_stock;
-            $bulkBefore  = (int) ($inventory->bulk_stock_ml ?? 0);
+            $bulkBefore = (int) ($inventory->bulk_stock_ml ?? 0);
 
             if ($product->is_refill) {
                 // Bibit parfum: quantity dalam ml → langsung tambah current_stock (ml bibit)
@@ -144,20 +149,20 @@ class GoodsReceiptController extends Controller
                 // Botol/packaging: quantity dalam pcs → tambah bulk_stock_ml saja
                 // current_stock (ml bibit) tidak berubah
                 $mlPerUnit = (float) preg_replace('/[^0-9.]/', '', $product->size ?? '30');
-                $totalMl   = $mlPerUnit * $validated['quantity'];
+                $totalMl = $mlPerUnit * $validated['quantity'];
                 $inventory->increment('bulk_stock_ml', $totalMl);
                 $inventory->increment('stock_in', $validated['quantity']);
             }
             $inventory->refresh();
 
             $stockAfter = (int) $inventory->current_stock;
-            $bulkAfter  = (int) ($inventory->bulk_stock_ml ?? 0);
+            $bulkAfter = (int) ($inventory->bulk_stock_ml ?? 0);
 
             // Update tanggal kadaluarsa & biaya per unit jika ada
             $updateData = ['cost_per_unit' => $validated['unit_cost']];
-            if (!empty($validated['expiration_date'])) {
+            if (! empty($validated['expiration_date'])) {
                 $updateData['expiration_date'] = $validated['expiration_date'];
-                $updateData['date_received']   = $validated['received_date'];
+                $updateData['date_received'] = $validated['received_date'];
             }
             $inventory->update($updateData);
 
@@ -166,17 +171,17 @@ class GoodsReceiptController extends Controller
                 ? $validated['quantity']  // bibit: ml
                 : $bulkAfter - $bulkBefore;  // botol: delta bulk_stock_ml dalam ml
 
-            \App\Models\InventoryMovement::record(
-                productId:   $validated['product_id'],
-                branchId:    null,
-                type:        'receipt',
-                quantity:    $movementQty,
+            InventoryMovement::record(
+                productId: $validated['product_id'],
+                branchId: null,
+                type: 'purchase',
+                quantity: $movementQty,
                 stockBefore: $product->is_refill ? $stockBefore : $bulkBefore,
-                stockAfter:  $product->is_refill ? $stockAfter : $bulkAfter,
-                refType:     'goods_receipt',
-                notes:       'Penerimaan barang dari ' . ($validated['supplier_name'] ?? 'supplier') 
-                            . ' | ' . ($product->is_refill ? $validated['quantity'] . ' ml bibit' : $validated['quantity'] . ' botol (' . $movementQty . ' ml)'),
-                userId:      $user->id,
+                stockAfter: $product->is_refill ? $stockAfter : $bulkAfter,
+                refType: 'goods_receipt',
+                notes: 'Penerimaan barang dari '.($validated['supplier_name'] ?? 'supplier')
+                            .' | '.($product->is_refill ? $validated['quantity'].' ml bibit' : $validated['quantity'].' botol ('.$movementQty.' ml)'),
+                userId: $user->id,
             );
         });
 
@@ -189,7 +194,7 @@ class GoodsReceiptController extends Controller
         Gate::authorize('goods_receipts.view');
 
         $user = auth()->user();
-        if (!$user->isOwner() && $goodsReceipt->branch_id !== $user->branch_id) {
+        if (! $user->isOwner() && $goodsReceipt->branch_id !== $user->branch_id) {
             abort(403);
         }
 
