@@ -2,10 +2,10 @@
   <img src="public/logotoko.png" alt="APMS Logo" width="180">
 </p>
 
-<h1 align="center">APMS — Ashar Parfume Management System</h1>
+<h1 align="center">APMS — Ashar Parfum Management System</h1>
 
 <p align="center">
-  <strong>Enterprise Point-of-Sale (POS), Inventory, Wholesale & HR Management Platform</strong><br>
+  <strong>Enterprise POS, Inventory, Wholesale, HR & Accounting Management Platform</strong><br>
   <sub>Proprietary system for Ashar Grosir Parfum · Laravel 12 · PHP 8.2+ · MySQL 8.0</sub>
 </p>
 
@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel" alt="Laravel 12">
   <img src="https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php" alt="PHP 8.2">
   <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql" alt="MySQL">
+  <img src="https://img.shields.io/badge/Tests-51%20passed-00C851" alt="51 Tests Passing">
   <img src="https://img.shields.io/badge/Security-Hardened-00C851" alt="Security">
   <img src="https://img.shields.io/badge/API-Sanctum-FF2D20" alt="Sanctum">
 </p>
@@ -100,6 +101,13 @@ The system unifies **Point-of-Sale (POS)**, **inventory logistics**, **wholesale
 - **Payroll** — automated monthly payroll generation with salary + commission aggregation
 - **Commissions** — per-transaction item-based commission calculation
 - **Password reset requests** — branch-level employees request owner-approved password resets
+
+### Accounting & Finance
+- **Double-entry GL** — full general ledger with Chart of Accounts (5-level COA)
+- **Journal entries** — manual journal + auto-reversal, unique numbering `JNL-YYYYMMDD-XXXXXX`
+- **Auto-posting** — idempotent, fail-safe automatic journal posting from all operational transactions (POS, wholesale, goods receipt, expense, sales return, debt payment, payroll)
+- **Accounting periods** — open/close period management with draft validation
+- **Financial reports** — Trial Balance, Income Statement, Balance Sheet, Cash Flow Statement + PDF export (DomPDF)
 
 ### Reporting & Analytics
 - **Sales reports** — daily/monthly/custom range with PDF/CSV/Excel export
