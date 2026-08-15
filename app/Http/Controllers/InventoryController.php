@@ -63,12 +63,14 @@ class InventoryController extends Controller
         $outOfStock   = $outOfStockQuery->get();
         $expiringSoon = $expiringSoonQuery->get();
 
-        // Calculate total inventory value from the FULL result set (not just
-        // the current page) so the KPI card is always accurate.
-        $totalInventoryValue = Inventory::whereNull('branch_id')
+        // Calculate total inventory stock and value from the FULL result set (not just
+        // the current page) so the KPI cards are always accurate.
+        $allInventories = Inventory::whereNull('branch_id')
             ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
-            ->get()
-            ->sum(fn($item) => $item->current_stock * ($item->cost_per_unit ?? 0));
+            ->get();
+
+        $totalInventoryStock = $allInventories->sum('current_stock');
+        $totalInventoryValue = $allInventories->sum(fn($item) => $item->current_stock * ($item->cost_per_unit ?? 0));
 
         $products = Product::where('is_active', true)->get();
 
@@ -82,6 +84,7 @@ class InventoryController extends Controller
             'lowStock',
             'outOfStock',
             'expiringSoon',
+            'totalInventoryStock',
             'totalInventoryValue',
             'products',
             'warehouses'

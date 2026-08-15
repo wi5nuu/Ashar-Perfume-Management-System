@@ -47,7 +47,7 @@
                         </div>
                         <div>
                             <div class="text-muted small mb-1">Total Stok</div>
-                            <h4 class="mb-0 font-weight-bold">{{ \App\Helpers\PerformanceHelper::formatMl($inventories->sum('current_stock')) }}</h4>
+                            <h4 class="mb-0 font-weight-bold">{{ \App\Helpers\PerformanceHelper::formatMl($totalInventoryStock ?? 0) }}</h4>
                         </div>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
                         </div>
                         <div>
                             <div class="text-muted small mb-1">Stok Rendah</div>
-                            <h4 class="mb-0 font-weight-bold">{{ $inventories->filter(fn($i) => (float)($i->current_stock ?? 0) > 0 && (float)($i->current_stock ?? 0) <= ($i->minimum_stock ?? 500))->count() }}</h4>
+                            <h4 class="mb-0 font-weight-bold">{{ $lowStock->count() }}</h4>
                         </div>
                     </div>
                 </div>
@@ -77,7 +77,7 @@
                         </div>
                         <div>
                             <div class="text-muted small mb-1">Stok Habis</div>
-                            <h4 class="mb-0 font-weight-bold">{{ $inventories->filter(fn($i) => (float)($i->current_stock ?? 0) <= 0)->count() }}</h4>
+                            <h4 class="mb-0 font-weight-bold">{{ $outOfStock->count() }}</h4>
                         </div>
                     </div>
                 </div>
@@ -93,7 +93,7 @@
                         <div>
                             <div class="text-muted small mb-1">Nilai Inventory</div>
                             <h5 class="mb-0 font-weight-bold" style="font-size:1rem;">
-                                Rp {{ number_format($inventories->sum(fn($i) => $i->quantity * ($i->product->cost_price ?? 0)), 0, ',', '.') }}
+                                Rp {{ number_format($totalInventoryValue ?? 0, 0, ',', '.') }}
                             </h5>
                         </div>
                     </div>
