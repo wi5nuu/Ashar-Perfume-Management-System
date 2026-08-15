@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
-use App\Models\DebtPayment;
 use App\Http\Requests\StoreDebtPaymentRequest;
+use App\Models\Branch;
+use App\Models\Customer;
+use App\Models\DebtPayment;
+use App\Models\Transaction;
+use App\Services\Accounting\AutoPostingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -24,7 +27,7 @@ class DebtController extends Controller
             ->whereIn('payment_status', ['unpaid', 'partial']);
 
         $user = auth()->user();
-        if (!$user->isOwner()) {
+        if (! $user->isOwner()) {
             $query->where('branch_id', $user->branch_id);
         }
 
@@ -68,36 +71,40 @@ class DebtController extends Controller
 
                 if ($paymentAmount > $currentDebt) {
                     throw new \RuntimeException(
-                        "Payment amount (Rp " . number_format($paymentAmount, 0, ',', '.') .
-                        ") exceeds remaining debt (Rp " . number_format($currentDebt, 0, ',', '.') . ")."
+                        'Payment amount (Rp '.number_format($paymentAmount, 0, ',', '.').
+                        ') exceeds remaining debt (Rp '.number_format($currentDebt, 0, ',', '.').').'
                     );
                 }
 
                 // Create the payment record
-                DebtPayment::create([
+                $payment = DebtPayment::create([
                     'transaction_id' => $locked->id,
-                    'amount'         => $paymentAmount,
+                    'amount' => $paymentAmount,
                     'payment_method' => $validated['payment_method'],
-                    'payment_date'   => now(),
-                    'notes'          => $validated['notes'] ?? null,
+                    'payment_date' => now(),
+                    'notes' => $validated['notes'] ?? null,
                 ]);
 
+                // Enterprise double-entry posting (fail-safe, idempotent).
+                app(AutoPostingService::class)->postDebtPayment($payment);
+
                 // Atomic update — parameterized query prevents SQL injection
+                // CASE WHEN digunakan (bukan GREATEST) agar kompatibel MySQL & SQLite.
                 DB::statement(
                     "UPDATE transactions SET
-                        debt_amount = GREATEST(0, debt_amount - ?),
+                        debt_amount = CASE WHEN (debt_amount - ?) < 0 THEN 0 ELSE debt_amount - ? END,
                         paid_amount = paid_amount + ?,
                         payment_status = CASE WHEN (debt_amount - ?) <= 0 THEN 'paid' ELSE 'partial' END
                     WHERE id = ?",
-                    [$paymentAmount, $paymentAmount, $paymentAmount, $locked->id]
+                    [$paymentAmount, $paymentAmount, $paymentAmount, $paymentAmount, $locked->id]
                 );
 
                 Log::info('Debt payment recorded', [
                     'transaction_id' => $locked->id,
-                    'amount'         => $paymentAmount,
-                    'method'         => $validated['payment_method'],
-                    'user_id'        => auth()->id(),
-                    'branch_id'      => $locked->branch_id,
+                    'amount' => $paymentAmount,
+                    'method' => $validated['payment_method'],
+                    'user_id' => auth()->id(),
+                    'branch_id' => $locked->branch_id,
                 ]);
             });
 
@@ -107,8 +114,8 @@ class DebtController extends Controller
         } catch (\Exception $e) {
             Log::error('Debt payment failed', [
                 'transaction_id' => $transaction->id,
-                'error'          => $e->getMessage(),
-                'user_id'        => auth()->id(),
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
             ]);
 
             return back()->with('error', 'Payment processing failed. Please try again.');
@@ -145,7 +152,7 @@ class DebtController extends Controller
             ->whereIn('payment_status', ['unpaid', 'partial'])
             ->where('debt_amount', '>', 0);
 
-        if (!$user->isOwner()) {
+        if (! $user->isOwner()) {
             $query->where('transactions.branch_id', $user->branch_id);
         } elseif ($branchFilter) {
             $query->where('transactions.branch_id', $branchFilter);
@@ -159,10 +166,10 @@ class DebtController extends Controller
 
         // Load customer names
         $customerIds = $debts->pluck('customer_id')->filter()->unique();
-        $customers = \App\Models\Customer::whereIn('id', $customerIds)->pluck('name', 'id');
+        $customers = Customer::whereIn('id', $customerIds)->pluck('name', 'id');
 
         // Branches for filter
-        $branches = \App\Models\Branch::all();
+        $branches = Branch::all();
 
         return view('debts.aging', compact('grouped', 'buckets', 'customers', 'branches', 'branchFilter'));
     }
