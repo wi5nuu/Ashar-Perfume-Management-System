@@ -21,7 +21,7 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if (!config('security.registration.enabled', false)) {
+        if (! config('security.registration.enabled', false)) {
             return back()->withErrors(['email' => 'Pendaftaran sedang ditutup. Silakan hubungi administrator.'])->onlyInput('email');
         }
 
@@ -31,12 +31,14 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', new StrongPassword],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'cashier',
-        ]);
+        $user = new User;
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->role = 'cashier';
+        // password di-set eksplisit (bukan mass-assignment) — 'hashed' cast
+        // di model meng-hash otomatis; password sengaja tidak ada di $fillable.
+        $user->password = $request->password;
+        $user->save();
 
         event(new Registered($user));
 

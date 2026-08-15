@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Rules\StrongPassword;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Rules\StrongPassword;
 
 class PasswordController extends Controller
 {
@@ -20,9 +20,11 @@ class PasswordController extends Controller
             'password' => ['required', new StrongPassword, 'confirmed'],
         ]);
 
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        // password di-set eksplisit (bukan mass-assignment) — password sengaja
+        // tidak ada di $fillable model User; 'hashed' cast meng-hash otomatis.
+        $request->user()->forceFill([
+            'password' => $validated['password'],
+        ])->save();
 
         return back()->with('status', 'password-updated');
     }

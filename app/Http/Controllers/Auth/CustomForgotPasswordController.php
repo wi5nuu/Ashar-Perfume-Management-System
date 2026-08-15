@@ -14,17 +14,19 @@ use Illuminate\Support\Str;
 class CustomForgotPasswordController extends Controller
 {
     const AUTO_RESET_TIMEOUT = 3600; // 1 jam
+
     const OPERATIONAL_START = 9;  // 09:00
-    const OPERATIONAL_END   = 21; // 21:00
+
+    const OPERATIONAL_END = 21; // 21:00
 
     public function create()
     {
         return view('auth.custom-forgot-password', [
-            'password'          => null,
-            'statusType'        => null,
-            'statusMessage'     => null,
-            'remainingMinutes'  => null,
-            'withinHours'       => $this->isWithinOperationalHours(),
+            'password' => null,
+            'statusType' => null,
+            'statusMessage' => null,
+            'remainingMinutes' => null,
+            'withinHours' => $this->isWithinOperationalHours(),
         ]);
     }
 
@@ -35,7 +37,7 @@ class CustomForgotPasswordController extends Controller
         ]);
 
         $user = User::where('email', $request->email)->first();
-        if (!$user) {
+        if (! $user) {
             return view('auth.custom-forgot-password', [
                 'password' => null, 'statusType' => 'not_found',
                 'statusMessage' => null, 'remainingMinutes' => null,
@@ -47,14 +49,14 @@ class CustomForgotPasswordController extends Controller
             ->latest()
             ->first();
 
-        $password         = null;
-        $statusType       = null;
-        $statusMessage    = null;
+        $password = null;
+        $statusType = null;
+        $statusMessage = null;
         $remainingMinutes = null;
-        $withinHours      = $this->isWithinOperationalHours();
+        $withinHours = $this->isWithinOperationalHours();
 
         if ($existing && $existing->status === 'approved') {
-            $password   = '********';
+            $password = '********';
             $statusType = 'approved';
         } elseif ($existing && $existing->status === 'pending') {
             $elapsed = now()->diffInSeconds($existing->created_at);
@@ -64,33 +66,35 @@ class CustomForgotPasswordController extends Controller
                     $newPassword = Str::random(16);
 
                     $existing->update([
-                        'status'       => 'approved',
-                        'new_password' => Hash::make($newPassword),
-                        'resolved_at'  => now(),
-                        'notes'        => $existing->notes . ' | Auto-reset setelah ' . round($elapsed / 60) . ' menit',
+                        'status' => 'approved',
+                        'resolved_at' => now(),
+                        'notes' => $existing->notes.' | Auto-reset setelah '.round($elapsed / 60).' menit',
                     ]);
 
-                    $user->update([
-                        'password' => Hash::make($newPassword),
-                    ]);
+                    // password di-set eksplisit (bukan mass-assignment) —
+                    // password sengaja tidak ada di $fillable; 'hashed' cast
+                    // di model meng-hash otomatis.
+                    $user->forceFill([
+                        'password' => $newPassword,
+                    ])->save();
 
                     Log::info('Password auto-reset', ['user_id' => $user->id]);
 
-                    $password   = '********';
+                    $password = '********';
                     $statusType = 'auto_approved';
                 } else {
                     $statusType = 'outside_hours';
                 }
             } else {
-                $remainingSeconds  = self::AUTO_RESET_TIMEOUT - $elapsed;
-                $remainingMinutes  = ceil($remainingSeconds / 60);
-                $statusType        = 'pending';
+                $remainingSeconds = self::AUTO_RESET_TIMEOUT - $elapsed;
+                $remainingMinutes = ceil($remainingSeconds / 60);
+                $statusType = 'pending';
             }
         } else {
             $newRequest = PasswordResetRequest::create([
                 'user_id' => $user->id,
-                'status'  => 'pending',
-                'notes'   => 'Permintaan dari halaman login',
+                'status' => 'pending',
+                'notes' => 'Permintaan dari halaman login',
             ]);
 
             // Notify all Owner users
@@ -100,7 +104,7 @@ class CustomForgotPasswordController extends Controller
             }
 
             $remainingMinutes = ceil(self::AUTO_RESET_TIMEOUT / 60);
-            $statusType       = 'created';
+            $statusType = 'created';
         }
 
         return view('auth.custom-forgot-password', compact(
@@ -111,6 +115,7 @@ class CustomForgotPasswordController extends Controller
     private function isWithinOperationalHours(): bool
     {
         $hour = (int) now()->format('H');
+
         return $hour >= self::OPERATIONAL_START && $hour < self::OPERATIONAL_END;
     }
 }

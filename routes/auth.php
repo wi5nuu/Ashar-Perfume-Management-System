@@ -25,7 +25,8 @@ Route::middleware('guest')->group(function () {
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
-    ->middleware('throttle:5,1');
+        ->name('login')
+        ->middleware('throttle:10,1');
 
     Route::get('lupa-password', [CustomForgotPasswordController::class, 'create'])
         ->name('password.custom-forgot');
