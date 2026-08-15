@@ -278,18 +278,18 @@ const ctx = document.getElementById('incomeExpenseChart').getContext('2d');
 new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: @json($chartData['labels'] ?? ['Jan','Feb','Mar','Apr','Mei','Jun']),
+        labels: @js($chartData['labels'] ?? ['Jan','Feb','Mar','Apr','Mei','Jun']),
         datasets: [
             {
                 label: 'Pendapatan',
-                data: @json($chartData['income'] ?? [0,0,0,0,0,0]),
+                data: @js($chartData['income'] ?? [0,0,0,0,0,0]),
                 backgroundColor: 'rgba(39,174,96,0.75)',
                 borderRadius: 6,
                 borderWidth: 0
             },
             {
                 label: 'Pengeluaran',
-                data: @json($chartData['expense'] ?? [0,0,0,0,0,0]),
+                data: @js($chartData['expense'] ?? [0,0,0,0,0,0]),
                 backgroundColor: 'rgba(231,76,60,0.65)',
                 borderRadius: 6,
                 borderWidth: 0
