@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreExpenseRequest;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
-use App\Http\Requests\StoreExpenseRequest;
-use Illuminate\Http\Request;
+use App\Services\Accounting\AutoPostingService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -24,7 +24,7 @@ class ExpenseController extends Controller
         $user = auth()->user();
         $query = Expense::with(['category', 'user']);
 
-        if (!$user->isOwner()) {
+        if (! $user->isOwner()) {
             $query->where('branch_id', $user->branch_id);
         }
 
@@ -41,17 +41,20 @@ class ExpenseController extends Controller
         $dailyAverage = $last30DaysSum / 30;
 
         $topCategoryRow = (clone $query)
-            ->select('category_id', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
+            ->select('category_id', DB::raw('SUM(amount) as total'))
             ->groupBy('category_id')
             ->orderByDesc('total')
             ->with('category')
             ->first();
         $topCategory = $topCategoryRow?->category?->name ?? '-';
 
+        // Load categories for filter dropdown
+        $categories = ExpenseCategory::all();
+
         // Paginate terakhir supaya clone sebelumnya tidak terpengaruh
         $expenses = $query->latest()->paginate(20);
 
-        return view('expenses.index', compact('expenses', 'totalExpenses', 'lastMonthExpenses', 'dailyAverage', 'topCategory'));
+        return view('expenses.index', compact('expenses', 'totalExpenses', 'lastMonthExpenses', 'dailyAverage', 'topCategory', 'categories'));
     }
 
     /**
@@ -80,21 +83,24 @@ class ExpenseController extends Controller
     {
         Gate::authorize('expenses.manage');
         $validated = $request->validated();
-        $user      = Auth::user();
+        $user = Auth::user();
 
-        $validated['user_id']   = $user->id;
+        $validated['user_id'] = $user->id;
         $validated['branch_id'] = $user->branch_id;
 
         if ($request->hasFile('proof_image')) {
             $validated['proof_image'] = $request->file('proof_image')->store('expenses', 'public');
         }
 
-        Expense::create($validated);
+        $expense = Expense::create($validated);
+
+        // Enterprise double-entry posting (fail-safe, idempotent).
+        app(AutoPostingService::class)->postExpense($expense);
 
         Log::info('Expense created', [
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'branch_id' => $user->branch_id,
-            'amount'    => $validated['amount'],
+            'amount' => $validated['amount'],
         ]);
 
         return redirect()
@@ -145,7 +151,7 @@ class ExpenseController extends Controller
         $expense->update($validated);
 
         Log::info('Expense updated', [
-            'id'      => $expense->id,
+            'id' => $expense->id,
             'user_id' => auth()->id(),
         ]);
 
@@ -173,7 +179,7 @@ class ExpenseController extends Controller
         }
 
         Log::info('Expense soft-deleted', [
-            'id'      => $expense->id,
+            'id' => $expense->id,
             'user_id' => auth()->id(),
         ]);
 
