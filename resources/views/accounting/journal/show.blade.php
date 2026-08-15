@@ -9,6 +9,16 @@
         @csrf
         <button class="btn btn-success btn-sm" onclick="return confirm('Posting jurnal?')"><i class="fas fa-check"></i> Posting</button>
       </form>
+      <form method="POST" action="{{ route('accounting.journal.destroy', $journal->id) }}" class="d-inline">
+        @csrf
+        @method('DELETE')
+        <button class="btn btn-danger btn-sm" onclick="return confirm('Hapus jurnal draft ini?')"><i class="fas fa-trash"></i> Hapus</button>
+      </form>
+      @elseif($journal->status=='posted')
+      <form method="POST" action="{{ route('accounting.journal.reverse', $journal->id) }}" class="d-inline">
+        @csrf
+        <button class="btn btn-warning btn-sm" onclick="return confirm('Buat jurnal pembalik? Jurnal asli akan ditandai reversed dan nilai di GL dibalik.')"><i class="fas fa-undo"></i> Reverse</button>
+      </form>
       @endif
       <a href="{{ route('accounting.journal.index') }}" class="btn btn-secondary btn-sm">Kembali</a>
     </div>
@@ -19,7 +29,9 @@
         <div class="col-md-3"><strong>No. Jurnal:</strong> {{ $journal->journal_number }}</div>
         <div class="col-md-3"><strong>Tanggal:</strong> {{ $journal->date->format('d/m/Y') }}</div>
         <div class="col-md-3"><strong>Status:</strong>
-          @if($journal->status=='posted')<span class="badge badge-success">Posted</span>@else<span class="badge badge-warning">Draft</span>@endif
+          @if($journal->status=='posted')<span class="badge badge-success">Posted</span>
+          @elseif($journal->status=='reversed')<span class="badge badge-dark">Reversed</span>
+          @else<span class="badge badge-warning">Draft</span>@endif
         </div>
         <div class="col-md-3"><strong>Periode:</strong> {{ $journal->period->name ?? '-' }}</div>
       </div>
