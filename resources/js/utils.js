@@ -64,7 +64,7 @@
 
     // 8. Generate random ID
     window.generateId = function(prefix = 'id') {
-        return prefix + '-' + Math.random().toString(36).substr(2, 9);
+        return prefix + '-' + Math.random().toString(36).substring(2, 11);
     };
 
     // 9. Parse query string
@@ -221,7 +221,7 @@
     // 25. Truncate text
     window.truncate = function(str, length, suffix = '...') {
         if (str.length <= length) return str;
-        return str.substr(0, length) + suffix;
+        return str.substring(0, length) + suffix;
     };
 
     // 26. Capitalize first letter
