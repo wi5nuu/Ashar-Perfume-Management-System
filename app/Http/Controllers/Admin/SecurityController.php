@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Rules\PasswordHistoryRule;
-use App\Rules\StrongPassword;
-use App\Services\Security\DataIntegrityService;
-use App\Services\Security\SecurityAlertService;
 use App\Models\AuditLog;
 use App\Models\IpBlacklist;
 use App\Models\LoginActivity;
 use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Rules\PasswordHistoryRule;
+use App\Rules\StrongPassword;
 use App\Services\Security\ActivityMonitor;
+use App\Services\Security\DataIntegrityService;
+use App\Services\Security\SecurityAlertService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -57,14 +57,25 @@ class SecurityController extends Controller
     {
         $query = AuditLog::with('user')->latest();
 
-        if ($request->filled('action')) $query->where('action', $request->action);
-        if ($request->filled('model')) $query->where('target_model', 'like', "%{$request->model}%");
-        if ($request->filled('user_id')) $query->where('user_id', $request->user_id);
-        if ($request->filled('date_from')) $query->whereDate('created_at', '>=', $request->date_from);
-        if ($request->filled('date_to')) $query->whereDate('created_at', '<=', $request->date_to);
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+        if ($request->filled('model')) {
+            $query->where('target_model', 'like', "%{$request->model}%");
+        }
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
 
         $logs = $query->paginate(50);
         $actions = AuditLog::distinct('action')->pluck('action');
+
         return view('admin.security.audit-logs', compact('logs', 'actions'));
     }
 
@@ -72,12 +83,21 @@ class SecurityController extends Controller
     {
         $query = LoginActivity::with('user')->latest();
 
-        if ($request->filled('user_id')) $query->where('user_id', $request->user_id);
-        if ($request->filled('suspicious')) $query->where('is_suspicious', true);
-        if ($request->filled('date_from')) $query->whereDate('created_at', '>=', $request->date_from);
-        if ($request->filled('date_to')) $query->whereDate('created_at', '<=', $request->date_to);
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+        if ($request->filled('suspicious')) {
+            $query->where('is_suspicious', true);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
 
         $activities = $query->paginate(50);
+
         return view('admin.security.login-activities', compact('activities'));
     }
 
@@ -89,13 +109,15 @@ class SecurityController extends Controller
             })
             ->with('branch')
             ->paginate(20);
+
         return view('admin.security.locked-accounts', compact('users'));
     }
 
     public function unlockAccount(User $user)
     {
         $user->unlock();
-        Log::info("User {$user->name} unlocked by " . auth()->user()->name);
+        Log::info("User {$user->name} unlocked by ".auth()->user()->name);
+
         return redirect()->route('admin.security.locked-accounts')
             ->with('success', "Akun {$user->name} berhasil dibuka.");
     }
@@ -103,7 +125,8 @@ class SecurityController extends Controller
     public function forceLogout(User $user)
     {
         $user->lock('1 hour');
-        Log::info("User {$user->name} force logged out by " . auth()->user()->name);
+        Log::info("User {$user->name} force logged out by ".auth()->user()->name);
+
         return redirect()->route('admin.security.locked-accounts')
             ->with('success', "Sesi {$user->name} telah diakhiri.");
     }
@@ -111,6 +134,7 @@ class SecurityController extends Controller
     public function blockedIps()
     {
         $ips = IpBlacklist::active()->latest('created_at')->paginate(20);
+
         return view('admin.security.blocked-ips', compact('ips'));
     }
 
@@ -118,6 +142,7 @@ class SecurityController extends Controller
     {
         IpBlacklist::where('ip_address', $ip)->delete();
         Cache::forget("whitelist_ip_{$ip}");
+
         return redirect()->route('admin.security.blocked-ips')
             ->with('success', "IP {$ip} berhasil dibuka.");
     }
@@ -126,6 +151,7 @@ class SecurityController extends Controller
     {
         $score = $this->integrity->getIntegrityScore();
         $anomalies = $this->integrity->scanForAnomalies();
+
         return view('admin.security.integrity', compact('score', 'anomalies'));
     }
 
@@ -137,7 +163,7 @@ class SecurityController extends Controller
     {
         $deleted = $this->monitor->cleanOldLogs();
 
-        Log::info('Audit log cleanup triggered manually by ' . auth()->user()->name . " — {$deleted} records deleted.");
+        Log::info('Audit log cleanup triggered manually by '.auth()->user()->name." — {$deleted} records deleted.");
 
         return redirect()->route('admin.security.overview')
             ->with('success', "{$deleted} log lama berhasil dibersihkan.");
@@ -167,11 +193,14 @@ class SecurityController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            $user->update([
-                'password' => Hash::make($request->password),
+            // password di-set eksplisit (bukan mass-assignment) — password
+            // sengaja tidak ada di $fillable model User; 'hashed' cast
+            // di model meng-hash otomatis.
+            $user->forceFill([
+                'password' => $request->password,
                 'password_changed_at' => now(),
                 'requires_password_change' => false,
-            ]);
+            ])->save();
         });
 
         $historyCount = config('security.password_policy.history_count', 5);
@@ -182,6 +211,7 @@ class SecurityController extends Controller
             ->delete();
 
         Log::info("Password changed by user {$user->name}");
+
         return redirect()->route('dashboard')->with('success', 'Kata sandi berhasil diubah.');
     }
 }

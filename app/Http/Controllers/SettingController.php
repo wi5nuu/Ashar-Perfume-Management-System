@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LoginActivity;
 use App\Models\PasswordResetRequest;
+use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\PasswordResetApproved;
 use App\Notifications\PasswordResetRequested;
+use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Gate;
-use App\Rules\StrongPassword;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SettingController extends Controller
 {
@@ -20,33 +23,33 @@ class SettingController extends Controller
      * Whitelist of allowed setting keys that can be updated via the UI.
      * This prevents injection of arbitrary keys like 'app_debug', 'app_env', etc.
      *
-     * @var array<string, string>  key => validation rule
+     * @var array<string, string> key => validation rule
      */
     private const ALLOWED_SETTINGS = [
-        'store_name'            => 'string|max:255',
-        'store_address'         => 'string|max:500',
-        'store_phone'           => 'string|max:30',
-        'store_logo'            => 'string|max:500',
-        'tax_rate'              => 'numeric|min:0|max:1',
-        'receipt_footer'        => 'string|max:500',
-        'receipt_visibility'    => 'in:public,private',
-        'approval_threshold'    => 'numeric|min:0',
-        'points_rate'           => 'numeric|min:0',
-        'default_tax_enabled'   => 'in:0,1,true,false',
-        'store_email'           => 'email|max:255',
-        'store_website'         => 'url|max:255',
+        'store_name' => 'string|max:255',
+        'store_address' => 'string|max:500',
+        'store_phone' => 'string|max:30',
+        'store_logo' => 'string|max:500',
+        'tax_rate' => 'numeric|min:0|max:1',
+        'receipt_footer' => 'string|max:500',
+        'receipt_visibility' => 'in:public,private',
+        'approval_threshold' => 'numeric|min:0',
+        'points_rate' => 'numeric|min:0',
+        'default_tax_enabled' => 'in:0,1,true,false',
+        'store_email' => 'email|max:255',
+        'store_website' => 'url|max:255',
         'operating_hours_start' => 'string|max:10',
-        'operating_hours_end'   => 'string|max:10',
+        'operating_hours_end' => 'string|max:10',
         // Harga tetap per tier per ukuran
-        'tier_price_30ml_premium'  => 'numeric|min:0',
-        'tier_price_30ml_sedang'   => 'numeric|min:0',
-        'tier_price_30ml_biasa'    => 'numeric|min:0',
-        'tier_price_50ml_premium'  => 'numeric|min:0',
-        'tier_price_50ml_sedang'   => 'numeric|min:0',
-        'tier_price_50ml_biasa'    => 'numeric|min:0',
+        'tier_price_30ml_premium' => 'numeric|min:0',
+        'tier_price_30ml_sedang' => 'numeric|min:0',
+        'tier_price_30ml_biasa' => 'numeric|min:0',
+        'tier_price_50ml_premium' => 'numeric|min:0',
+        'tier_price_50ml_sedang' => 'numeric|min:0',
+        'tier_price_50ml_biasa' => 'numeric|min:0',
         'tier_price_100ml_premium' => 'numeric|min:0',
-        'tier_price_100ml_sedang'  => 'numeric|min:0',
-        'tier_price_100ml_biasa'   => 'numeric|min:0',
+        'tier_price_100ml_sedang' => 'numeric|min:0',
+        'tier_price_100ml_biasa' => 'numeric|min:0',
     ];
 
     /**
@@ -56,7 +59,7 @@ class SettingController extends Controller
     {
         Gate::authorize('manage_settings');
 
-        $settings = \App\Models\Setting::pluck('value', 'key');
+        $settings = Setting::pluck('value', 'key');
 
         return view('settings.index', compact('settings'));
     }
@@ -79,7 +82,7 @@ class SettingController extends Controller
         // Build validation rules from whitelist
         $validationRules = [];
         foreach (self::ALLOWED_SETTINGS as $key => $rule) {
-            $validationRules[$key] = 'nullable|' . $rule;
+            $validationRules[$key] = 'nullable|'.$rule;
         }
 
         $validated = $request->validate($validationRules);
@@ -89,20 +92,20 @@ class SettingController extends Controller
             $request->validate(['store_logo' => 'image|mimes:jpg,jpeg,png|max:1024']);
 
             // Delete old logo if exists
-            $oldLogo = \App\Models\Setting::getValue('store_logo');
+            $oldLogo = Setting::getValue('store_logo');
             if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
                 Storage::disk('public')->delete($oldLogo);
             }
 
             $path = $request->file('store_logo')->store('logos', 'public');
-            \App\Models\Setting::setValue('store_logo', $path);
+            Setting::setValue('store_logo', $path);
             unset($validated['store_logo']);
         }
 
         // Save only whitelisted settings
         foreach ($validated as $key => $value) {
             if ($value !== null && $key !== 'store_logo') {
-                \App\Models\Setting::setValue($key, $value);
+                Setting::setValue($key, $value);
             }
         }
 
@@ -111,7 +114,7 @@ class SettingController extends Controller
 
         Log::info('Settings updated', [
             'user_id' => auth()->id(),
-            'keys'    => array_keys($validated),
+            'keys' => array_keys($validated),
         ]);
 
         return redirect()
@@ -125,7 +128,7 @@ class SettingController extends Controller
     public function profile()
     {
         $user = auth()->user();
-        $loginActivities = \App\Models\LoginActivity::where('user_id', $user->id)
+        $loginActivities = LoginActivity::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -141,13 +144,13 @@ class SettingController extends Controller
         $user = auth()->user();
 
         $rules = [
-            'name'  => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
         ];
 
         // Only Owner can change email
         if ($user->isOwner()) {
-            $rules['email'] = 'required|email|unique:users,email,' . $user->id;
+            $rules['email'] = 'required|email|unique:users,email,'.$user->id;
         }
 
         $validated = $request->validate($rules);
@@ -176,6 +179,7 @@ class SettingController extends Controller
         $user->delete();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/');
     }
 
@@ -184,19 +188,21 @@ class SettingController extends Controller
      */
     public function updatePassword(Request $request)
     {
-        if (!auth()->user()->isOwner()) {
+        if (! auth()->user()->isOwner()) {
             abort(403, 'Hanya Owner yang dapat mengubah kata sandi. Hubungi Owner untuk perubahan password.');
         }
 
         $request->validate([
             'current_password' => 'required|current_password',
-            'password'         => ['required', new StrongPassword, 'confirmed'],
+            'password' => ['required', new StrongPassword, 'confirmed'],
         ]);
 
         $user = auth()->user();
-        $user->update([
-            'password' => Hash::make($request->password),
-        ]);
+        // password di-set eksplisit (bukan mass-assignment) — password sengaja
+        // tidak ada di $fillable model User; 'hashed' cast meng-hash otomatis.
+        $user->forceFill([
+            'password' => $request->password,
+        ])->save();
 
         Log::info('Password changed', ['user_id' => $user->id]);
 
@@ -244,12 +250,12 @@ class SettingController extends Controller
 
             // Filter for .sql or .zip files, sort by newest
             $sqlFiles = collect($files)
-                ->filter(fn($f) => preg_match('/\.(sql|zip)$/', $f))
+                ->filter(fn ($f) => preg_match('/\.(sql|zip)$/', $f))
                 ->sort()
                 ->reverse()
                 ->first();
 
-            if (!$sqlFiles) {
+            if (! $sqlFiles) {
                 return redirect()
                     ->route('settings.index')
                     ->with('error', 'Backup created but file not found. Check storage/app/backups.');
@@ -260,7 +266,7 @@ class SettingController extends Controller
             $msg = $e->getMessage();
             Log::error('Backup failed', [
                 'user_id' => auth()->id(),
-                'error'   => $msg,
+                'error' => $msg,
             ]);
 
             // Provide user-friendly message for common mysqldump issues
@@ -270,7 +276,7 @@ class SettingController extends Controller
 
             return redirect()
                 ->route('settings.index')
-                ->with('error', 'Backup gagal: ' . $msg);
+                ->with('error', 'Backup gagal: '.$msg);
         }
     }
 
@@ -305,7 +311,7 @@ class SettingController extends Controller
         ];
 
         foreach ($commonPaths as $path) {
-            if (file_exists($path . 'mysqldump.exe')) {
+            if (file_exists($path.'mysqldump.exe')) {
                 return $path;
             }
         }
@@ -335,7 +341,7 @@ class SettingController extends Controller
     {
         Log::warning('Restore attempt blocked — web restore is disabled for security.', [
             'user_id' => auth()->id(),
-            'ip'      => $request->ip(),
+            'ip' => $request->ip(),
         ]);
 
         return redirect()
@@ -343,7 +349,7 @@ class SettingController extends Controller
             ->with(
                 'error',
                 'Database restore via web interface is disabled for security. '
-                . 'Use CLI: php artisan backup:restore or mysql -u <user> -p <database> < backup.sql'
+                .'Use CLI: php artisan backup:restore or mysql -u <user> -p <database> < backup.sql'
             );
     }
 
@@ -409,7 +415,7 @@ class SettingController extends Controller
             return back()->with('error', 'Permintaan ini sudah diproses.');
         }
 
-        $newPassword = \Illuminate\Support\Str::random(16);
+        $newPassword = Str::random(16);
 
         // 'new_password' column was dropped in migration 2026_08_06_140121 —
         // do NOT include it here or the update will throw SQLSTATE[42S22].
@@ -420,9 +426,11 @@ class SettingController extends Controller
         ]);
 
         $user = $resetRequest->user;
-        $user->update([
-            'password' => Hash::make($newPassword),
-        ]);
+        // password di-set eksplisit (bukan mass-assignment) — password sengaja
+        // tidak ada di $fillable model User; 'hashed' cast meng-hash otomatis.
+        $user->forceFill([
+            'password' => $newPassword,
+        ])->save();
 
         // Notify the user
         $user->notify(new PasswordResetApproved($resetRequest, $newPassword));
@@ -432,7 +440,7 @@ class SettingController extends Controller
             'resolved_by' => auth()->id(),
         ]);
 
-        return back()->with('success', 'Password baru untuk ' . $user->name . ' telah dikirim.');
+        return back()->with('success', 'Password baru untuk '.$user->name.' telah dikirim.');
     }
 
     /**
