@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SalesReturn;
-use App\Models\Transaction;
-use App\Models\TransactionDetail;
 use App\Models\Inventory;
 use App\Models\InventoryMovement;
+use App\Models\SalesReturn;
+use App\Models\SalesReturnItem;
+use App\Models\Transaction;
+use App\Models\TransactionDetail;
+use App\Services\Accounting\AutoPostingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -21,17 +23,17 @@ class SalesReturnController extends Controller
         $user = auth()->user();
 
         $baseQuery = SalesReturn::query();
-        if (!$user->isOwner()) {
+        if (! $user->isOwner()) {
             $baseQuery->where('branch_id', $user->branch_id);
         }
 
         // KPI — hitung dari semua data, bukan dari paginator
-        $kpiPending   = (clone $baseQuery)->where('status', 'pending')->count();
-        $kpiApproved  = (clone $baseQuery)->whereIn('status', ['approved', 'completed'])->count();
+        $kpiPending = (clone $baseQuery)->where('status', 'pending')->count();
+        $kpiApproved = (clone $baseQuery)->whereIn('status', ['approved', 'completed'])->count();
         $kpiTotalRefund = (clone $baseQuery)->sum('total_refund');
 
         $query = SalesReturn::with(['transaction', 'user', 'branch']);
-        if (!$user->isOwner()) {
+        if (! $user->isOwner()) {
             $query->where('branch_id', $user->branch_id);
         }
 
@@ -51,7 +53,7 @@ class SalesReturnController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('return_number', 'like', "%{$search}%")
-                  ->orWhereHas('transaction', fn($t) => $t->where('invoice_number', 'like', "%{$search}%"));
+                    ->orWhereHas('transaction', fn ($t) => $t->where('invoice_number', 'like', "%{$search}%"));
             });
         }
 
@@ -81,10 +83,10 @@ class SalesReturnController extends Controller
 
         $validated = $request->validate([
             'transaction_id' => 'required|exists:transactions,id',
-            'reason'         => 'required|string|max:1000',
-            'items'          => 'required|array|min:1',
+            'reason' => 'required|string|max:1000',
+            'items' => 'required|array|min:1',
             'items.*.detail_id' => 'required|exists:transaction_details,id',
-            'items.*.quantity'  => 'required|integer|min:1',
+            'items.*.quantity' => 'required|integer|min:1',
         ]);
 
         try {
@@ -95,8 +97,8 @@ class SalesReturnController extends Controller
                 // Cumulative return qty check — prevent double-return exploit.
                 // Sum all previously returned quantities per detail_id across ALL
                 // non-cancelled return requests for this transaction.
-                $alreadyReturned = \App\Models\SalesReturnItem::whereIn('transaction_detail_id', collect($validated['items'])->pluck('detail_id'))
-                    ->whereHas('salesReturn', fn($q) => $q->where('transaction_id', $transaction->id)->whereNotIn('status', ['cancelled']))
+                $alreadyReturned = SalesReturnItem::whereIn('transaction_detail_id', collect($validated['items'])->pluck('detail_id'))
+                    ->whereHas('salesReturn', fn ($q) => $q->where('transaction_id', $transaction->id)->whereNotIn('status', ['cancelled']))
                     ->selectRaw('transaction_detail_id, SUM(quantity) as total_returned')
                     ->groupBy('transaction_detail_id')
                     ->pluck('total_returned', 'transaction_detail_id');
@@ -119,12 +121,12 @@ class SalesReturnController extends Controller
                 }
 
                 $return = SalesReturn::create([
-                    'return_number'  => SalesReturn::generateReturnNumber(),
+                    'return_number' => SalesReturn::generateReturnNumber(),
                     'transaction_id' => $transaction->id,
-                    'user_id'        => $user->id,
-                    'branch_id'      => $user->branch_id,
-                    'reason'         => $validated['reason'],
-                    'status'         => 'pending',
+                    'user_id' => $user->id,
+                    'branch_id' => $user->branch_id,
+                    'reason' => $validated['reason'],
+                    'status' => 'pending',
                 ]);
 
                 $detailIds = collect($validated['items'])->pluck('detail_id');
@@ -132,7 +134,9 @@ class SalesReturnController extends Controller
                 $totalRefund = 0;
                 foreach ($validated['items'] as $item) {
                     $detail = $details->get($item['detail_id']);
-                    if (!$detail) continue;
+                    if (! $detail) {
+                        continue;
+                    }
 
                     // Ensure return qty doesn't exceed original
                     $qty = min((int) $item['quantity'], (int) $detail->quantity);
@@ -141,10 +145,10 @@ class SalesReturnController extends Controller
 
                     $return->items()->create([
                         'transaction_detail_id' => $detail->id,
-                        'product_id'            => $detail->product_id,
-                        'quantity'              => $qty,
-                        'unit_price'            => $detail->price,
-                        'subtotal'              => $subtotal,
+                        'product_id' => $detail->product_id,
+                        'quantity' => $qty,
+                        'unit_price' => $detail->price,
+                        'subtotal' => $subtotal,
                     ]);
                 }
 
@@ -155,14 +159,15 @@ class SalesReturnController extends Controller
 
             Log::info('Sales return created', [
                 'return_id' => $return->id,
-                'user_id'   => auth()->id(),
+                'user_id' => auth()->id(),
             ]);
 
             return redirect()->route('returns.show', $return)
-                ->with('success', 'Retur penjualan berhasil dibuat: ' . $return->return_number);
+                ->with('success', 'Retur penjualan berhasil dibuat: '.$return->return_number);
         } catch (\Exception $e) {
             Log::error('Return creation failed', ['error' => $e->getMessage()]);
-            return back()->withInput()->with('error', 'Gagal membuat retur: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Gagal membuat retur: '.$e->getMessage());
         }
     }
 
@@ -188,15 +193,19 @@ class SalesReturnController extends Controller
 
         try {
             $return->update([
-                'status'      => 'approved',
+                'status' => 'approved',
                 'approved_at' => now(),
                 'approved_by' => auth()->id(),
             ]);
+
+            // Enterprise double-entry posting (fail-safe, idempotent).
+            app(AutoPostingService::class)->postSalesReturn($return);
         } catch (\Exception $e) {
             Log::error('Sales return approval failed', [
                 'return_id' => $return->id,
-                'error'     => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return back()->with('error', 'Gagal menyetujui retur. Silakan coba lagi.');
         }
 
@@ -221,7 +230,7 @@ class SalesReturnController extends Controller
             DB::transaction(function () use ($return, $branchId, $user) {
                 foreach ($return->items as $item) {
                     $query = Inventory::where('product_id', $item->product_id)
-                        ->when(is_null($branchId), fn($q) => $q->whereNull('branch_id'), fn($q) => $q->where('branch_id', $branchId));
+                        ->when(is_null($branchId), fn ($q) => $q->whereNull('branch_id'), fn ($q) => $q->where('branch_id', $branchId));
                     $inventory = $query->lockForUpdate()->first();
 
                     if ($inventory) {
@@ -231,36 +240,37 @@ class SalesReturnController extends Controller
                         $inventory->update(['current_stock' => $newStock]);
 
                         InventoryMovement::record(
-                            productId:   $item->product_id,
-                            branchId:    $branchId,
-                            type:        'return',
-                            quantity:    $item->quantity,
+                            productId: $item->product_id,
+                            branchId: $branchId,
+                            type: 'return',
+                            quantity: $item->quantity,
                             stockBefore: $oldStock,
-                            stockAfter:  $newStock,
-                            refType:     'sales_return',
-                            refId:       $return->id,
-                            notes:       'Return: ' . $return->return_number,
-                            userId:      $user->id,
+                            stockAfter: $newStock,
+                            refType: 'sales_return',
+                            refId: $return->id,
+                            notes: 'Return: '.$return->return_number,
+                            userId: $user->id,
                         );
                     }
                 }
 
                 $return->update([
-                    'status'       => 'completed',
+                    'status' => 'completed',
                     'completed_at' => now(),
                 ]);
             });
 
             Log::info('Sales return completed', [
                 'return_id' => $return->id,
-                'user_id'   => $user->id,
+                'user_id' => $user->id,
             ]);
 
             return redirect()->route('returns.show', $return)
                 ->with('success', 'Retur selesai. Stok telah dikembalikan.');
         } catch (\Exception $e) {
             Log::error('Return completion failed', ['error' => $e->getMessage()]);
-            return back()->with('error', 'Gagal menyelesaikan retur: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal menyelesaikan retur: '.$e->getMessage());
         }
     }
 }
