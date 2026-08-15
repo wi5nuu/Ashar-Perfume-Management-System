@@ -4,13 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Transaction extends Model
 {
     use SoftDeletes;
+    
     protected $hidden = ['payment_proof_image'];
 
     protected $fillable = [
+        'uuid',
         'invoice_number',
         'customer_id',
         'customer_type',
@@ -36,6 +39,28 @@ class Transaction extends Model
         'notes',
         'tax_enabled',
     ];
+
+    /**
+     * Boot function untuk auto-generate UUID saat create
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::creating(function ($transaction) {
+            if (empty($transaction->uuid)) {
+                $transaction->uuid = (string) Str::uuid();
+            }
+        });
+    }
+
+    /**
+     * Get the route key for the model (gunakan UUID instead of ID)
+     */
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
 
     protected $casts = [
         'total_amount'     => 'decimal:2',
