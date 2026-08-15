@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
-use App\Models\Customer;
 use App\Models\Branch;
+use App\Models\Customer;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 class SeedWholesaleLeads extends Command
 {
     protected $signature = 'leads:seed-wholesale';
+
     protected $description = 'Seed 60+ wholesale customer leads from competitor data';
 
     public function handle()
@@ -28,6 +29,7 @@ class SeedWholesaleLeads extends Command
             if (empty($lead['phone'])) {
                 $this->warn("Skipped {$lead['name']}: no phone");
                 $skipped++;
+
                 continue;
             }
 
@@ -36,6 +38,7 @@ class SeedWholesaleLeads extends Command
             if (User::where('phone', $phone)->exists()) {
                 $this->warn("Skipped {$lead['name']}: phone {$phone} already exists");
                 $skipped++;
+
                 continue;
             }
 
@@ -44,30 +47,32 @@ class SeedWholesaleLeads extends Command
             $email = $this->generateEmail($lead['name']);
 
             if (User::where('email', $email)->exists()) {
-                $email = $lead['name'] . '_' . Str::random(4) . '@apms-customer.com';
-                $email = Str::slug($email) . '@apms-customer.com';
+                $email = $lead['name'].'_'.Str::random(4).'@apms-customer.com';
+                $email = Str::slug($email).'@apms-customer.com';
                 if (User::where('email', $email)->exists()) {
-                    $email = 'lead_' . Str::random(8) . '@apms-customer.com';
+                    $email = 'lead_'.Str::random(8).'@apms-customer.com';
                 }
             }
 
             try {
-                $user = User::create([
-                    'name' => $lead['name'],
-                    'email' => $email,
-                    'phone' => $phone,
-                    'password' => Hash::make('perfume2026'),
-                    'role' => 'wholesale_customer',
-                    'branch_id' => $branchId,
-                    'can_login' => true,
-                    'is_active' => true,
-                    'referral_code' => strtoupper(Str::random(8)),
-                ]);
+                $user = new User;
+                $user->name = $lead['name'];
+                $user->email = $email;
+                $user->phone = $phone;
+                $user->role = 'wholesale_customer';
+                $user->branch_id = $branchId;
+                $user->can_login = true;
+                $user->is_active = true;
+                $user->referral_code = strtoupper(Str::random(8));
+                // password di-set eksplisit (bukan mass-assignment) — password
+                // sengaja tidak ada di $fillable; 'hashed' cast meng-hash otomatis.
+                $user->password = 'perfume2026';
+                $user->save();
 
                 $existingCustomer = Customer::where('phone', $phone)->first();
-                if (!$existingCustomer) {
+                if (! $existingCustomer) {
                     Customer::create([
-                        'customer_code' => 'CUST-' . strtoupper(Str::random(8)),
+                        'customer_code' => 'CUST-'.strtoupper(Str::random(8)),
                         'name' => $lead['name'],
                         'phone' => $phone,
                         'type' => 'wholesale',
@@ -115,11 +120,11 @@ class SeedWholesaleLeads extends Command
         }
 
         if (substr($phone, 0, 2) === '62') {
-            return '0' . substr($phone, 2);
+            return '0'.substr($phone, 2);
         }
 
         if ($phone[0] !== '0') {
-            return '0' . $phone;
+            return '0'.$phone;
         }
 
         return $phone;
@@ -129,7 +134,8 @@ class SeedWholesaleLeads extends Command
     {
         $slug = Str::slug($name);
         $slug = substr($slug, 0, 40);
-        return $slug . '@apms-customer.com';
+
+        return $slug.'@apms-customer.com';
     }
 
     private function buildBranchMap(): array
