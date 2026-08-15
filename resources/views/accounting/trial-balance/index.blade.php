@@ -34,13 +34,12 @@
     .btn-export { display: inline-flex; align-items: center; gap: 6px; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; border: 1.5px solid; transition: all 0.15s; text-decoration: none; cursor: pointer; }
     .btn-export.pdf { border-color: #ef5350; color: #ef5350; background: rgba(239,83,80,0.05); }
     .btn-export.pdf:hover { background: #ef5350; color: #fff; text-decoration: none; }
-    .btn-export.excel { border-color: #388e3c; color: #388e3c; background: rgba(56,142,60,0.05); }
-    .btn-export.excel:hover { background: #388e3c; color: #fff; text-decoration: none; }
+    .btn-export.csv { border-color: #388e3c; color: #388e3c; background: rgba(56,142,60,0.05); }
+    .btn-export.csv:hover { background: #388e3c; color: #fff; text-decoration: none; }
     .btn-export.print { border-color: var(--secondary); color: var(--secondary); background: rgba(45,48,71,0.04); }
     .btn-export.print:hover { background: var(--secondary); color: #fff; text-decoration: none; }
     .period-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.15); border-radius: 6px; padding: 3px 10px; font-size: 0.78rem; color: rgba(255,255,255,0.9); }
 </style>
-
 @endpush
 
 @section('content')
@@ -53,16 +52,16 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="#">Akuntansi</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('accounting.index') }}">Akuntansi</a></li>
                     <li class="breadcrumb-item active">Neraca Saldo</li>
                 </ol>
             </nav>
         </div>
         <div class="d-flex flex-wrap align-items-center" style="gap:0.5rem">
-            <span class="period-chip"><i class="fas fa-calendar-alt"></i>Per {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</span>
+            <span class="period-chip"><i class="fas fa-calendar-alt"></i>Per {{ \Carbon\Carbon::parse($data['to'])->format('d M Y') }}</span>
             <button onclick="window.print()" class="btn-export print"><i class="fas fa-print"></i> Cetak</button>
             <a href="{{ route('accounting.trial-balance.index', array_merge(request()->query(), ['export'=>'pdf'])) }}" class="btn-export pdf"><i class="fas fa-file-pdf"></i> PDF</a>
-            <a href="{{ route('accounting.trial-balance.index', array_merge(request()->query(), ['export'=>'excel'])) }}" class="btn-export excel"><i class="fas fa-file-excel"></i> Excel</a>
+            <a href="{{ route('accounting.trial-balance.index', array_merge(request()->query(), ['export'=>'csv'])) }}" class="btn-export csv"><i class="fas fa-file-csv"></i> CSV</a>
         </div>
     </div>
 
@@ -71,8 +70,12 @@
         <form method="GET">
             <div class="row align-items-end" style="row-gap:0.75rem">
                 <div class="col-md-4">
+                    <label class="mb-1" style="font-size:0.75rem;font-weight:600;color:#8892a4;text-transform:uppercase;letter-spacing:0.4px">Dari Tanggal</label>
+                    <input type="date" name="from" class="form-control" value="{{ $data['from'] ?? '' }}">
+                </div>
+                <div class="col-md-4">
                     <label class="mb-1" style="font-size:0.75rem;font-weight:600;color:#8892a4;text-transform:uppercase;letter-spacing:0.4px">Sampai Tanggal</label>
-                    <input type="date" name="end_date" class="form-control" value="{{ $endDate }}">
+                    <input type="date" name="to" class="form-control" value="{{ $data['to'] }}">
                 </div>
                 <div class="col-md-3">
                     <button type="submit" class="btn w-100" style="background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;height:calc(1.5em + 0.75rem + 2px)">
@@ -84,18 +87,13 @@
     </div>
 
     {{-- Balance Status --}}
-    @php
-        $totalDebit  = $accounts->sum('debit');
-        $totalCredit = $accounts->sum('credit');
-        $isBalanced  = round($totalDebit, 2) === round($totalCredit, 2);
-    @endphp
-    <div class="balance-status-bar {{ $isBalanced ? 'ok' : 'err' }}">
-        @if($isBalanced)
+    <div class="balance-status-bar {{ $data['is_balanced'] ? 'ok' : 'err' }}">
+        @if($data['is_balanced'])
             <i class="fas fa-check-circle fa-lg"></i>
-            <span>Neraca seimbang &mdash; Total Debit = Total Kredit = Rp {{ number_format($totalDebit, 0, ',', '.') }}</span>
+            <span>Neraca seimbang &mdash; Total Debit = Total Kredit = Rp {{ number_format($data['total_debit'], 0, ',', '.') }}</span>
         @else
             <i class="fas fa-exclamation-triangle fa-lg"></i>
-            <span>Neraca tidak seimbang! Selisih: Rp {{ number_format(abs($totalDebit - $totalCredit), 0, ',', '.') }}</span>
+            <span>Neraca tidak seimbang! Selisih: Rp {{ number_format(abs($data['total_debit'] - $data['total_credit']), 0, ',', '.') }}</span>
         @endif
     </div>
 
@@ -112,8 +110,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($accounts as $acc)
-                    @if($acc['balance'] != 0)
+                    @forelse($data['rows'] as $acc)
                     <tr>
                         <td><span class="acct-code-badge">{{ $acc['code'] }}</span></td>
                         <td style="font-weight:500;color:var(--secondary)">{{ $acc['name'] }}</td>
@@ -132,7 +129,6 @@
                             @endif
                         </td>
                     </tr>
-                    @endif
                     @empty
                     <tr>
                         <td colspan="4" class="text-center py-5" style="color:#8892a4;font-size:0.85rem">
@@ -145,17 +141,17 @@
                     <tr>
                         <td colspan="2" class="text-right" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.4px">TOTAL</td>
                         <td class="text-right">
-                            <span class="amount-debit" style="font-size:0.95rem">Rp {{ number_format($totalDebit, 0, ',', '.') }}</span>
+                            <span class="amount-debit" style="font-size:0.95rem">Rp {{ number_format($data['total_debit'], 0, ',', '.') }}</span>
                         </td>
                         <td class="text-right">
-                            <span class="amount-credit" style="font-size:0.95rem">Rp {{ number_format($totalCredit, 0, ',', '.') }}</span>
+                            <span class="amount-credit" style="font-size:0.95rem">Rp {{ number_format($data['total_credit'], 0, ',', '.') }}</span>
                         </td>
                     </tr>
-                    @if(!$isBalanced)
+                    @if(!$data['is_balanced'])
                     <tr style="background:#fce4ec">
                         <td colspan="2" class="text-right" style="color:#c62828;font-size:0.78rem">SELISIH (TIDAK BALANCE)</td>
                         <td colspan="2" class="text-right" style="color:#c62828">
-                            Rp {{ number_format(abs($totalDebit - $totalCredit), 0, ',', '.') }}
+                            Rp {{ number_format(abs($data['total_debit'] - $data['total_credit']), 0, ',', '.') }}
                         </td>
                     </tr>
                     @endif

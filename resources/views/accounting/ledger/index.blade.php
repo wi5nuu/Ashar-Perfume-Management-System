@@ -109,35 +109,28 @@
         </form>
     </div>
 
-    @if($accountId)
+    @if($accountId && $data)
     {{-- Account Header --}}
-    @php $selectedAccount = $accounts->firstWhere('id', $accountId); @endphp
-    @if($selectedAccount)
     <div class="acct-header-card">
         <div>
-            <div class="acct-code">{{ $selectedAccount->code }}</div>
-            <div class="acct-name">{{ $selectedAccount->name }}</div>
+            <div class="acct-code">{{ $data['account']->code }}</div>
+            <div class="acct-name">{{ $data['account']->name }}</div>
             <div style="font-size:0.78rem;color:#8892a4;margin-top:2px">
-                Tipe: {{ \App\Models\ChartOfAccount::TYPES[$selectedAccount->type] ?? $selectedAccount->type }}
-                &bull; Normal Balance: <span style="font-weight:600;color:var(--secondary)">{{ strtoupper($selectedAccount->normal_balance ?? '-') }}</span>
+                Tipe: {{ \App\Models\ChartOfAccount::TYPES[$data['account']->type] ?? $data['account']->type }}
+                &bull; Normal Balance: <span style="font-weight:600;color:var(--secondary)">{{ strtoupper($data['account']->normal_balance ?? '-') }}</span>
             </div>
         </div>
         <div class="text-right">
             <div class="acct-balance-label">Saldo Akhir</div>
-            <div class="acct-balance-val {{ $balance >= 0 ? 'amount-balance-pos' : 'amount-balance-neg' }}">
-                Rp {{ number_format(abs($balance), 0, ',', '.') }}
-                <span style="font-size:0.72rem;font-weight:600">{{ $balance >= 0 ? 'Dr' : 'Cr' }}</span>
+            <div class="acct-balance-val {{ $data['closing_balance'] >= 0 ? 'amount-balance-pos' : 'amount-balance-neg' }}">
+                Rp {{ number_format(abs($data['closing_balance']), 0, ',', '.') }}
+                <span style="font-size:0.72rem;font-weight:600">{{ $data['closing_balance'] >= 0 ? 'Dr' : 'Cr' }}</span>
             </div>
-            @if(request('from') || request('to'))
             <div style="font-size:0.72rem;color:#8892a4;margin-top:2px">
-                {{ request('from') ? \Carbon\Carbon::parse(request('from'))->format('d M Y') : 'Awal' }}
-                &ndash;
-                {{ request('to') ? \Carbon\Carbon::parse(request('to'))->format('d M Y') : 'Sekarang' }}
+                {{ \Carbon\Carbon::parse($data['from'])->format('d M Y') }} &ndash; {{ \Carbon\Carbon::parse($data['to'])->format('d M Y') }}
             </div>
-            @endif
         </div>
     </div>
-    @endif
 
     {{-- Transactions Table --}}
     <div class="table-card">
@@ -154,36 +147,46 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($details as $d)
-                    <tr>
-                        <td>
-                            <div style="font-weight:500;font-size:0.84rem">{{ $d->journalEntry->date->format('d M Y') }}</div>
-                            <div style="font-size:0.7rem;color:#b0b8c9">{{ $d->journalEntry->date->format('H:i') }}</div>
+                    <tr style="background:#f5f6fb">
+                        <td colspan="3" style="font-size:0.78rem;font-weight:700;color:#8892a4;text-transform:uppercase;letter-spacing:0.4px">Saldo Awal</td>
+                        <td class="text-right" colspan="2"></td>
+                        <td class="text-right">
+                            <span class="{{ $data['opening_balance'] >= 0 ? 'amount-balance-pos' : 'amount-balance-neg' }}">
+                                Rp {{ number_format(abs($data['opening_balance']), 0, ',', '.') }}
+                                <span style="font-size:0.65rem">{{ $data['opening_balance'] >= 0 ? 'Dr' : 'Cr' }}</span>
+                            </span>
                         </td>
+                    </tr>
+                    @forelse($data['rows'] as $d)
+                    <tr>
+                        <td style="font-weight:500;font-size:0.84rem">{{ \Carbon\Carbon::parse($d['date'])->format('d M Y') }}</td>
                         <td>
-                            <span class="journal-num">{{ $d->journalEntry->journal_number }}</span>
+                            <span class="journal-num">{{ $d['journal_number'] }}</span>
                         </td>
                         <td style="max-width:280px">
-                            <div style="font-size:0.84rem;color:var(--secondary)">{{ $d->journalEntry->description }}</div>
+                            <div style="font-size:0.84rem;color:var(--secondary)">{{ $d['description'] }}</div>
+                            @if($d['memo'])
+                            <div style="font-size:0.72rem;color:#b0b8c9">{{ $d['memo'] }}</div>
+                            @endif
                         </td>
                         <td class="text-right">
-                            @if($d->debit > 0)
-                                <span class="amount-debit">Rp {{ number_format($d->debit, 0, ',', '.') }}</span>
+                            @if($d['debit'] > 0)
+                                <span class="amount-debit">Rp {{ number_format($d['debit'], 0, ',', '.') }}</span>
                             @else
                                 <span style="color:#e0e0e0">&mdash;</span>
                             @endif
                         </td>
                         <td class="text-right">
-                            @if($d->credit > 0)
-                                <span class="amount-credit">Rp {{ number_format($d->credit, 0, ',', '.') }}</span>
+                            @if($d['credit'] > 0)
+                                <span class="amount-credit">Rp {{ number_format($d['credit'], 0, ',', '.') }}</span>
                             @else
                                 <span style="color:#e0e0e0">&mdash;</span>
                             @endif
                         </td>
                         <td class="text-right">
-                            <span class="{{ $d->running_balance >= 0 ? 'amount-balance-pos' : 'amount-balance-neg' }}">
-                                Rp {{ number_format(abs($d->running_balance), 0, ',', '.') }}
-                                <span style="font-size:0.65rem">{{ $d->running_balance >= 0 ? 'Dr' : 'Cr' }}</span>
+                            <span class="{{ $d['running_balance'] >= 0 ? 'amount-balance-pos' : 'amount-balance-neg' }}">
+                                Rp {{ number_format(abs($d['running_balance']), 0, ',', '.') }}
+                                <span style="font-size:0.65rem">{{ $d['running_balance'] >= 0 ? 'Dr' : 'Cr' }}</span>
                             </span>
                         </td>
                     </tr>
@@ -205,9 +208,9 @@
                         <td class="text-right"></td>
                         <td class="text-right"></td>
                         <td class="text-right">
-                            <span class="{{ $balance >= 0 ? 'amount-balance-pos' : 'amount-balance-neg' }}" style="font-size:0.95rem">
-                                Rp {{ number_format(abs($balance), 0, ',', '.') }}
-                                <span style="font-size:0.7rem">{{ $balance >= 0 ? 'Dr' : 'Cr' }}</span>
+                            <span class="{{ $data['closing_balance'] >= 0 ? 'amount-balance-pos' : 'amount-balance-neg' }}" style="font-size:0.95rem">
+                                Rp {{ number_format(abs($data['closing_balance']), 0, ',', '.') }}
+                                <span style="font-size:0.7rem">{{ $data['closing_balance'] >= 0 ? 'Dr' : 'Cr' }}</span>
                             </span>
                         </td>
                     </tr>
