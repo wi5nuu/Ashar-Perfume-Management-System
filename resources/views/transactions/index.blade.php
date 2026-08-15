@@ -164,7 +164,7 @@
                                 @forelse($transactions as $transaction)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('transactions.show', $transaction->id) }}" class="font-weight-bold text-primary">
+                                        <a href="{{ route('transactions.show', $transaction) }}" class="font-weight-bold text-primary">
                                             {{ $transaction->invoice_number }}
                                         </a>
                                     </td>
@@ -218,21 +218,21 @@
                                     </td>
                                     <td class="text-right">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('transactions.show', $transaction->id) }}" 
+                                            <a href="{{ route('transactions.show', $transaction) }}" 
                                                class="btn btn-info btn-sm" title="Lihat Detail">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('transactions.print', $transaction->id) }}" 
+                                            <a href="{{ route('transactions.print', $transaction) }}" 
                                                class="btn btn-success btn-sm" target="_blank" title="Print Invoice">
                                                 <i class="fas fa-print"></i>
                                             </a>
                                             @can('manage_transactions')
                                             <button type="button" class="btn btn-danger btn-sm" 
-                                                    onclick="deleteTransaction({{ $transaction->id }})" title="Hapus">
+                                                    onclick="deleteTransaction('{{ $transaction->uuid }}')" title="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
-                                            <form id="delete-form-{{ $transaction->id }}" 
-                                                  action="{{ route('transactions.destroy', $transaction->id) }}" 
+                                            <form id="delete-form-{{ $transaction->uuid }}" 
+                                                  action="{{ route('transactions.destroy', $transaction) }}" 
                                                   method="POST" class="d-none">
                                                 @csrf
                                                 @method('DELETE')

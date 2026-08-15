@@ -19,7 +19,7 @@
                     </nav>
                 </div>
                 <div class="mt-2 mt-md-0">
-                    <a href="{{ route('transactions.print', $transaction->id) }}" class="btn btn-primary-apms" target="_blank">
+                    <a href="{{ route('transactions.print', $transaction) }}" class="btn btn-primary-apms" target="_blank">
                         <i class="fas fa-print"></i> Cetak Invoice
                     </a>
                     <a href="{{ route('transactions.index') }}" class="btn btn-secondary ml-2">
