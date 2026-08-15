@@ -308,7 +308,7 @@ $greeting = $hour < 10 ? 'Selamat Pagi' : ($hour < 15 ? 'Selamat Siang' : ($hour
                                 @forelse($recentTransactions as $transaction)
                                 <tr>
                                     <td style="padding:8px 12px;">
-                                        <a href="{{ route('transactions.show', $transaction->id) }}" class="font-weight-600 d-inline-block text-truncate" style="color:#FF6B35; font-size:0.78rem; max-width:140px;" title="{{ $transaction->invoice_number }}">
+                                        <a href="{{ route('transactions.show', $transaction) }}" class="font-weight-600 d-inline-block text-truncate" style="color:#FF6B35; font-size:0.78rem; max-width:140px;" title="{{ $transaction->invoice_number }}">
                                             {{ $transaction->invoice_number }}
                                         </a>
                                     </td>
@@ -474,7 +474,7 @@ $greeting = $hour < 10 ? 'Selamat Pagi' : ($hour < 15 ? 'Selamat Siang' : ($hour
                 </div>
                 <div class="card-body p-0">
                     @forelse($recentTransactions->take(5) as $t)
-                    <a href="{{ route('transactions.show', $t->id) }}" class="stock-item" style="display:flex; text-decoration:none; color:inherit;">
+                    <a href="{{ route('transactions.show', $t) }}" class="stock-item" style="display:flex; text-decoration:none; color:inherit;">
                         <div class="stock-icon" style="background:rgba(255,107,53,0.08); color:#FF6B35;">
                             <i class="fas fa-receipt"></i>
                         </div>
