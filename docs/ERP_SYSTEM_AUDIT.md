@@ -107,11 +107,11 @@
 - **Fitur:** Open/close shift, initial cash, expected vs actual cash, discrepancy, closing photo, cash breakdown & denominations, supervisor review, manager notes
 - **Kekurangan:** Tidak ada shift scheduling otomatis
 
-### 2.14 Payroll — 🟡 Basic
+### 2.14 Payroll — ✅ Lengkap
 - **Fungsi:** Penggajian karyawan
-- **Status:** Basic implementation (hanya index)
-- **Fitur:** Basic salary, allowances, deductions, payroll settings per user, status (pending/paid)
-- **Kekurangan:** **Tidak ada create/edit/show** untuk payroll, tidak ada integrasi attendance→payroll, tidak ada BPJS/PPh 21, tidak ada slip gaji, tidak ada THR, tidak ada lembur otomatis
+- **Status:** Production-ready
+- **Fitur:** Basic salary, allowances, deductions, payroll settings per user, status (pending/paid), generate payroll batch, auto-posting jurnal double-entry ke GL
+- **Kekurangan:** Tidak ada integrasi attendance→payroll otomatis, tidak ada BPJS/PPh 21, tidak ada slip gaji cetak, tidak ada THR, tidak ada lembur otomatis
 
 ### 2.15 Commission — ✅ Lengkap
 - **Fungsi:** Komisi karyawan per transaksi
@@ -129,7 +129,7 @@
 - **Fungsi:** Laporan penjualan, inventory, laba rugi, customer analytics
 - **Status:** Production-ready
 - **Fitur:** Sales report (daily/monthly), P&L (COGS, gross profit, net), inventory (low stock, out of stock, expiring), customer analytics (top customers, growth, types), branch comparison, payment distribution, multi-period chart, smart insights
-- **Kekurangan:** Tidak ada balance sheet, tidak ada cash flow statement, tidak ada custom report builder
+- **Kekurangan:** Tidak ada custom report builder
 
 ### 2.18 Export (PDF/CSV/Excel) — ✅ Lengkap
 - **Fungsi:** Ekspor laporan ke berbagai format
@@ -212,16 +212,16 @@
 | **Membership** | 🟡 | Loyalty points untuk retail, credit+rank untuk grosir |
 | **Deposit Customer** | ❌ | Belum ada deposit/prepaid |
 | **Loyalty** | ✅ | Advanced wholesale loyalty (15 tiers), basic retail points |
-| **Accounting** | ❌ | **Tidak ada** — no chart of account, no journal, no GL |
-| **Chart of Account** | ❌ | Belum ada |
-| **Journal** | ❌ | Belum ada |
-| **General Ledger** | ❌ | Belum ada |
-| **Balance Sheet** | ❌ | Belum ada |
-| **Profit Loss** | ✅ | Revenue - COGS - Expenses, branch-scoped |
-| **Cash Flow** | ❌ | Belum ada |
-| **Auto Posting** | ❌ | Tidak ada double-entry accounting |
+| **Accounting** | ✅ | Double-entry GL: COA, jurnal, periode, auto-posting |
+| **Chart of Account** | ✅ | COA enterprise (kode standar, 5 level, posting/cash/bank flag) |
+| **Journal** | ✅ | Jurnal + reversal, nomor unik JNL-YYYYMMDD-XXXXXX |
+| **General Ledger** | ✅ | Buku besar per akun, running balance, export PDF |
+| **Balance Sheet** | ✅ | Dari GL, akun is_posting, opening/closing balance |
+| **Profit Loss** | ✅ | Income statement formal dari GL (revenue, COGS, operating expense) |
+| **Cash Flow** | ✅ | Metode tidak langsung dari GL |
+| **Auto Posting** | ✅ | Double-entry dari POS, PO, expense, payroll (idempoten, fail-safe) |
 | **Tax** | 🟡 | PPN toggle (10%) di transaksi, tidak ada PPh, tidak ada laporan pajak |
-| **Payroll** | 🟡 | Basic — hanya index, belum ada create/edit/slip/BPJS |
+| **Payroll** | ✅ | Generate payroll batch, auto-posting GL, salary + allowances + deductions |
 | **Attendance** | ✅ | Time in/out dengan status, role tracking |
 | **Shift** | ✅ | Cash reconciliation, photo, denominations |
 | **Employee** | ✅ | Full HR data, corporate fields |
@@ -383,14 +383,14 @@
 | Manajemen Gudang | ✅ Setara (multi-warehouse) |
 | CRM | 🟨 Setara (customer portal, loyalty) |
 | Karyawan & Absensi | ✅ Lebih Baik (shift + cash reconciliation) |
-| Laporan Keuangan | ❌ **Majoo lebih unggul** (APMS tidak punya accounting) |
+| Laporan Keuangan | ✅ Setara (COA, jurnal, GL, trial balance, income statement, balance sheet, cash flow, export PDF) |
 | Manajemen Aset | ❌ Belum Ada |
 | Integrasi Marketplace | ❌ Belum Ada |
 
 ### Majoo Prime
 | Fitur | Status |
 |-------|--------|
-| Akuntansi (COA, Jurnal, GL) | ❌ **Belum Ada** — gap terbesar |
+| Akuntansi (COA, Jurnal, GL) | ✅ **Selesai** — double-entry, laporan keuangan, auto-posting |
 | Laporan Pajak (PPN, PPh) | ❌ Belum Ada |
 | Payroll Lengkap | ❌ **Belum Ada** (APMS masih basic) |
 | Manajemen Produksi | ❌ Belum Ada |
@@ -433,10 +433,10 @@
 ### Critical Gaps
 | Fitur | Prioritas | Notes |
 |-------|-----------|-------|
-| **Chart of Account + Jurnal + GL** | Critical | Double-entry accounting |
-| **Balance Sheet** | Critical | Laporan posisi keuangan |
-| **Cash Flow Statement** | Critical | Laporan arus kas |
-| **Auto Posting** | Critical | Posting otomatis ke GL dari transaksi |
+| ~~Chart of Account + Jurnal + GL~~ | ✅ Selesai | Double-entry accounting |
+| ~~Balance Sheet~~ | ✅ Selesai | Laporan posisi keuangan |
+| ~~Cash Flow Statement~~ | ✅ Selesai | Laporan arus kas |
+| ~~Auto Posting~~ | ✅ Selesai | Posting otomatis ke GL dari transaksi |
 | **Laporan Pajak (PPN, PPh 21/23/4a2)** | Critical | Fitur wajib pajak |
 | **Payroll Lengkap (slip, BPJS, THR)** | Critical | Hitung PPh 21, BPJS, THR |
 
@@ -514,13 +514,13 @@
 |-------|:-------------:|:-------------:|:-----------:|
 | **POS** | ✅ **APMS Unggul** | 🟨 Setara | 🟨 Setara |
 | **Inventory** | ✅ **APMS Unggul** | ✅ **APMS Unggul** | 🟨 Setara |
-| **Accounting** | ❌ Majoo Unggul | ❌ Majoo Unggul | ❌ Majoo Unggul |
+| **Accounting** | ✅ **APMS Unggul** (COA, jurnal, GL, auto-posting) | ✅ Setara | 🟨 Setara |
 | **CRM** | ✅ **APMS Unggul** | 🟨 Setara | 🟨 Setara |
 | **Payroll** | ❌ Majoo Unggul | ❌ Majoo Unggul | ❌ Majoo Unggul |
 | **AI/Analytics** | ✅ **APMS Unggul** | ✅ **APMS Unggul** | ✅ **APMS Unggul** |
 | **Security** | ✅ **APMS Unggul** | ✅ **APMS Unggul** | ✅ **APMS Unggul** |
 | **Loyalty** | ✅ **APMS Unggul** | ✅ **APMS Unggul** | ✅ **APMS Unggul** |
-| **Laporan Keuangan** | ❌ Majoo Unggul | ❌ Majoo Unggul | ❌ Majoo Unggul |
+| **Laporan Keuangan** | ✅ **APMS Unggul** (formal dari GL) | ✅ Setara | 🟨 Setara |
 | **Marketplace** | ❌ Majoo Unggul | ❌ Majoo Unggul | ❌ Majoo Unggul |
 | **Multi Cabang** | ✅ **APMS Unggul** | ✅ **APMS Unggul** | 🟨 Setara |
 | **Realtime** | ✅ **APMS Unggul** | ✅ **APMS Unggul** | ✅ **APMS Unggul** |
@@ -529,11 +529,11 @@
 
 **APMS unggul dari Majoo Starter** di hampir semua aspek — POS lebih modern, inventory multi-gudang, AI analytics, security enterprise-grade, real-time dashboard, dan loyalty system.
 
-**APMS setara dengan Majoo Advance** — sama-sama kuat di POS, inventory, purchasing. APMS unggul di AI, security, loyalty. Majoo unggul di accounting.
+**APMS setara dengan Majoo Advance** — sama-sama kuat di POS, inventory, purchasing, dan accounting. APMS unggul di AI, security, loyalty.
 
-**APMS belum bisa menyaingi Majoo Prime** untuk enterprise yang membutuhkan double-entry accounting, laporan pajak, payroll enterprise, dan integrasi marketplace.
+**APMS mendekati Majoo Prime** — double-entry accounting (COA, jurnal, GL, laporan keuangan) sudah selesai. Gap yang tersisa: laporan pajak, payroll enterprise, manajemen aset, dan integrasi marketplace.
 
-**Strategi:** Jika APMS menambahkan modul Accounting (COA, Jurnal, GL, Balance Sheet, Cash Flow) dan payroll lengkap dalam 6 bulan ke depan, APMS bisa menjadi alternatif yang **lebih unggul dari Majoo Prime** untuk UKM/retail di Indonesia, terutama dengan keunggulan AI, security, dan real-time yang tidak dimiliki Majoo.
+**Strategi:** Dengan modul Accounting (COA, Jurnal, GL, Balance Sheet, Cash Flow) yang sudah selesai, APMS bisa menjadi alternatif yang **lebih unggul dari Majoo Prime** untuk UKM/retail di Indonesia setelah menyelesaikan laporan pajak, payroll lengkap, dan integrasi marketplace — terutama dengan keunggulan AI, security, dan real-time yang tidak dimiliki Majoo.
 
 ---
 
@@ -543,14 +543,14 @@
 
 | # | Fitur | Module | Estimasi |
 |---|-------|--------|----------|
-| 1 | **Chart of Account** — COA dengan kode akun standar | Accounting | 2 minggu |
-| 2 | **Double-Entry Journal** — Jurnal otomatis dari semua transaksi | Accounting | 3 minggu |
-| 3 | **General Ledger** — GL dengan saldo akun real-time | Accounting | 2 minggu |
-| 4 | **Trial Balance** — Neraca saldo sebelum laporan keuangan | Accounting | 1 minggu |
-| 5 | **Balance Sheet** — Laporan posisi keuangan (aset, liabilitas, ekuitas) | Accounting | 1 minggu |
-| 6 | **Income Statement** — Laba rugi formal (dari GL, bukan query langsung) | Accounting | 1 minggu |
-| 7 | **Cash Flow Statement** — Laporan arus kas (metode langsung/tidak langsung) | Accounting | 2 minggu |
-| 8 | **Auto Posting Engine** — Posting otomatis dari POS, Purchase, Expense ke GL | Accounting | 4 minggu |
+| 1 | ~~Chart of Account~~ — COA dengan kode akun standar | Accounting | ✅ Selesai |
+| 2 | ~~Double-Entry Journal~~ — Jurnal otomatis dari semua transaksi | Accounting | ✅ Selesai |
+| 3 | ~~General Ledger~~ — GL dengan saldo akun real-time | Accounting | ✅ Selesai |
+| 4 | ~~Trial Balance~~ — Neraca saldo sebelum laporan keuangan | Accounting | ✅ Selesai |
+| 5 | ~~Balance Sheet~~ — Laporan posisi keuangan (aset, liabilitas, ekuitas) | Accounting | ✅ Selesai |
+| 6 | ~~Income Statement~~ — Laba rugi formal (dari GL, bukan query langsung) | Accounting | ✅ Selesai |
+| 7 | ~~Cash Flow Statement~~ — Laporan arus kas (metode langsung/tidak langsung) | Accounting | ✅ Selesai |
+| 8 | ~~Auto Posting Engine~~ — Posting otomatis dari POS, Purchase, Expense ke GL | Accounting | ✅ Selesai |
 | 9 | **Account Payable (Hutang)** — Manajemen hutang usaha formal | Accounting | 2 minggu |
 | 10 | **Account Receivable (Piutang)** — Piutang formal dengan invoice | Accounting | 2 minggu |
 | 11 | **Payroll Lengkap** — Slip gaji, PPh 21, BPJS, THR, lembur | HR | 4 minggu |
