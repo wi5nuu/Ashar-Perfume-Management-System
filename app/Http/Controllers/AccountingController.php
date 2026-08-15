@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
-use App\Models\JournalDetail;
-use App\Models\AccountingPeriod;
+use App\Services\Accounting\FinancialStatementService;
+use App\Services\Accounting\JournalService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class AccountingController extends Controller
 {
-    // Auth enforced via routes/accounting.php middleware — no constructor needed.
+    public function __construct(private readonly FinancialStatementService $statements) {}
 
+    // ─────────────────────────────────────────────────────────────────────
+    // DASHBOARD
+    // ─────────────────────────────────────────────────────────────────────
     public function index()
     {
         return view('accounting.index', [
@@ -21,16 +24,22 @@ class AccountingController extends Controller
             'currentPeriod' => AccountingPeriod::current(),
             'coaCount' => ChartOfAccount::count(),
             'journalCount' => JournalEntry::count(),
-            'unpostedCount' => JournalEntry::where('status', 'draft')->count(),
+            'unpostedCount' => JournalEntry::where('status', JournalEntry::STATUS_DRAFT)->count(),
+            'recentJournals' => JournalEntry::with(['period', 'creator'])->latest()->limit(5)->get(),
+            'closedPeriodCount' => AccountingPeriod::where('is_closed', true)->count(),
         ]);
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // CHART OF ACCOUNTS
+    // ─────────────────────────────────────────────────────────────────────
     public function coaIndex(Request $request)
     {
         $accounts = ChartOfAccount::with('parent')
-            ->when($request->type, fn($q, $v) => $q->where('type', $v))
-            ->when($request->search, fn($q, $v) => $q->where('name', 'like', "%{$v}%")->orWhere('code', 'like', "%{$v}%"))
+            ->when($request->type, fn ($q, $v) => $q->where('type', $v))
+            ->when($request->search, fn ($q, $v) => $q->where(fn ($b) => $b->where('name', 'like', "%{$v}%")->orWhere('code', 'like', "%{$v}%")))
             ->orderBy('code')->paginate(25);
+
         return view('accounting.coa.index', compact('accounts'));
     }
 
@@ -41,29 +50,120 @@ class AccountingController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'required|in:asset,liability,equity,income,expense',
             'parent_id' => 'nullable|exists:chart_of_accounts,id',
+            'is_posting' => 'sometimes|boolean',
+            'is_cash' => 'sometimes|boolean',
+            'is_bank' => 'sometimes|boolean',
             'description' => 'nullable|string',
         ]);
         $validated['normal_balance'] = ChartOfAccount::NORMAL_BALANCE[$validated['type']];
         $validated['is_active'] = true;
-        $validated['level'] = $validated['parent_id'] ? (ChartOfAccount::find($validated['parent_id'])?->level ?? 0) + 1 : 1;
+        $validated['level'] = ! empty($validated['parent_id'])
+            ? (ChartOfAccount::find($validated['parent_id'])?->level ?? 0) + 1
+            : 1;
         ChartOfAccount::create($validated);
+
         return redirect()->route('accounting.coa.index')->with('success', 'Akun berhasil ditambahkan');
     }
 
+    public function coaEdit(ChartOfAccount $account)
+    {
+        return view('accounting.coa.edit', [
+            'account' => $account,
+            'accounts' => ChartOfAccount::active()->where('id', '!=', $account->id)->orderBy('code')->get(),
+        ]);
+    }
+
+    public function coaUpdate(Request $request, ChartOfAccount $account)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:chart_of_accounts,id',
+            'is_posting' => 'sometimes|boolean',
+            'is_cash' => 'sometimes|boolean',
+            'is_bank' => 'sometimes|boolean',
+            'is_active' => 'sometimes|boolean',
+            'description' => 'nullable|string',
+        ]);
+
+        $validated['is_posting'] = $request->boolean('is_posting');
+        $validated['is_cash'] = $request->boolean('is_cash');
+        $validated['is_bank'] = $request->boolean('is_bank');
+        $validated['is_active'] = $request->boolean('is_active', $account->is_active);
+        $validated['level'] = ! empty($validated['parent_id'])
+            ? (ChartOfAccount::find($validated['parent_id'])?->level ?? 0) + 1
+            : 1;
+
+        if (! $validated['is_active'] && $account->journalDetails()->exists()) {
+            return back()->withErrors(['is_active' => 'Akun memiliki riwayat jurnal — tidak dapat dinonaktifkan.']);
+        }
+
+        $account->update($validated);
+
+        return redirect()->route('accounting.coa.index')->with('success', "Akun {$account->code} berhasil diperbarui");
+    }
+
+    public function coaDestroy(ChartOfAccount $account)
+    {
+        if ($account->journalDetails()->exists() || $account->children()->exists()) {
+            return back()->withErrors(['error' => 'Akun tidak dapat dihapus (memiliki riwayat jurnal atau sub-akun).']);
+        }
+        $account->delete();
+
+        return redirect()->route('accounting.coa.index')->with('success', 'Akun berhasil dihapus');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // PERIODE AKUNTANSI
+    // ─────────────────────────────────────────────────────────────────────
+    public function periodIndex()
+    {
+        $periods = AccountingPeriod::withCount('journals')->latest()->paginate(25);
+
+        return view('accounting.periods.index', compact('periods'));
+    }
+
+    public function periodStore(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100|unique:accounting_periods,name',
+            'start_date' => 'required|date|before_or_equal:end_date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+        AccountingPeriod::create($validated + ['is_closed' => false]);
+
+        return redirect()->route('accounting.periods.index')->with('success', 'Periode akuntansi berhasil dibuat');
+    }
+
+    public function periodClose(AccountingPeriod $period)
+    {
+        try {
+            $period->close(auth()->id());
+
+            return redirect()->route('accounting.periods.index')->with('success', "Periode {$period->name} ditutup.");
+        } catch (\DomainException $e) {
+            return back()->withErrors(['close' => $e->getMessage()]);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // JURNAL
+    // ─────────────────────────────────────────────────────────────────────
     public function journalIndex(Request $request)
     {
-        $journals = JournalEntry::with(['period', 'creator'])
-            ->when($request->status, fn($q, $v) => $q->where('status', $v))
-            ->when($request->from, fn($q, $v) => $q->whereDate('date', '>=', $v))
-            ->when($request->to, fn($q, $v) => $q->whereDate('date', '<=', $v))
+        $journals = JournalEntry::with(['period', 'creator', 'branch'])
+            ->when($request->status, fn ($q, $v) => $q->where('status', $v))
+            ->when($request->from, fn ($q, $v) => $q->whereDate('date', '>=', $v))
+            ->when($request->to, fn ($q, $v) => $q->whereDate('date', '<=', $v))
+            ->when($request->search, fn ($q, $v) => $q->where(fn ($b) => $b->where('journal_number', 'like', "%{$v}%")->orWhere('description', 'like', "%{$v}%")))
             ->orderBy('created_at', 'desc')->paginate(25);
+
         return view('accounting.journal.index', compact('journals'));
     }
 
     public function journalCreate()
     {
         return view('accounting.journal.create', [
-            'accounts' => ChartOfAccount::active()->orderBy('code')->get(),
+            'accounts' => ChartOfAccount::active()->posting()->orderBy('code')->get(),
             'periods' => AccountingPeriod::open()->get(),
         ]);
     }
@@ -71,135 +171,188 @@ class AccountingController extends Controller
     public function journalStore(Request $request)
     {
         $validated = $request->validate([
-            'period_id' => 'required|exists:accounting_periods,id',
             'date' => 'required|date',
             'description' => 'required|string',
             'entries' => 'required|array|min:2',
             'entries.*.account_id' => 'required|exists:chart_of_accounts,id',
-            'entries.*.debit' => 'required_without:entries.*.credit|numeric|min:0',
-            'entries.*.credit' => 'required_without:entries.*.debit|numeric|min:0',
+            'entries.*.debit' => 'nullable|numeric|min:0',
+            'entries.*.credit' => 'nullable|numeric|min:0',
             'entries.*.memo' => 'nullable|string',
         ]);
 
-        $totalDebit = collect($validated['entries'])->sum('debit');
-        $totalCredit = collect($validated['entries'])->sum('credit');
+        $lines = collect($validated['entries'])->map(fn ($line) => [
+            'account_id' => $line['account_id'],
+            'debit' => $line['debit'] ?? 0,
+            'credit' => $line['credit'] ?? 0,
+            'memo' => $line['memo'] ?? null,
+        ])->all();
 
-        if (abs($totalDebit - $totalCredit) > 0.01) {
-            return back()->withErrors(['entries' => "Total debit ({$totalDebit}) != total kredit ({$totalCredit})"])->withInput();
-        }
-
-        $entry = DB::transaction(function () use ($validated, $totalDebit, $totalCredit) {
-            $journal = JournalEntry::create([
-                'journal_number' => 'JNL-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
-                'period_id' => $validated['period_id'],
+        try {
+            $entry = JournalService::create([
                 'date' => $validated['date'],
                 'description' => $validated['description'],
-                'total_debit' => $totalDebit,
-                'total_credit' => $totalCredit,
-                'status' => JournalEntry::STATUS_DRAFT,
+                'source_type' => 'manual',
                 'created_by' => auth()->id(),
-            ]);
-            foreach ($validated['entries'] as $line) {
-                JournalDetail::create([
-                    'journal_entry_id' => $journal->id,
-                    'account_id' => $line['account_id'],
-                    'debit' => $line['debit'] ?? 0,
-                    'credit' => $line['credit'] ?? 0,
-                    'memo' => $line['memo'] ?? null,
-                ]);
-            }
-            return $journal;
-        });
+                'status' => JournalEntry::STATUS_DRAFT,
+            ], $lines, auth()->user()?->branch_id);
 
-        return redirect()->route('accounting.journal.show', $entry->id)->with('success', 'Jurnal berhasil dibuat');
+            return redirect()->route('accounting.journal.show', $entry->id)->with('success', 'Jurnal berhasil dibuat');
+        } catch (\DomainException $e) {
+            return back()->withErrors(['entries' => $e->getMessage()])->withInput();
+        }
     }
 
     public function journalShow(JournalEntry $journal)
     {
-        $journal->load(['details.account', 'period', 'creator']);
+        $journal->load(['details.account', 'period', 'creator', 'branch']);
+
         return view('accounting.journal.show', compact('journal'));
     }
 
     public function journalPost(JournalEntry $journal)
     {
-        try { $journal->post(); return redirect()->route('accounting.journal.show', $journal->id)->with('success', 'Jurnal berhasil diposting'); }
-        catch (\Exception $e) { return back()->withErrors(['post' => $e->getMessage()]); }
+        try {
+            $journal->post();
+
+            return redirect()->route('accounting.journal.show', $journal->id)->with('success', 'Jurnal berhasil diposting');
+        } catch (\DomainException $e) {
+            return back()->withErrors(['post' => $e->getMessage()]);
+        }
     }
 
+    public function journalReverse(JournalEntry $journal)
+    {
+        try {
+            $reversal = $journal->reverse(auth()->id());
+
+            return redirect()->route('accounting.journal.show', $reversal->id)
+                ->with('success', 'Jurnal pembalik berhasil dibuat. Jurnal asli ditandai reversed.');
+        } catch (\DomainException $e) {
+            return back()->withErrors(['reverse' => $e->getMessage()]);
+        }
+    }
+
+    public function journalDestroy(JournalEntry $journal)
+    {
+        try {
+            $journal->deleteDraft();
+
+            return redirect()->route('accounting.journal.index')->with('success', 'Jurnal draft dihapus');
+        } catch (\DomainException $e) {
+            return back()->withErrors(['delete' => $e->getMessage()]);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // LAPORAN KEUANGAN (via FinancialStatementService)
+    // ─────────────────────────────────────────────────────────────────────
     public function ledger(Request $request)
     {
         $accounts = ChartOfAccount::active()->orderBy('code')->get();
         $accountId = $request->account_id;
-        $details = collect();
-        $balance = 0;
+        $data = null;
 
-        if ($accountId) {
-            $account = ChartOfAccount::findOrFail($accountId);
-            $query = JournalDetail::with('journalEntry')->where('account_id', $accountId)
-                ->whereHas('journalEntry', fn($q) => $q->where('status', 'posted'));
-            if ($request->from) $query->whereHas('journalEntry', fn($q) => $q->whereDate('date', '>=', $request->from));
-            if ($request->to) $query->whereHas('journalEntry', fn($q) => $q->whereDate('date', '<=', $request->to));
-            $details = $query->orderBy(JournalEntry::select('date')->whereColumn('id', 'journal_details.journal_entry_id'))->get();
-            $normalBalance = $account->normal_balance;
-            $details->each(function ($d) use ($normalBalance, &$balance) {
-                $balance += $normalBalance === 'debit' ? $d->debit - $d->credit : $d->credit - $d->debit;
-                $d->running_balance = $balance;
-            });
+        if ($request->account_id) {
+            $account = ChartOfAccount::findOrFail($request->account_id);
+            $data = $this->statements->generalLedger(
+                $account,
+                $request->from,
+                $request->to
+            );
+
+            if ($request->export === 'pdf') {
+                return $this->exportPdf('accounting.exports.ledger-pdf', $data, 'ledger');
+            }
         }
 
-        return view('accounting.ledger.index', compact('accounts', 'accountId', 'details', 'balance'));
+        return view('accounting.ledger.index', compact('accounts', 'data', 'accountId', 'request'));
     }
 
     public function trialBalance(Request $request)
     {
-        $endDate = $request->end_date;
-        $accounts = ChartOfAccount::active()->orderBy('code')->get()->map(function ($a) use ($endDate) {
-            $q = JournalDetail::where('account_id', $a->id)->whereHas('journalEntry', fn($q) => $q->where('status', 'posted'));
-            if ($endDate) $q->whereHas('journalEntry', fn($qq) => $qq->whereDate('date', '<=', $endDate));
-            $d = (float) $q->sum('debit'); $c = (float) $q->sum('credit');
-            $bal = $a->normal_balance === 'debit' ? $d - $c : $c - $d;
-            return ['code' => $a->code, 'name' => $a->name, 'type' => $a->type,
-                'debit' => $bal > 0 && in_array($a->type, ['asset','expense']) ? $bal : 0,
-                'credit' => $bal > 0 && in_array($a->type, ['liability','equity','income']) ? $bal : 0, 'balance' => $bal];
-        });
-        return view('accounting.trial-balance.index', compact('accounts', 'endDate'));
+        $data = $this->statements->trialBalance($request->from, $request->to);
+
+        if ($request->export === 'pdf') {
+            return $this->exportPdf('accounting.exports.trial-balance-pdf', $data, 'trial-balance');
+        }
+        if ($request->export === 'csv') {
+            return $this->exportCsv('trial-balance', ['Kode', 'Akun', 'Debit', 'Kredit'], $data['rows'], function ($r) {
+                return [$r['code'], $r['name'], $r['debit'], $r['credit']];
+            }, $data['from'], $data['to']);
+        }
+
+        return view('accounting.trial-balance.index', compact('data'));
     }
 
     public function incomeStatement(Request $request)
     {
-        $endDate = $request->end_date ?? now()->toDateString();
-        $income = ChartOfAccount::byType('income')->active()->orderBy('code')->get()->map(fn($a) => ['code' => $a->code, 'name' => $a->name, 'balance' => $a->balance()]);
-        $expense = ChartOfAccount::byType('expense')->active()->orderBy('code')->get()->map(fn($a) => ['code' => $a->code, 'name' => $a->name, 'balance' => $a->balance()]);
-        $ti = $income->sum('balance'); $te = $expense->sum('balance');
-        return view('accounting.income-statement.index', compact('income', 'expense', 'ti', 'te', 'endDate'));
+        $data = $this->statements->incomeStatement($request->from, $request->to);
+
+        if ($request->export === 'pdf') {
+            return $this->exportPdf('accounting.exports.income-statement-pdf', $data, 'income-statement');
+        }
+        if ($request->export === 'csv') {
+            $rows = $data['revenue']->concat($data['expenses']);
+
+            return $this->exportCsv('income-statement', ['Kode', 'Akun', 'Jumlah'], $rows, function ($r) {
+                return [$r['code'], $r['name'], $r['balance']];
+            }, $data['from'], $data['to']);
+        }
+
+        return view('accounting.income-statement.index', compact('data'));
     }
 
     public function balanceSheet(Request $request)
     {
-        $endDate = $request->end_date ?? now()->toDateString();
-        $assets = ChartOfAccount::byType('asset')->active()->orderBy('code')->get()->map(fn($a) => ['code' => $a->code, 'name' => $a->name, 'balance' => $a->balance()]);
-        $liabilities = ChartOfAccount::byType('liability')->active()->orderBy('code')->get()->map(fn($a) => ['code' => $a->code, 'name' => $a->name, 'balance' => $a->balance()]);
-        $equities = ChartOfAccount::byType('equity')->active()->orderBy('code')->get()->map(fn($a) => ['code' => $a->code, 'name' => $a->name, 'balance' => $a->balance()]);
-        $netIncome = ChartOfAccount::byType('income')->active()->get()->sum(fn($a) => $a->balance()) - ChartOfAccount::byType('expense')->active()->get()->sum(fn($a) => $a->balance());
-        return view('accounting.balance-sheet.index', compact('assets', 'liabilities', 'equities', 'netIncome', 'endDate'));
+        $data = $this->statements->balanceSheet($request->as_of);
+
+        if ($request->export === 'pdf') {
+            return $this->exportPdf('accounting.exports.balance-sheet-pdf', $data, 'balance-sheet');
+        }
+
+        return view('accounting.balance-sheet.index', compact('data'));
     }
 
     public function cashFlow(Request $request)
     {
-        $startDate = $request->start_date ?? now()->subMonth()->toDateString();
-        $endDate   = $request->end_date   ?? now()->toDateString();
+        $data = $this->statements->cashFlow($request->from, $request->to);
 
-        // Resolve the primary revenue account from config, fall back to any income account.
-        $revenueCode = config('accounting.revenue_account_code', '4-101');
-        $revenue     = ChartOfAccount::where('code', $revenueCode)->first()
-                    ?? ChartOfAccount::byType('income')->active()->orderBy('code')->first();
+        if ($request->export === 'pdf') {
+            return $this->exportPdf('accounting.exports.cash-flow-pdf', $data, 'cash-flow');
+        }
 
-        $cashIn  = $revenue
-            ? $revenue->balanceBetween($startDate, $endDate)
-            : 0;
-        $cashOut = ChartOfAccount::byType('expense')->active()->get()
-            ->sum(fn($a) => $a->balanceBetween($startDate, $endDate));
+        return view('accounting.cash-flow.index', compact('data'));
+    }
 
-        return view('accounting.cash-flow.index', compact('cashIn', 'cashOut', 'startDate', 'endDate'));
+    // ─────────────────────────────────────────────────────────────────────
+    // EXPORT HELPERS
+    // ─────────────────────────────────────────────────────────────────────
+    private function exportPdf(string $view, array $data, string $slug)
+    {
+        $pdf = Pdf::loadView($view, ['data' => $data])
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download($slug.'-'.date('Ymd').'.pdf');
+    }
+
+    private function exportCsv(string $slug, array $header, $rows, callable $mapper, ?string $from, ?string $to)
+    {
+        $output = fopen('php://temp', 'r+');
+        fputcsv($output, $header);
+        foreach ($rows as $row) {
+            fputcsv($output, $mapper($row));
+        }
+        if ($from || $to) {
+            fputcsv($output, []);
+            fputcsv($output, ['Periode', ($from ?? '-').' s/d '.($to ?? '-')]);
+        }
+        rewind($output);
+        $content = stream_get_contents($output);
+        fclose($output);
+
+        return response($content, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$slug.'-'.date('Ymd').'.csv"',
+        ]);
     }
 }
