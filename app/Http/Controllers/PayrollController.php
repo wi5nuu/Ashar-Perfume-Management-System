@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Payroll;
 use App\Models\Attendance;
-use App\Models\PayrollSetting;
+use App\Models\Payroll;
+use App\Models\User;
+use App\Services\Accounting\AutoPostingService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class PayrollController extends Controller
 {
@@ -69,7 +69,7 @@ class PayrollController extends Controller
 
         try {
             // Pre-fetch all attendance counts in a single query — avoids N+1 inside the loop
-            $parsedMonth  = Carbon::parse($month . '-01');
+            $parsedMonth = Carbon::parse($month.'-01');
             $attendanceCounts = Attendance::whereIn('user_id', $employees->pluck('id'))
                 ->whereMonth('date', $parsedMonth->month)
                 ->whereYear('date', $parsedMonth->year)
@@ -78,39 +78,50 @@ class PayrollController extends Controller
                 ->groupBy('user_id')
                 ->pluck('total', 'user_id');
 
-            DB::transaction(function () use ($employees, $month, $attendanceCounts) {
+            $createdPayrolls = DB::transaction(function () use ($employees, $month, $attendanceCounts) {
+                $created = collect();
+
                 foreach ($employees as $employee) {
                     $settings = $employee->payrollSettings;
 
                     $attendanceCount = $attendanceCounts->get($employee->id, 0);
 
-                    $basic     = (float) ($employee->basic_salary ?? 0);
+                    $basic = (float) ($employee->basic_salary ?? 0);
                     $allowance = (float) ($settings?->allowance ?? 0);
                     $deduction = (float) ($settings?->deduction ?? 0);
-                    $total     = ($basic + $allowance) - $deduction;
+                    $total = ($basic + $allowance) - $deduction;
 
                     Payroll::where('user_id', $employee->id)->where('month', $month)->lockForUpdate()->first();
-                    Payroll::updateOrCreate(
+                    $payroll = Payroll::updateOrCreate(
                         [
                             'user_id' => $employee->id,
-                            'month'   => $month,
+                            'month' => $month,
                         ],
                         [
-                            'basic_salary'   => $basic,
-                            'allowance'      => $allowance,
-                            'deduction'      => $deduction,
-                            'total_salary'   => max(0, $total),
+                            'basic_salary' => $basic,
+                            'allowance' => $allowance,
+                            'deduction' => $deduction,
+                            'total_salary' => max(0, $total),
                             'attendance_days' => $attendanceCount,
-                            'status'         => 'pending',
+                            'status' => 'pending',
                         ]
                     );
+
+                    $created->push($payroll);
                 }
+
+                return $created;
             });
 
+            // Enterprise double-entry posting — satu jurnal agregat per bulan
+            // (fail-safe, idempotent).
+            app(AutoPostingService::class)
+                ->postPayrollBatch($createdPayrolls, $month, auth()->user()->branch_id);
+
             Log::info('Payroll generated', [
-                'month'     => $month,
+                'month' => $month,
                 'employees' => $employees->count(),
-                'user_id'   => auth()->id(),
+                'user_id' => auth()->id(),
             ]);
 
             return back()->with('success', "Payroll for {$month} generated successfully for {$employees->count()} employees.");
